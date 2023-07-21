@@ -11,6 +11,9 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/../../UE_5.0/Engine/Source/Runtime/Engine/Private/Components/CharacterMovementComponent.cpp" root0="SKIP_HIGHLIGHTING" />
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -151,6 +154,14 @@
       <updated>1683504642917</updated>
       <workItem from="1683504705609" duration="9413000" />
       <workItem from="1683592896988" duration="8000" />
+      <workItem from="1685633535285" duration="369000" />
+      <workItem from="1686564535211" duration="1722000" />
+      <workItem from="1686933109029" duration="7191000" />
+      <workItem from="1688962925627" duration="713000" />
+      <workItem from="1688970425339" duration="2313000" />
+      <workItem from="1688987927941" duration="8100000" />
+      <workItem from="1689492102080" duration="1098000" />
+      <workItem from="1689690304624" duration="2014000" />
     </task>
     <servers />
   </component>

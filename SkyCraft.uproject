@@ -10,7 +10,8 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"Voxel"
+				"Voxel",
+				"NavigationSystem"
 			]
 		}
 	],
@@ -254,10 +255,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "SpeedTreeImporter",
-			"Enabled": false
-		},
-		{
 			"Name": "WindowsMoviePlayer",
 			"Enabled": false
 		},
@@ -301,6 +298,11 @@
 		{
 			"Name": "StazHelper",
 			"Enabled": false
+		},
+		{
+			"Name": "GeneralMovement",
+			"Enabled": false,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/0a128683c41f4b59906c661b95ca8655"
 		}
 	],
 	"TargetPlatforms": [

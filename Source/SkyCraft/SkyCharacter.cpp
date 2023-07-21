@@ -5,7 +5,8 @@
 #include "SkyCharacterMovementComponent.h"
 
 // Sets default values
-ASkyCharacter::ASkyCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<USkyCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+// ASkyCharacter::ASkyCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<USkyCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+ASkyCharacter::ASkyCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -32,3 +33,11 @@ void ASkyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 }
 
+void ASkyCharacter::Jump()
+{
+	// UPrimitiveComponent* BaseOwner = GetMovementBase()->GetOwner();
+	UPrimitiveComponent* BaseOwner = GetCharacterMovement()->CurrentFloor.HitResult.Component.Get();
+	ForceSetBase = true;
+	SetBase(BaseOwner, NAME_None, false);
+	Super::Jump();
+}
