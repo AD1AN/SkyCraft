@@ -13,23 +13,32 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/../../UE_5.0/Engine/Source/Runtime/Engine/Private/Components/CharacterMovementComponent.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/SkyCraft/BuildSnapType.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/SkyCraft/BuildingBoxComponent.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/SkyCraft/BuildingBoxComponent.h" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/SkyCraft/Interface_BuildingBoxComponent.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Source/SkyCraft/Interface_BuildingBoxComponent.h" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectId" id="2PUHEOpp3GPMRcgPJoFjniEKES6" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "settings.editor.selected.configurable": "RiderTestRunnerUnitTestingPageId",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="C++ Project.SkyCraft">
     <configuration name="SkyCraft" type="CppProject" factoryName="C++ Project">
       <configuration_1>
@@ -164,6 +173,22 @@
       <workItem from="1689690304624" duration="2014000" />
       <workItem from="1690404811021" duration="585000" />
       <workItem from="1690405591433" duration="401000" />
+      <workItem from="1695441451882" duration="2638000" />
+      <workItem from="1695504757804" duration="8368000" />
+      <workItem from="1695730984719" duration="2763000" />
+      <workItem from="1696002489511" duration="738000" />
+      <workItem from="1696142943313" duration="232000" />
+      <workItem from="1696185237810" duration="5571000" />
+      <workItem from="1696319128772" duration="829000" />
+      <workItem from="1696322829124" duration="470000" />
+      <workItem from="1696323843947" duration="79000" />
+      <workItem from="1696324681536" duration="223000" />
+      <workItem from="1696327432524" duration="73000" />
+      <workItem from="1696327516830" duration="9000" />
+      <workItem from="1696327570431" duration="774000" />
+      <workItem from="1696331447659" duration="2611000" />
+      <workItem from="1696360950871" duration="2562000" />
+      <workItem from="1696363575156" duration="5978000" />
     </task>
     <servers />
   </component>
@@ -174,5 +199,9 @@
   <component name="UnityUnitTestConfiguration" currentTestLauncher="NUnit" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>
