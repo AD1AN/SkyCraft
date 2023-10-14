@@ -22,15 +22,9 @@ UCLASS(ClassGroup="Collision", hidecategories=(Object,LOD,Lighting,TextureStream
 class SKYCRAFT_API UBuildingBoxComponent : public UBoxComponent, public IInterface_BuildingBoxComponent
 {
 	GENERATED_BODY()
-
 	
 public:
 	UBuildingBoxComponent();
-	
-	virtual void OnRegister() override;
-	
-	UPROPERTY()
-	UStaticMeshComponent* CubeMeshComponent;
 
 	UFUNCTION(BlueprintCallable)
 	virtual UBuildingBoxComponent* Get_BuildingBoxComponent() override;
@@ -55,7 +49,4 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float NewBuildingRotation;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool ShowSnap = false;
 };
