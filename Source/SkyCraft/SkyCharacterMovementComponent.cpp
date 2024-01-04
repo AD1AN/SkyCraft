@@ -19,14 +19,14 @@ void USkyCharacterMovementComponent::UpdateBasedMovement(float DeltaSeconds)
  	}
 }
 
-void USkyCharacterMovementComponent::ServerMoveHandleClientError(float ClientTimeStamp, float DeltaTime, const FVector& Accel, const FVector& RelativeClientLoc, UPrimitiveComponent* ClientMovementBase, FName ClientBaseBoneName, uint8 ClientMovementMode)
-{
-	if (CharacterOwner->GetRootComponent() == nullptr || CharacterOwner->GetRootComponent()->GetAttachParent() == nullptr)
-	{
-	 	Super::ServerMoveHandleClientError(ClientTimeStamp, DeltaTime, Accel, RelativeClientLoc, ClientMovementBase, ClientBaseBoneName, ClientMovementMode);
-	}
-	else
-	{
-		return;
-	}
-}
+// void USkyCharacterMovementComponent::ServerMoveHandleClientError(float ClientTimeStamp, float DeltaTime, const FVector& Accel, const FVector& RelativeClientLoc, UPrimitiveComponent* ClientMovementBase, FName ClientBaseBoneName, uint8 ClientMovementMode)
+// {
+// 	if (CharacterOwner->GetRootComponent() == nullptr || CharacterOwner->GetRootComponent()->GetAttachParent() == nullptr)
+// 	{
+// 	 	Super::ServerMoveHandleClientError(ClientTimeStamp, DeltaTime, Accel, RelativeClientLoc, ClientMovementBase, ClientBaseBoneName, ClientMovementMode);
+// 	}
+// 	else
+// 	{
+// 		return;
+// 	}
+// }

@@ -12,5 +12,5 @@ class SKYCRAFT_API USkyCharacterMovementComponent : public UCharacterMovementCom
 	GENERATED_UCLASS_BODY()
 
 	virtual void UpdateBasedMovement(float DeltaSeconds) override;
-	virtual void ServerMoveHandleClientError(float ClientTimeStamp, float DeltaTime, const FVector& Accel, const FVector& RelativeClientLoc, UPrimitiveComponent* ClientMovementBase, FName ClientBaseBoneName, uint8 ClientMovementMode) override;
+	//virtual void ServerMoveHandleClientError(float ClientTimeStamp, float DeltaTime, const FVector& Accel, const FVector& RelativeClientLoc, UPrimitiveComponent* ClientMovementBase, FName ClientBaseBoneName, uint8 ClientMovementMode) override;
 };
