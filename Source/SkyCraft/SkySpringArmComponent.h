@@ -1,16 +1,16 @@
-// Staz Lincord Copyrighted
+// ADIAN Copyrighted
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "StazSpringArmComponent.generated.h"
+#include "SkySpringArmComponent.generated.h"
 
 /**
  * 
  */
 UCLASS(ClassGroup=Camera, meta=(BlueprintSpawnableComponent), hideCategories=(Mobility))
-class SKYCRAFT_API UStazSpringArmComponent : public USpringArmComponent
+class SKYCRAFT_API USkySpringArmComponent : public USpringArmComponent
 {
 	GENERATED_BODY()
 

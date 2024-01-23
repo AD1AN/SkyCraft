@@ -1,4 +1,4 @@
-// Staz Lincord Copyrighted
+// ADIAN Copyrighted
 
 #pragma once
 
