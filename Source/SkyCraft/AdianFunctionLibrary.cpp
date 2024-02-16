@@ -3,7 +3,7 @@
 
 #include "AdianFunctionLibrary.h"
 
-FString UStazFunctionLibrary::GetProjectVersion()
+FString UAdianFunctionLibrary::GetProjectVersion()
 {
 	FString ProjectVersion;
 	GConfig->GetString(

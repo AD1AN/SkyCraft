@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class SKYCRAFT_API UStazFunctionLibrary : public UBlueprintFunctionLibrary
+class SKYCRAFT_API UAdianFunctionLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 	
