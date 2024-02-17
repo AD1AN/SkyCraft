@@ -14,9 +14,6 @@ class SKYCRAFT_API UIC : public UActorComponent
 public:	
 	UIC();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	APlayerController* PC_Owner;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool CanLMB = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
