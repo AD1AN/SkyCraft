@@ -43,7 +43,7 @@
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
-    "settings.editor.selected.configurable": "SolutionBuilderGeneralOptionsPage",
+    "settings.editor.selected.configurable": "SolutionBuilderPresentationOptionsPageId",
     "vue.rearranger.settings.migration": "true"
   },
   "keyToStringList": {
@@ -55,7 +55,7 @@
   }
 }]]></component>
   <component name="RunManager" selected="C++ Project.SkyCraft">
-    <configuration name="SkyCraft" type="CppProject" factoryName="C++ Project">
+    <configuration name="SkyCraft" type="CppProject" factoryName="C++ Project" activateToolWindowBeforeRun="false">
       <configuration_1>
         <option name="CONFIGURATION" value="DebugGame Editor" />
         <option name="PLATFORM" value="Win64" />
@@ -240,6 +240,7 @@
       <workItem from="1707845516203" duration="844000" />
       <workItem from="1707849567458" duration="24000" />
       <workItem from="1707972657594" duration="21036000" />
+      <workItem from="1708071403367" duration="9130000" />
     </task>
     <servers />
   </component>

@@ -19,7 +19,7 @@ public:
 	FText Name;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EItemType ItemType;
+	TEnumAsByte<EItemType> ItemType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Description;

@@ -3,32 +3,84 @@
 
 #include "IC.h"
 
-// Sets default values for this component's properties
 UIC::UIC()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
-	// ...
 }
 
 
-// Called when the game starts
 void UIC::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
 }
 
 
-// Called every frame
 void UIC::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+}
 
-	// ...
+void UIC::ServerBeginPlay_Implementation()
+{
+}
+
+void UIC::ClientBeginPlay_Implementation()
+{
+}
+
+void UIC::ServerOnDestroy_Implementation()
+{
+}
+
+void UIC::ClientOnDestroy_Implementation()
+{
+}
+
+void UIC::Select_Implementation()
+{
+}
+
+void UIC::Deselect_Implementation()
+{
+}
+
+void UIC::LMB_Implementation(bool Pressed)
+{
+}
+
+void UIC::LMB_HoldStart_Implementation(bool Pressed)
+{
+}
+
+void UIC::LMB_HoldStop_Implementation(bool Pressed)
+{
+}
+
+void UIC::RMB_Implementation(bool Pressed)
+{
+}
+
+void UIC::RMB_HoldStart_Implementation()
+{
+}
+
+void UIC::RMB_HoldStop_Implementation()
+{
+}
+
+void UIC::MMB_Implementation(bool Pressed)
+{
+}
+
+void UIC::WheelUp_Implementation()
+{
+}
+
+void UIC::WheelDown_Implementation()
+{
+}
+
+void UIC::Alt_Implementation(bool Pressed)
+{
 }
 
