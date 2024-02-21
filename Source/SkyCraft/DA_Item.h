@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EquipmentType.h"
 #include "IC.h"
 #include "ItemProperty.h"
 #include "ItemType.h"
@@ -30,18 +31,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool Stacking = false;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="Stacking", EditConditionHides))
 	int32 MaxStacking = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UIC* ItemComponent;
+	TSubclassOf<UIC> ItemComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides))
+	TEnumAsByte<EEquipmentType> EquipmentType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides))
 	USkeletalMesh* EQ_Male;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides))
 	USkeletalMesh* EQ_Female;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) // ReadWrite - because of error for SearchInProperties()
 	TArray<FItemProperty> InitialProperties;
 };

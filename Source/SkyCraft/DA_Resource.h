@@ -22,6 +22,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool ChangeScale = false;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ChangeScale", EditConditionHides))
 	FVector NewScale = FVector(1,1,1);
 };

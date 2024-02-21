@@ -6,34 +6,17 @@
 UIC::UIC()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	SetIsReplicatedByDefault(true);
 }
-
 
 void UIC::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-
 void UIC::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-
-void UIC::ServerBeginPlay_Implementation()
-{
-}
-
-void UIC::ClientBeginPlay_Implementation()
-{
-}
-
-void UIC::ServerOnDestroy_Implementation()
-{
-}
-
-void UIC::ClientOnDestroy_Implementation()
-{
 }
 
 void UIC::Select_Implementation()
