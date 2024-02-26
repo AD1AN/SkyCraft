@@ -16,6 +16,7 @@ ASkyCharacter::ASkyCharacter(const FObjectInitializer& ObjectInitializer) : Supe
 // Called when the game starts or when spawned
 void ASkyCharacter::BeginPlay()
 {
+	PreBeginPlay();
 	Super::BeginPlay();
 }
 

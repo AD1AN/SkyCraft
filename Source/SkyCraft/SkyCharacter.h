@@ -19,6 +19,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	
+	/** This event called before ActorComponents BeginPlay(). */
+	UFUNCTION(BlueprintImplementableEvent)
+	void PreBeginPlay();
 
 public:	
 	// Called every frame

@@ -12,14 +12,14 @@ struct FResourceLoot
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(UIMin="0",UIMax ="100"))
-	float Probability = 100;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(UIMin="0",UIMax ="1"))
+	float Probability = 1;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	int32 Min = 1;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	int32 Max = 5;
+	int32 Max = 1;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	UDA_Item* Item;
@@ -31,13 +31,13 @@ struct FResourceSize
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	int32 Health = 0;
+	int32 Health = 100;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<FResourceLoot> Loot;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<UStaticMesh*> SM;
+	TArray<UStaticMesh*> SM_Variety;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<FSM_Scalar> SM_Scalar;
@@ -45,6 +45,6 @@ struct FResourceSize
 	FResourceSize()
 	{
 		Loot.Add(FResourceLoot{});
-		SM.Add(nullptr);
+		SM_Variety.Add(nullptr);
 	}
 };
