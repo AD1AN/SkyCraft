@@ -6,16 +6,13 @@
 #include "UObject/Interface.h"
 #include "TESTInterface.generated.h"
 
-// This class does not need to be modified.
+
 UINTERFACE(MinimalAPI)
 class UTESTInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class SKYCRAFT_API ITESTInterface
 {
 	GENERATED_BODY()
