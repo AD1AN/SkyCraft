@@ -13,11 +13,9 @@ class SKYCRAFT_API ASkyCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ASkyCharacter(const FObjectInitializer& ObjectInitializer);
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
 	/** This event called before ActorComponents BeginPlay(). */
@@ -25,10 +23,8 @@ protected:
 	void PreBeginPlay();
 
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	bool ForceSetBase = false;
