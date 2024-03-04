@@ -21,7 +21,7 @@ public:
 	TEnumAsByte<EBuildResourceType> ResourceType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<AActor> BA;
+	TSubclassOf<ABA*> BA;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UDA_BA* BuildSnapType;
