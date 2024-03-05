@@ -8,6 +8,8 @@
 #include "InventorySlot.h"
 #include "DA_BA.generated.h"
 
+class ABA;
+
 UCLASS(BlueprintType)
 class SKYCRAFT_API UDA_BA : public UDataAsset
 {
@@ -21,7 +23,7 @@ public:
 	TEnumAsByte<EBuildResourceType> ResourceType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<ABA*> BA;
+	TSubclassOf<ABA> BA;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UDA_BA* BuildSnapType;
