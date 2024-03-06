@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DA_SkyTag.h"
 #include "Engine/DataAsset.h"
 #include "ResourceStructs.h"
 #include "DA_Resource.generated.h"
@@ -15,6 +16,9 @@ class SKYCRAFT_API UDA_Resource : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FResourceSize> Size;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<UDA_SkyTag*> SkyTags;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool Interactable = false;
