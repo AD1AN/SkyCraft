@@ -18,7 +18,7 @@ public:
 
 	virtual void OnRegister() override;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UDA_SkyTag*> DA_SkyTags;
 
 protected:
