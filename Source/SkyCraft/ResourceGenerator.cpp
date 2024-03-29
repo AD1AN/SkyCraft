@@ -19,51 +19,61 @@ void UResourceGenerator::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UResourceGenerator::SetupGenerator(float InAreaSize, int32 InGeneratorSeed, float InScaleRatio, float InGroundAltitude, float InLinetraceLength)
+void UResourceGenerator::SetupGenerator(FSetupGeneratorIn SetupGeneratorIn)
 {
-	this->AreaSize = InAreaSize;
-	this->GeneratorSeed = InGeneratorSeed;
-	this->ScaleRatio = InScaleRatio;
-	this->GroundAltitude = InGroundAltitude;
-	this->LinetraceLength = InLinetraceLength;
+	this->AreaSize = SetupGeneratorIn.AreaSize;
+	this->GeneratorSeed = SetupGeneratorIn.GeneratorSeed;
+	this->ScaleRatio = SetupGeneratorIn.ScaleRatio;
+	this->GroundAltitude = SetupGeneratorIn.GroundAltitude;
+	this->LinetraceLength = SetupGeneratorIn.LinetraceLength;
 }
 
-void UResourceGenerator::GenerateResources(int32 MaxSpawnPoints, UDA_Resource* DA_Resource, FIntMinMax ResourceSize, FIntMinMax SM_Variety)
+void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResourcesIn)
 {
-	int32 _SpawnPoints = MaxSpawnPoints / (ScaleRatio - 3 - ScaleRatio);
-	float _GridSize = sqrt(_SpawnPoints);
-	float _CellSize = AreaSize / _GridSize;
-	float _MaxOffset = _CellSize * 0.35;
+	const uint32 _SpawnPoints = GenerateResourcesIn.MaxSpawnPoints / ((3-ScaleRatio) - (ScaleRatio));
+	const float _GridSize = sqrt(_SpawnPoints);
+	const float _CellSize = AreaSize / _GridSize;
+	const float _MaxOffset = _CellSize * 0.25;
 
 	FVector ActorLoc = GetOwner()->GetActorLocation();
-	UWorld* _World = GetWorld();
 
-	FRandomStream _StreamX;
-	FRandomStream _StreamY;
+	FRandomStream _StreamX = GeneratorSeed + Generations;
+	FRandomStream _StreamY = GeneratorSeed + Generations + 1;
 
-	float _IslandScale = FMath::Clamp(ScaleRatio, 0.25, 0.5);
+	const float _IslandScale = FMath::Clamp(ScaleRatio, 0.25, 0.5);
 
-	for (int32 _Row = 0; _Row < _GridSize-1; ++_Row)
+	for (uint16 _Row = 0; _Row < _GridSize-1; ++_Row)
 	{
 		
-		for (int32 _Column = 0; _Column < _GridSize-1; ++_Column)
+		for (uint16 _Column = 0; _Column < _GridSize-1; ++_Column)
 		{
-			
 			FVector LocalLoc = FVector(
 				_StreamX.FRandRange(_MaxOffset * -1, _MaxOffset) + (_CellSize * _Column + _CellSize * 0.5) * _IslandScale,
 				_StreamY.FRandRange(_MaxOffset * -1, _MaxOffset) + (_CellSize * _Row + _CellSize * 0.5) * _IslandScale,
 				GroundAltitude);
 			FVector WorldLoc = LocalLoc + ActorLoc;
-			float _offXY = _IslandScale * (AreaSize / 2);
-			FVector StartlLoc = WorldLoc - FVector(_offXY, _offXY, 0);
-			FVector EndLoc = StartlLoc + LinetraceLength;
+			float _scaleXY = _IslandScale * (AreaSize / 2);
+			FVector StartlLoc = WorldLoc - FVector(_scaleXY, _scaleXY, 0);
+			FVector EndLoc = StartlLoc;
+			EndLoc.Z += LinetraceLength;
 			FHitResult HitResult;
 			
-			if (_World->LineTraceSingleByChannel(HitResult, StartlLoc, EndLoc, ECC_Visibility))
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, StartlLoc, EndLoc, ECC_Visibility))
 			{
-				
+				if (HitResult.GetActor()->Tags.Contains(CollisionTags))
+				{
+					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
+					{
+						// GetWorld()->SpawnActor(Resource)
+					}
+				}
 			}
-			DrawDebugLine(_World, StartlLoc, EndLoc, FColor::Red, false, 15);
+			_StreamX = _StreamX.GetUnsignedInt();
+			_StreamY = _StreamY.GetUnsignedInt();
+			
+			// UE_LOG(LogTemp, Warning, TEXT("%f"), FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))));
+			DrawDebugLine(GetWorld(), StartlLoc, EndLoc, FColor::Red, false, 555);
 		}
 	}
+	Generations++;
 }

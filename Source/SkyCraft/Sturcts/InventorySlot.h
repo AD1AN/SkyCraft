@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "DA_Item.h"
+#include "../DA_Item.h"
 #include "InventorySlot.generated.h"
 
 USTRUCT(BlueprintType)

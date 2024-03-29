@@ -8,6 +8,47 @@
 #include "Components/ActorComponent.h"
 #include "ResourceGenerator.generated.h"
 
+USTRUCT(BlueprintType)
+struct FSetupGeneratorIn
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float AreaSize;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 GeneratorSeed;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float ScaleRatio;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float GroundAltitude;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float LinetraceLength;
+};
+
+USTRUCT(BlueprintType)
+struct FGenerateResourcesIn
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 MaxSpawnPoints;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UDA_Resource* DA_Resource;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float MaxFloorSlope;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FIntMinMax ResourceSize;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FIntMinMax SM_Variety;
+};
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
 class SKYCRAFT_API UResourceGenerator : public UActorComponent
@@ -49,8 +90,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable)
-	void SetupGenerator(float InAreaSize, int32 InGeneratorSeed, float InScaleRatio, float InGroundAltitude, float InLinetraceLength);
+	void SetupGenerator(FSetupGeneratorIn SetupGeneratorIn);
 	
 	UFUNCTION(BlueprintCallable)
-	void GenerateResources(int32 MaxSpawnPoints, UDA_Resource* DA_Resource, FIntMinMax ResourceSize, FIntMinMax SM_Variety);
+	void GenerateResources(FGenerateResourcesIn GenerateResourcesIn);
 };

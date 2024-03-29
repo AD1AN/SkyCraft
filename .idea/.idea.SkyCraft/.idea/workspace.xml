@@ -43,7 +43,8 @@
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
-    "settings.editor.selected.configurable": "editor.preferences.appearance",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.keymap",
     "vue.rearranger.settings.migration": "true"
   },
   "keyToStringList": {
@@ -54,6 +55,11 @@
     ]
   }
 }]]></component>
+  <component name="RunAnythingCache">
+    <option name="myCommands">
+      <command value="_StreamX = _StreamX.RandRange(INT_MIN,INT_MAX);" />
+    </option>
+  </component>
   <component name="RunManager" selected="C++ Project.SkyCraft">
     <configuration name="SkyCraft" type="CppProject" factoryName="C++ Project" activateToolWindowBeforeRun="false">
       <configuration_1>
@@ -251,7 +257,7 @@
       <workItem from="1710885446752" duration="1000" />
       <workItem from="1711059529320" duration="11000" />
       <workItem from="1711420088441" duration="1429000" />
-      <workItem from="1711450262667" duration="11556000" />
+      <workItem from="1711450262667" duration="40387000" />
     </task>
     <servers />
   </component>

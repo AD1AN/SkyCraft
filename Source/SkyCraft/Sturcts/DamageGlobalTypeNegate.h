@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "DamageGlobalType.h"
+#include "../Enums/DamageGlobalType.h"
 #include "DamageGlobalTypeNegate.generated.h"
 
 USTRUCT(BlueprintType)
