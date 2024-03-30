@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "SkyCraft/Enums/EquipmentType.h"
-#include "IC.h"
-#include "ItemProperty.h"
+#include "SkyCraft/IC.h"
+#include "SkyCraft/Structs/ItemProperty.h"
 #include "SkyCraft/Enums/ItemType.h"
 #include "Engine/DataAsset.h"
 #include "DA_Item.generated.h"

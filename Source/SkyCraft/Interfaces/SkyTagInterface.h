@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "DA_SkyTag.h"
+#include "Skycraft/DA_SkyTag.h"
 #include "SkyTagInterface.generated.h"
 
 USTRUCT(BlueprintType)

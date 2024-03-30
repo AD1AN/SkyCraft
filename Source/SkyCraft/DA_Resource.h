@@ -5,7 +5,8 @@
 #include "CoreMinimal.h"
 #include "DA_SkyTag.h"
 #include "Engine/DataAsset.h"
-#include "ResourceStructs.h"
+#include "SkyCraft/Structs/ResourceStructs.h"
+#include "Structs/InteractKeySettings.h"
 #include "DA_Resource.generated.h"
 
 UCLASS(BlueprintType)
@@ -21,7 +22,7 @@ public:
 	TArray<UDA_SkyTag*> SkyTags;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool Interactable = false;
+	TArray<FInteractKeySettings> InteractKeys;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool ChangeScale = false;

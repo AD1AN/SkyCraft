@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "BuildResourceType.h"
-#include "InventorySlot.h"
+#include "SkyCraft/Enums/BuildResourceType.h"
+#include "SkyCraft/Structs/InventorySlot.h"
 #include "DA_BA.generated.h"
 
 class ABA;

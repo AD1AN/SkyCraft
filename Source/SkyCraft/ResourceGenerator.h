@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "DA_Resource.h"
-#include "IntMinMax.h"
+#include "SkyCraft/Structs/IntMinMax.h"
 #include "Components/ActorComponent.h"
 #include "ResourceGenerator.generated.h"
 

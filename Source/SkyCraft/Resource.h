@@ -28,14 +28,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USkyTags* SkyTags;
 
-	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	// UInteractSystem
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UInteractSystem* InteractSystem;
 	
 public:	
 	AResource();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Loaded = false;
+	bool bLoaded = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 LoadHealth = 403;
@@ -72,4 +72,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	void ServerInteract(FInteractIn In, FInteractOut& Out);
 
+	UFUNCTION(BlueprintNativeEvent)
+	UInteractSystem* GetInteractSystem();
+	
+	UFUNCTION(BlueprintNativeEvent)
+	FVector GetInteractLocation();
 };

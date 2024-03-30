@@ -4,12 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Structs/CurrentProlonged.h"
-#include "Structs/InteractKeySettings.h"
+#include "SkyCraft/Structs/CurrentProlonged.h"
+#include "SkyCraft/Structs/InteractKeySettings.h"
+#include "SkyCraft/Enums/InterruptedBy.h"
+#include "SkyCraft/Enums/InteractKey.h"
 #include "InteractSystem.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FClientInterrupted, TEnumAsByte<EInterruptedBy>, InterruptedBy, TEnumAsByte<EInteractKey>, InteractedKey, APawn*, InteractedPawn);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FServerInterrupted, TEnumAsByte<EInterruptedBy>, InterruptedBy, TEnumAsByte<EInteractKey>, InteractedKey, APawn*, InteractedPawn);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FClientInterrupted, EInterruptedBy, InterruptedBy, EInteractKey, InteractedKey, APawn*, InteractedPawn);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FServerInterrupted, EInterruptedBy, InterruptedBy, EInteractKey, InteractedKey, APawn*, InteractedPawn);
 
 UCLASS(Blueprintable)
 class SKYCRAFT_API UInteractSystem : public UActorComponent

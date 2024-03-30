@@ -2,7 +2,10 @@
 
 
 #include "ResourceGenerator.h"
+
+#include "Resource.h"
 #include "Math/RandomStream.h"
+#include "Structs/IntMinMax.h"
 
 UResourceGenerator::UResourceGenerator()
 {
@@ -52,19 +55,23 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 				_StreamY.FRandRange(_MaxOffset * -1.f, _MaxOffset) + (_CellSize * _Row + _CellSize * 0.5f) * _IslandScale,
 				GroundAltitude);
 			FVector WorldLoc = LocalLoc + ActorLoc;
-			float _scaleXY = _IslandScale * (AreaSize / 2.f);
-			FVector StartlLoc = WorldLoc - FVector(_scaleXY, _scaleXY, 0);
-			FVector EndLoc = StartlLoc;
+			float ScaleXY = _IslandScale * (AreaSize / 2.f);
+			FVector StartLoc = WorldLoc - FVector(ScaleXY, ScaleXY, 0);
+			FVector EndLoc = StartLoc;
 			EndLoc.Z += LinetraceLength;
-			FHitResult HitResult;
-			
-			if (GetWorld()->LineTraceSingleByChannel(HitResult, StartlLoc, EndLoc, ECC_Visibility))
+
+			if (FHitResult HitResult; GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility))
 			{
 				if (HitResult.GetActor()->Tags.Contains(CollisionTags))
 				{
 					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
 					{
-						// GetWorld()->SpawnActor(Resource)
+						AResource* SpawnedRes = GetWorld()->SpawnActor<AResource>(AResource::StaticClass(), HitResult.ImpactPoint, FRotator(0,0,_StreamX.FRandRange(-359.0f, 359.0f)));
+						SpawnedRes->DA_Resource = GenerateResourcesIn.DA_Resource;
+						SpawnedRes->ResourceSize = _StreamY.RandRange(GenerateResourcesIn.ResourceSize.Min, GenerateResourcesIn.ResourceSize.Max);
+						SpawnedRes->SM_Variety = _StreamX.RandRange(GenerateResourcesIn.SM_Variety.Min, GenerateResourcesIn.SM_Variety.Max);
+						SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepWorldTransform);
+						SpawnedResources.Add(SpawnedRes);
 					}
 				}
 			}
@@ -72,7 +79,7 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 			_StreamY = _StreamY.GetUnsignedInt();
 			
 			// UE_LOG(LogTemp, Warning, TEXT("%f"), FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))));
-			DrawDebugLine(GetWorld(), StartlLoc, EndLoc, FColor::Red, false, 555);
+			// DrawDebugLine(GetWorld(), StartLoc, EndLoc, FColor::Red, false, 555);
 		}
 	}
 	Generations++;

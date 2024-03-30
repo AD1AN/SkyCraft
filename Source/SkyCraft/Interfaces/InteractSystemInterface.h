@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enums/InteractKey.h"
-#include "Enums/InterruptedBy.h"
+#include "SkyCraft/Enums/InteractKey.h"
+#include "SkyCraft/Enums/InterruptedBy.h"
+#include "SkyCraft/InteractSystem.h"
+#include "SkyCraft/IC.h"
 #include "UObject/Interface.h"
 #include "InteractSystemInterface.generated.h"
 
@@ -79,4 +81,10 @@ class SKYCRAFT_API IInteractSystemInterface
 	
 	UFUNCTION(BlueprintNativeEvent)
 	void ClientInterrupt(FInterruptIn In, FInterruptOut& Out);
+	
+	UFUNCTION(BlueprintNativeEvent)
+	UInteractSystem* GetInteractSystem();
+
+	UFUNCTION(BlueprintNativeEvent)
+	FVector GetInteractLocation();
 };

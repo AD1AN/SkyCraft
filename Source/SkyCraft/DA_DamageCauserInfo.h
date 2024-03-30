@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "DamageGlobalType.h"
+#include "SkyCraft/Enums/DamageGlobalType.h"
 #include "DA_DamageCauserInfo.generated.h"
 
 UCLASS(BlueprintType)

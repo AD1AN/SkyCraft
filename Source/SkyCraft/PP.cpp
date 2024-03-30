@@ -17,6 +17,8 @@ void APP::BeginPlay()
 
 void APP::Client_Interrupt_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractedKey, APawn* InteractedPawn)
 {
+	UInteractSystem* InteractSystem = IInteractSystemInterface::Execute_GetInteractSystem(InterruptActor);
+	InteractSystem->OnClientInterrupted.Broadcast(InterruptedBy, InteractedKey, InteractedPawn);
 	
 	FInterruptIn InterruptIn;
 	InterruptIn.InterruptedBy = InterruptedBy;
