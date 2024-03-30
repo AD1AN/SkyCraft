@@ -33,14 +33,14 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 	const uint32 _SpawnPoints = GenerateResourcesIn.MaxSpawnPoints / ((3-ScaleRatio) - (ScaleRatio));
 	const float _GridSize = sqrt(_SpawnPoints);
 	const float _CellSize = AreaSize / _GridSize;
-	const float _MaxOffset = _CellSize * 0.25;
+	const float _MaxOffset = _CellSize * 0.25f;
 
 	FVector ActorLoc = GetOwner()->GetActorLocation();
 
 	FRandomStream _StreamX = GeneratorSeed + Generations;
 	FRandomStream _StreamY = GeneratorSeed + Generations + 1;
 
-	const float _IslandScale = FMath::Clamp(ScaleRatio, 0.25, 0.5);
+	const float _IslandScale = FMath::Clamp(ScaleRatio, 0.25f, 0.5f);
 
 	for (uint16 _Row = 0; _Row < _GridSize-1; ++_Row)
 	{
@@ -48,11 +48,11 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 		for (uint16 _Column = 0; _Column < _GridSize-1; ++_Column)
 		{
 			FVector LocalLoc = FVector(
-				_StreamX.FRandRange(_MaxOffset * -1, _MaxOffset) + (_CellSize * _Column + _CellSize * 0.5) * _IslandScale,
-				_StreamY.FRandRange(_MaxOffset * -1, _MaxOffset) + (_CellSize * _Row + _CellSize * 0.5) * _IslandScale,
+				_StreamX.FRandRange(_MaxOffset * -1.f, _MaxOffset) + (_CellSize * _Column + _CellSize * 0.5f) * _IslandScale,
+				_StreamY.FRandRange(_MaxOffset * -1.f, _MaxOffset) + (_CellSize * _Row + _CellSize * 0.5f) * _IslandScale,
 				GroundAltitude);
 			FVector WorldLoc = LocalLoc + ActorLoc;
-			float _scaleXY = _IslandScale * (AreaSize / 2);
+			float _scaleXY = _IslandScale * (AreaSize / 2.f);
 			FVector StartlLoc = WorldLoc - FVector(_scaleXY, _scaleXY, 0);
 			FVector EndLoc = StartlLoc;
 			EndLoc.Z += LinetraceLength;

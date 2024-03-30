@@ -20,6 +20,14 @@ void AResource::BeginPlay()
 void AResource::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
+void AResource::ClientInteract_Implementation(FInteractIn In, FInteractOut& Out)
+{
+	Out.Success = false;
+}
+
+void AResource::ServerInteract_Implementation(FInteractIn In, FInteractOut& Out)
+{
+	Out.Success = false;
+}

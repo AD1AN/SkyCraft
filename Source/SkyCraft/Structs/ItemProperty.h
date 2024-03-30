@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "DA_ItemProperty.h"
+#include "SkyCraft/DA_ItemProperty.h"
 #include "ItemProperty.generated.h"
 
 USTRUCT(BlueprintType)

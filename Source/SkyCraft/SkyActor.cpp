@@ -5,8 +5,8 @@
 
 ASkyActor::ASkyActor()
 {
-	PrimaryActorTick.bCanEverTick = false;
-
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 }
 
 void ASkyActor::BeginPlay()

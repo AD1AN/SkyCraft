@@ -4,9 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Sturcts/InteractKeySettings.h"
+#include "Structs/CurrentProlonged.h"
+#include "Structs/InteractKeySettings.h"
 #include "InteractSystem.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FClientInterrupted, TEnumAsByte<EInterruptedBy>, InterruptedBy, TEnumAsByte<EInteractKey>, InteractedKey, APawn*, InteractedPawn);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FServerInterrupted, TEnumAsByte<EInterruptedBy>, InterruptedBy, TEnumAsByte<EInteractKey>, InteractedKey, APawn*, InteractedPawn);
 
 UCLASS(Blueprintable)
 class SKYCRAFT_API UInteractSystem : public UActorComponent
@@ -15,15 +18,21 @@ class SKYCRAFT_API UInteractSystem : public UActorComponent
 
 public:	
 	UInteractSystem();
+	
+	UPROPERTY(BlueprintAssignable)
+	FClientInterrupted OnClientInterrupted;
+
+	UPROPERTY(BlueprintAssignable)
+	FServerInterrupted OnServerInterrupted;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bInteractable = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FInteractKeySettings InteractKeys;
+	TArray<FInteractKeySettings> InteractKeys;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	
+	TArray<FCurrentProlonged> CurrentProlonged;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -31,6 +40,6 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
-	
-		
+	UFUNCTION()
+	void RemoveProlonged(APawn* InteractedPawn);
 };

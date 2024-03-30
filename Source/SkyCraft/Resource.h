@@ -10,6 +10,7 @@
 #include "Interfaces/SkyTagInterface.h"
 #include "Interfaces/DamageSystemInterface.h"
 #include "Interfaces/InteractSystemInterface.h"
+#include "Structs/ResourceStructs.h"
 #include "Resource.generated.h"
 
 UCLASS(Blueprintable)
@@ -65,5 +66,10 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
+	UFUNCTION(BlueprintNativeEvent)
+	void ClientInteract(FInteractIn In, FInteractOut& Out);
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void ServerInteract(FInteractIn In, FInteractOut& Out);
 
 };

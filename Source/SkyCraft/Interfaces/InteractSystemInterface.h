@@ -18,12 +18,6 @@ struct FInteractIn
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	APawn* InteractedPawn;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	AActor* InteractedPC_Sky;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	AActor* InteractedPP_Sky;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UIC* InteractedIC;
@@ -51,12 +45,6 @@ struct FInterruptIn
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	APawn* InteractedPawn;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	AController* InteractedController;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	AActor* InteractedPP_Sky;
 };
 
 USTRUCT(BlueprintType)
@@ -79,15 +67,16 @@ class SKYCRAFT_API IInteractSystemInterface
 	GENERATED_BODY()
 
 	public:
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly)
+	
+	UFUNCTION(BlueprintNativeEvent)
 	void ServerInteract(FInteractIn In, FInteractOut& Out);
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly)
+	UFUNCTION(BlueprintNativeEvent)
 	void ClientInteract(FInteractIn In, FInteractOut& Out);
 	
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly)
+	UFUNCTION(BlueprintNativeEvent)
 	void ServerInterrupt(FInterruptIn In, FInterruptOut& Out);
 	
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly)
+	UFUNCTION(BlueprintNativeEvent)
 	void ClientInterrupt(FInterruptIn In, FInterruptOut& Out);
 };

@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EquipmentType.h"
+#include "SkyCraft/Enums/EquipmentType.h"
 #include "IC.h"
 #include "ItemProperty.h"
-#include "ItemType.h"
+#include "SkyCraft/Enums/ItemType.h"
 #include "Engine/DataAsset.h"
 #include "DA_Item.generated.h"
 
