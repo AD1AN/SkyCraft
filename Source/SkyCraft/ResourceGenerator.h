@@ -58,7 +58,7 @@ class SKYCRAFT_API UResourceGenerator : public UActorComponent
 public:	
 	UResourceGenerator();
 	
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<AActor*> SpawnedResources;
 
 	UPROPERTY(EditAnywhere)
@@ -77,10 +77,13 @@ public:
 	float LinetraceLength = -3000;
 
 	UPROPERTY(EditAnywhere)
-	FName CollisionTags;
+	TArray<UDA_SkyTag*> CollisionSkyTags;
 
 	UPROPERTY(EditAnywhere)
 	int32 Generations;
+
+	UPROPERTY(EditAnywhere)
+	UClass* ResourceActorClass;
 	
 	
 protected:

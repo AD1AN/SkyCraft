@@ -17,19 +17,19 @@ class SKYCRAFT_API UDamageSystem : public UActorComponent
 public:	
 	// UDamageSystem();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage System Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Health = 404;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage System Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaxHealth = 404;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage System Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UDA_DamageCauserInfo*> Includes;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage System Info")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bOnlyIncludes = false;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage System Negations")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<TEnumAsByte<EDamageGlobalType>, float> NegateDamage;
 
 	UDamageSystem()

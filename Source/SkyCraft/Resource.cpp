@@ -9,6 +9,7 @@ AResource::AResource()
 	
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetGenerateOverlapEvents(false);
+	SetRootComponent(StaticMesh);
 	
 	DamageSystem = CreateDefaultSubobject<UDamageSystem>(TEXT("DamageSystem"));
 	SkyTags = CreateDefaultSubobject<USkyTags>(TEXT("SkyTags"));
@@ -19,6 +20,8 @@ AResource::AResource()
 void AResource::BeginPlay()
 {
 	Super::BeginPlay();
+
+	check(DA_Resource);
 	
 	CurrentSize = DA_Resource->Size[ResourceSize];
 	

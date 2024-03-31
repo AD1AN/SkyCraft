@@ -62,16 +62,23 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 
 			if (FHitResult HitResult; GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility))
 			{
-				if (HitResult.GetActor()->Tags.Contains(CollisionTags))
+				for (const UDA_SkyTag* SkyTag : CollisionSkyTags)
 				{
-					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
+					if (HitResult.GetActor()->Tags.Contains(SkyTag->SkyTag))
 					{
-						AResource* SpawnedRes = GetWorld()->SpawnActor<AResource>(AResource::StaticClass(), HitResult.ImpactPoint, FRotator(0,0,_StreamX.FRandRange(-359.0f, 359.0f)));
-						SpawnedRes->DA_Resource = GenerateResourcesIn.DA_Resource;
-						SpawnedRes->ResourceSize = _StreamY.RandRange(GenerateResourcesIn.ResourceSize.Min, GenerateResourcesIn.ResourceSize.Max);
-						SpawnedRes->SM_Variety = _StreamX.RandRange(GenerateResourcesIn.SM_Variety.Min, GenerateResourcesIn.SM_Variety.Max);
-						SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepWorldTransform);
-						SpawnedResources.Add(SpawnedRes);
+						if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
+						{
+							UE_LOG(LogTemp, Warning, TEXT("%s"), *ResourceActorClass->GetName());
+							AResource* SpawnedRes = GetWorld()->SpawnActor<AResource>(ResourceActorClass, HitResult.ImpactPoint, FRotator(0,0,_StreamX.FRandRange(-359.0f, 359.0f)));
+							UE_LOG(LogTemp, Warning, TEXT("%s"), *SpawnedRes->GetName());
+							UE_LOG(LogTemp, Warning, TEXT("=============================="));
+							SpawnedRes->DA_Resource = GenerateResourcesIn.DA_Resource;
+							SpawnedRes->ResourceSize = _StreamY.RandRange(GenerateResourcesIn.ResourceSize.Min, GenerateResourcesIn.ResourceSize.Max);
+							SpawnedRes->SM_Variety = _StreamX.RandRange(GenerateResourcesIn.SM_Variety.Min, GenerateResourcesIn.SM_Variety.Max);
+							SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepWorldTransform);
+							SpawnedResources.Add(SpawnedRes);
+						}
+						break;
 					}
 				}
 			}
@@ -79,7 +86,7 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 			_StreamY = _StreamY.GetUnsignedInt();
 			
 			// UE_LOG(LogTemp, Warning, TEXT("%f"), FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))));
-			// DrawDebugLine(GetWorld(), StartLoc, EndLoc, FColor::Red, false, 555);
+			DrawDebugLine(GetWorld(), StartLoc, EndLoc, FColor::Red, false, 555);
 		}
 	}
 	Generations++;
