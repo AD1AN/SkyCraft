@@ -16,7 +16,7 @@ struct FInteractIn
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TEnumAsByte<EInteractKey> InteractedKey;
+	EInteractKey InteractedKey;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	APawn* InteractedPawn;
@@ -40,10 +40,10 @@ struct FInterruptIn
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TEnumAsByte<EInterruptedBy> InterruptedBy;
+	EInterruptedBy InterruptedBy;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TEnumAsByte<EInteractKey> InteractedKey;
+	EInteractKey InteractedKey;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	APawn* InteractedPawn;

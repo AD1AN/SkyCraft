@@ -257,7 +257,7 @@
       <workItem from="1710885446752" duration="1000" />
       <workItem from="1711059529320" duration="11000" />
       <workItem from="1711420088441" duration="1429000" />
-      <workItem from="1711450262667" duration="69664000" />
+      <workItem from="1711450262667" duration="83467000" />
     </task>
     <servers />
   </component>
@@ -266,6 +266,17 @@
   </component>
   <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
   <component name="UnityUnitTestConfiguration" currentTestLauncher="NUnit" />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
   </component>

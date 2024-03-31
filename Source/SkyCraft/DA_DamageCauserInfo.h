@@ -14,7 +14,7 @@ class SKYCRAFT_API UDA_DamageCauserInfo : public UDataAsset
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<TEnumAsByte<EDamageGlobalType>> DamageGlobalTypes;
+	TArray<EDamageGlobalType> DamageGlobalTypes;
 
 	UDA_DamageCauserInfo()
 	{

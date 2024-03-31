@@ -10,7 +10,7 @@ struct FInteractKeySettings
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TEnumAsByte<EInteractKey> InteractKey;
+	EInteractKey InteractKey;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	FText Text;
@@ -19,7 +19,7 @@ struct FInteractKeySettings
 	bool bCheckPlayer;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<TEnumAsByte<EPlayerForm>> PlayerForm;
+	TArray<EPlayerForm> PlayerForm;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	bool bProlonged;

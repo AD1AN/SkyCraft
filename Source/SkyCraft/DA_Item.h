@@ -20,7 +20,7 @@ public:
 	FText Name;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TEnumAsByte<EItemType> ItemType;
+	EItemType ItemType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Description;
@@ -38,7 +38,7 @@ public:
 	TSubclassOf<UIC> ItemComponent;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides))
-	TEnumAsByte<EEquipmentType> EquipmentType;
+	EEquipmentType EquipmentType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides))
 	USkeletalMesh* EQ_Male;

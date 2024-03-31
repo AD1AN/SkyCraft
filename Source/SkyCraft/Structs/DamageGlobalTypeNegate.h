@@ -9,7 +9,7 @@ struct FDamageGlobalTypeNegate
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TEnumAsByte<EDamageGlobalType> DamageGlobalType;
+	EDamageGlobalType DamageGlobalType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Negate;

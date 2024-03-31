@@ -11,7 +11,7 @@ AResource::AResource()
 	StaticMesh->SetGenerateOverlapEvents(false);
 	SetRootComponent(StaticMesh);
 	
-	DamageSystem = CreateDefaultSubobject<UDamageSystem>(TEXT("DamageSystem"));
+	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
 	SkyTags = CreateDefaultSubobject<USkyTags>(TEXT("SkyTags"));
 	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
 	InteractSystem->bInteractable = false;
@@ -21,8 +21,6 @@ void AResource::BeginPlay()
 {
 	Super::BeginPlay();
 
-	check(DA_Resource);
-	
 	CurrentSize = DA_Resource->Size[ResourceSize];
 	
 	StaticMesh->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
@@ -36,8 +34,8 @@ void AResource::BeginPlay()
 	
 	SkyTags->DA_SkyTags.Append(DA_Resource->SkyTags);
 	
-	DamageSystem->MaxHealth = CurrentSize.Health;
-	DamageSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;
+	HealthSystem->MaxHealth = CurrentSize.Health;
+	HealthSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;
 	
 	for (auto SM_Scalar : CurrentSize.SM_Scalar)
 	{

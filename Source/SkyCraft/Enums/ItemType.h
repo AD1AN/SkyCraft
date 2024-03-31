@@ -3,7 +3,7 @@
 #include "Itemtype.generated.h"
 
 UENUM(BlueprintType)
-enum EItemType
+enum class EItemType : uint8
 {
 	Resource,
 	Usable,

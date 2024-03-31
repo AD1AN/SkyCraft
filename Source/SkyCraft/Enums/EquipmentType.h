@@ -3,7 +3,7 @@
 #include "EquipmentType.generated.h"
 
 UENUM(BlueprintType)
-enum EEquipmentType
+enum class EEquipmentType : uint8
 {
 	EQHead,
 	EQChest,

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "SkyCraft/DA_DamageCauserInfo.h"
 #include "UObject/Interface.h"
-#include "DamageSystemInterface.generated.h"
+#include "HealthSystemInterface.generated.h"
 
 USTRUCT(BlueprintType)
 struct FApplyDamageIn
@@ -41,12 +41,12 @@ struct FApplyDamageOut
 };
 
 UINTERFACE(MinimalAPI)
-class UDamageSystemInterface : public UInterface
+class UHealthSystemInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class SKYCRAFT_API IDamageSystemInterface
+class SKYCRAFT_API IHealthSystemInterface
 {
 	GENERATED_BODY()
 

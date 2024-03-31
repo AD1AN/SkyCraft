@@ -82,8 +82,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	int32 Generations;
 
-	UPROPERTY(EditAnywhere)
-	UClass* ResourceActorClass;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class AResource> ResourceBPClass;
 	
 	
 protected:

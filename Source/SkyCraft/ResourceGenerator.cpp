@@ -2,7 +2,6 @@
 
 
 #include "ResourceGenerator.h"
-
 #include "Resource.h"
 #include "Math/RandomStream.h"
 #include "Structs/IntMinMax.h"
@@ -68,13 +67,14 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 					{
 						if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
 						{
-							UE_LOG(LogTemp, Warning, TEXT("%s"), *ResourceActorClass->GetName());
-							AResource* SpawnedRes = GetWorld()->SpawnActor<AResource>(ResourceActorClass, HitResult.ImpactPoint, FRotator(0,0,_StreamX.FRandRange(-359.0f, 359.0f)));
-							UE_LOG(LogTemp, Warning, TEXT("%s"), *SpawnedRes->GetName());
-							UE_LOG(LogTemp, Warning, TEXT("=============================="));
+							FTransform ResTransform;
+							ResTransform.SetLocation(HitResult.ImpactPoint);
+							ResTransform.SetRotation(FQuat(FRotator(0,_StreamX.FRandRange(-359.0f, 359.0f),0)));
+							AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceBPClass, ResTransform);
 							SpawnedRes->DA_Resource = GenerateResourcesIn.DA_Resource;
 							SpawnedRes->ResourceSize = _StreamY.RandRange(GenerateResourcesIn.ResourceSize.Min, GenerateResourcesIn.ResourceSize.Max);
 							SpawnedRes->SM_Variety = _StreamX.RandRange(GenerateResourcesIn.SM_Variety.Min, GenerateResourcesIn.SM_Variety.Max);
+							SpawnedRes->FinishSpawning(ResTransform);
 							SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepWorldTransform);
 							SpawnedResources.Add(SpawnedRes);
 						}
@@ -86,7 +86,7 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 			_StreamY = _StreamY.GetUnsignedInt();
 			
 			// UE_LOG(LogTemp, Warning, TEXT("%f"), FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))));
-			DrawDebugLine(GetWorld(), StartLoc, EndLoc, FColor::Red, false, 555);
+			// DrawDebugLine(GetWorld(), StartLoc, EndLoc, FColor::Red, false, 555);
 		}
 	}
 	Generations++;

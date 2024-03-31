@@ -3,7 +3,7 @@
 #include "InterruptedBy.generated.h"
 
 UENUM(BlueprintType)
-enum EInterruptedBy
+enum class EInterruptedBy : uint8
 {
 	Player,
 	Distance,

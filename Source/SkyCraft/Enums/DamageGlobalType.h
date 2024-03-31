@@ -3,7 +3,7 @@
 #include "DamageGlobalType.generated.h"
 
 UENUM(BlueprintType)
-enum EDamageGlobalType
+enum class EDamageGlobalType : uint8
 {
 	Slash,
 	Thrust,
@@ -17,3 +17,4 @@ enum EDamageGlobalType
 	Velocity,
 	Pure
 };
+ENUM_RANGE_BY_FIRST_AND_LAST(EDamageGlobalType, EDamageGlobalType::Slash, EDamageGlobalType::Pure);

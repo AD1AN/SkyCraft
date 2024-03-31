@@ -20,7 +20,7 @@ public:
 	FText Name;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TEnumAsByte<EBuildResourceType> ResourceType;
+	EBuildResourceType ResourceType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<ABA> BA;

@@ -9,7 +9,7 @@ struct FCurrentProlonged
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TEnumAsByte<EInteractKey> InteractKey;
+	EInteractKey InteractKey;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	APawn* InteractedPawn;

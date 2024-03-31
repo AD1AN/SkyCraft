@@ -3,7 +3,7 @@
 #include "PlayerForm.generated.h"
 
 UENUM(BlueprintType)
-enum EPlayerForm
+enum class EPlayerForm : uint8
 {
 	Island,
 	Normal,

@@ -3,7 +3,7 @@
 #include "BuildResourceType.generated.h"
 
 UENUM(BlueprintType)
-enum EBuildResourceType
+enum class EBuildResourceType : uint8
 {
 	Wooden,
 	Stone,
