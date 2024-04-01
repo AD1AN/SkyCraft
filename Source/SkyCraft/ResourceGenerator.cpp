@@ -5,6 +5,7 @@
 #include "Resource.h"
 #include "Math/RandomStream.h"
 #include "Structs/IntMinMax.h"
+#include "AdianFL.h"
 
 UResourceGenerator::UResourceGenerator()
 {
@@ -14,6 +15,11 @@ UResourceGenerator::UResourceGenerator()
 void UResourceGenerator::BeginPlay()
 {
 	Super::BeginPlay();
+
+	for (auto cst : CollisionSkyTags)
+	{
+		NamesCollisionSkyTags.Add(cst->SkyTag);
+	}
 }
 
 void UResourceGenerator::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -61,24 +67,20 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 
 			if (FHitResult HitResult; GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility))
 			{
-				for (const UDA_SkyTag* SkyTag : CollisionSkyTags)
+				if (UAdianFL::ContainsArray(HitResult.GetActor()->Tags, NamesCollisionSkyTags))
 				{
-					if (HitResult.GetActor()->Tags.Contains(SkyTag->SkyTag))
+					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
 					{
-						if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
-						{
-							FTransform ResTransform;
-							ResTransform.SetLocation(HitResult.ImpactPoint);
-							ResTransform.SetRotation(FQuat(FRotator(0,_StreamX.FRandRange(-359.0f, 359.0f),0)));
-							AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceBPClass, ResTransform);
-							SpawnedRes->DA_Resource = GenerateResourcesIn.DA_Resource;
-							SpawnedRes->ResourceSize = _StreamY.RandRange(GenerateResourcesIn.ResourceSize.Min, GenerateResourcesIn.ResourceSize.Max);
-							SpawnedRes->SM_Variety = _StreamX.RandRange(GenerateResourcesIn.SM_Variety.Min, GenerateResourcesIn.SM_Variety.Max);
-							SpawnedRes->FinishSpawning(ResTransform);
-							SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepWorldTransform);
-							SpawnedResources.Add(SpawnedRes);
-						}
-						break;
+						FTransform ResTransform;
+						ResTransform.SetLocation(HitResult.ImpactPoint);
+						ResTransform.SetRotation(FQuat(FRotator(0,_StreamX.FRandRange(-359.0f, 359.0f),0)));
+						AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceBPClass, ResTransform);
+						SpawnedRes->DA_Resource = GenerateResourcesIn.DA_Resource;
+						SpawnedRes->ResourceSize = _StreamY.RandRange(GenerateResourcesIn.ResourceSize.Min, GenerateResourcesIn.ResourceSize.Max);
+						SpawnedRes->SM_Variety = _StreamX.RandRange(GenerateResourcesIn.SM_Variety.Min, GenerateResourcesIn.SM_Variety.Max);
+						SpawnedRes->FinishSpawning(ResTransform);
+						SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepWorldTransform);
+						SpawnedResources.Add(SpawnedRes);
 					}
 				}
 			}
