@@ -17,6 +17,9 @@ class SKYCRAFT_API UDA_Resource : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FResourceSize> Size;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FSM_Scalar> GlobalSM_Scalars;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<UDA_SkyTag*> SkyTags;

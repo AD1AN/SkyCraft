@@ -8,8 +8,8 @@ AResource::AResource()
 	PrimaryActorTick.bCanEverTick = false;
 	
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	StaticMesh->SetGenerateOverlapEvents(false);
 	SetRootComponent(StaticMesh);
+	StaticMesh->SetGenerateOverlapEvents(false);
 	
 	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
 	SkyTags = CreateDefaultSubobject<USkyTags>(TEXT("SkyTags"));
@@ -36,8 +36,13 @@ void AResource::BeginPlay()
 	
 	HealthSystem->MaxHealth = CurrentSize.Health;
 	HealthSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;
+
+	for (const FSM_Scalar GScalar : DA_Resource->GlobalSM_Scalars)
+	{
+		StaticMesh->SetScalarParameterForCustomPrimitiveData(GScalar.ParameterName, GScalar.Value);
+	}
 	
-	for (auto SM_Scalar : CurrentSize.SM_Scalar)
+	for (const FSM_Scalar SM_Scalar : CurrentSize.SM_Scalar)
 	{
 		StaticMesh->SetScalarParameterForCustomPrimitiveData(SM_Scalar.ParameterName, SM_Scalar.Value);
 	}
@@ -55,14 +60,13 @@ void AResource::Tick(float DeltaTime)
 
 UInteractSystem* AResource::GetInteractSystem_Implementation()
 {
-	return nullptr; // todo
+	return InteractSystem;
 }
 
 FVector AResource::GetInteractLocation_Implementation()
 {
-	return FVector::ZeroVector; // todo
+	return GetActorLocation();
 }
-
 
 void AResource::ClientInteract_Implementation(FInteractIn In, FInteractOut& Out)
 {

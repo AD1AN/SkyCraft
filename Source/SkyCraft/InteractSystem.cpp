@@ -28,7 +28,7 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	}
 	else
 	{
-		for (auto CurrentP : CurrentProlonged)
+		for (const FCurrentProlonged CurrentP : CurrentProlonged)
 		{
 			if (FVector::Distance(GetOwner()->GetActorLocation(), CurrentP.InteractedPawn->GetActorLocation()) > 300)
 			{
@@ -52,6 +52,12 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	}
 }
 
+void UInteractSystem::AddProlonged(FCurrentProlonged AddProlonged)
+{
+	CurrentProlonged.Add(AddProlonged);
+	SetComponentTickEnabled(true);
+}
+
 void UInteractSystem::RemoveProlonged(APawn* InteractedPawn)
 {
 	for (auto It = CurrentProlonged.CreateIterator(); It; ++It)
@@ -66,4 +72,31 @@ void UInteractSystem::RemoveProlonged(APawn* InteractedPawn)
 			break;
 		}
 	}
+}
+
+void UInteractSystem::FindInteractKey(EInteractKey InteractKey, bool& FoundInteractKey, FInteractKeySettings& KeySettings)
+{
+	for (const FInteractKeySettings IKS : InteractKeys)
+	{
+		if (IKS.InteractKey == InteractKey)
+		{
+			FoundInteractKey = true;
+			KeySettings = IKS;
+			return;
+		}
+	}
+	FoundInteractKey = false;
+}
+
+void UInteractSystem::CheckInteractPlayerForm(FInteractKeySettings KeySettings, EPlayerForm PlayerFrom, bool& Passed)
+{
+	for (const EPlayerForm PF : KeySettings.PlayerForm)
+	{
+		if (PF == PlayerFrom)
+		{
+			Passed = true;
+			return;
+		}
+	}
+	Passed = false;
 }

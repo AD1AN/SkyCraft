@@ -70,21 +70,21 @@ class SKYCRAFT_API IInteractSystemInterface
 
 	public:
 	
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ServerInteract(FInteractIn In, FInteractOut& Out);
 
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ClientInteract(FInteractIn In, FInteractOut& Out);
 	
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ServerInterrupt(FInterruptIn In, FInterruptOut& Out);
 	
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ClientInterrupt(FInterruptIn In, FInterruptOut& Out);
 	
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	UInteractSystem* GetInteractSystem();
 
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FVector GetInteractLocation();
 };
