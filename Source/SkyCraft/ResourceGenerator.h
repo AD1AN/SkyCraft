@@ -3,10 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "DA_Resource.h"
-#include "SkyCraft/Structs/IntMinMax.h"
 #include "Components/ActorComponent.h"
+#include "SkyCraft/Structs/Uint8MinMax.h"
+#include "SkyCraft/Structs/SW_Resource.h"
 #include "ResourceGenerator.generated.h"
+
+class AResource;
+class UDA_Resource;
+class UDA_SkyTag;
 
 USTRUCT(BlueprintType)
 struct FSetupGeneratorIn
@@ -44,10 +48,10 @@ struct FGenerateResourcesIn
 	float MaxFloorSlope;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	FIntMinMax ResourceSize;
+	FUint8MinMax ResourceSize;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	FIntMinMax SM_Variety;
+	FUint8MinMax SM_Variety;
 };
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
@@ -59,7 +63,7 @@ public:
 	UResourceGenerator();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<AActor*> SpawnedResources;
+	TArray<AResource*> SpawnedResources;
 
 	UPROPERTY(EditAnywhere)
 	float AreaSize;
@@ -84,7 +88,7 @@ public:
 	int32 Generations;
 
 	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class AResource> ResourceBPClass;
+	TSubclassOf<AResource> ResourceBPClass;
 	
 	
 protected:
@@ -98,4 +102,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void GenerateResources(FGenerateResourcesIn GenerateResourcesIn);
+
+	UFUNCTION(BlueprintCallable)
+	void LoadResources(TArray<FSW_Resource> Resources);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FSW_Resource> SaveResources();
 };

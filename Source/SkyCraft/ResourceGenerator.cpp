@@ -16,7 +16,7 @@ void UResourceGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	for (auto cst : CollisionSkyTags)
+	for (const UDA_SkyTag* cst : CollisionSkyTags)
 	{
 		NamesCollisionSkyTags.Add(cst->SkyTag);
 	}
@@ -92,4 +92,49 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 		}
 	}
 	Generations++;
+}
+
+void UResourceGenerator::LoadResources(TArray<FSW_Resource> Resources)
+{
+	for (const FSW_Resource res : Resources)
+	{
+		FTransform ResTransform;
+		ResTransform.SetLocation(res.RelativeLocation);
+		ResTransform.SetRotation(FQuat(res.RelativeRotation));
+		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceBPClass, ResTransform);
+		SpawnedRes->bLoaded = true;
+		SpawnedRes->LoadHealth = res.Health;
+		SpawnedRes->DA_Resource = res.DA_Resource;
+		SpawnedRes->ResourceSize = res.ResourceSize;
+		SpawnedRes->SM_Variety = res.SM_Variety;
+		SpawnedRes->Growing = res.Growing;
+		SpawnedRes->GrowMarkTime = res.GrowMarkTime;
+		SpawnedRes->GrowSavedTime = res.GrowSavedTime;
+		SpawnedRes->FinishSpawning(ResTransform);
+		SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
+		SpawnedResources.Add(SpawnedRes);
+	}
+}
+
+TArray<FSW_Resource> UResourceGenerator::SaveResources()
+{
+	TArray<FSW_Resource> SavedResources;
+	for (const AResource* Res : SpawnedResources)
+	{
+		if (IsValid(Res))
+		{
+			FSW_Resource SW_Res;
+			SW_Res.RelativeLocation = Res->StaticMesh->GetRelativeLocation();
+			SW_Res.RelativeRotation = Res->StaticMesh->GetRelativeRotation();
+			SW_Res.DA_Resource = Res->DA_Resource;
+			SW_Res.ResourceSize = Res->ResourceSize;
+			SW_Res.SM_Variety = Res->SM_Variety;
+			SW_Res.Health = Res->HealthSystem->Health;
+			SW_Res.Growing = Res->Growing;
+			SW_Res.GrowMarkTime = Res->GrowMarkTime;
+			SW_Res.GrowSavedTime = Res->GrowSavedTime;
+			SavedResources.Add(SW_Res);
+		}
+	}
+	return SavedResources;
 }
