@@ -22,7 +22,7 @@ struct FInteractIn
 	APawn* InteractedPawn;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	UIC* InteractedIC;
+	TSubclassOf<UIC> InteractedIC;
 };
 
 USTRUCT(BlueprintType)

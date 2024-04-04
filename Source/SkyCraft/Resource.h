@@ -44,10 +44,10 @@ public:
 	UDA_Resource* DA_Resource;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 ResourceSize = 0;
+	uint8 ResourceSize = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 SM_Variety;
+	uint8 SM_Variety;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Growing = false;

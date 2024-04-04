@@ -7,9 +7,9 @@ struct FSM_Scalar
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FName ParameterName;
 	
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	float Value = 0;
 };
