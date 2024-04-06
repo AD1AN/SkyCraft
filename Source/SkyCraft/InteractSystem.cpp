@@ -3,19 +3,14 @@
 
 #include "InteractSystem.h"
 
-#include "PP.h"
+#include "PlayerInfo.h"
 #include "Interfaces/InteractSystemInterface.h"
-#include "Interfaces/PPInterface.h"
+#include "Interfaces\PlayerInfoInterface.h"
 
 UInteractSystem::UInteractSystem()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
-}
-
-void UInteractSystem::BeginPlay()
-{
-	Super::BeginPlay();
 }
 
 void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -40,12 +35,10 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 				InterruptIn.InterruptedBy = EInterruptedBy::Distance;
 				InterruptIn.InteractedKey = CurrentP.InteractKey;
 				InterruptIn.InteractedPawn = CurrentP.InteractedPawn;
-				
 				FInterruptOut InterruptOut;
-				
 				IInteractSystemInterface::Execute_ServerInterrupt(GetOwner(), InterruptIn, InterruptOut);
 
-				APP* PP = IPPInterface::Execute_GetPP(CurrentP.InteractedPawn);
+				APlayerInfo* PP = IPlayerInfoInterface::Execute_GetPlayerInfo(CurrentP.InteractedPawn);
 				PP->Client_Interrupt(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.InteractedPawn);
 			}
 		}

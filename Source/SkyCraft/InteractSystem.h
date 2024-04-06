@@ -36,10 +36,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FCurrentProlonged> CurrentProlonged;
 	
-protected:
-	virtual void BeginPlay() override;
-
-public:	
+	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	UFUNCTION(BlueprintCallable)
