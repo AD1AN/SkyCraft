@@ -4,7 +4,7 @@
 #include "ResourceGenerator.h"
 #include "Resource.h"
 #include "Math/RandomStream.h"
-#include "Structs/IntMinMax.h"
+#include "HealthSystem.h"
 #include "AdianFL.h"
 
 UResourceGenerator::UResourceGenerator()

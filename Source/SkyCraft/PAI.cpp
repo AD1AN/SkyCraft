@@ -2,7 +2,9 @@
 
 
 #include "PAI.h"
+#include "InteractSystem.h"
 #include "Interfaces/InteractSystemInterface.h"
+#include "Interfaces/Interact_CPP.h"
 
 void APAI::Server_Interrupt_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PInfo)
 {
@@ -16,7 +18,7 @@ void APAI::Server_Interrupt_Implementation(AActor* InterruptActor, EInterruptedB
 	InterruptIn.Pawn = Pawn;
 	InterruptIn.PAI = PInfo;
 	FInterruptOut InterruptOut;
-	IInteractSystemInterface::Execute_ServerInterrupt(InterruptActor, InterruptIn, InterruptOut);
+	Cast<IInteract_CPP>(InterruptActor)->ServerInterrupt(InterruptIn, InterruptOut);
 }
 
 void APAI::Client_Interrupt_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PInfo)
@@ -30,5 +32,5 @@ void APAI::Client_Interrupt_Implementation(AActor* InterruptActor, EInterruptedB
 	InterruptIn.Pawn = Pawn;
 	InterruptIn.PAI = PInfo;
 	FInterruptOut InterruptOut;
-	IInteractSystemInterface::Execute_ClientInterrupt(InterruptActor, InterruptIn, InterruptOut);
+	Cast<IInteract_CPP>(InterruptActor)->ClientInterrupt(InterruptIn, InterruptOut);
 }

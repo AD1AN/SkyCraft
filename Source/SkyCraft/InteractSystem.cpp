@@ -4,8 +4,7 @@
 #include "InteractSystem.h"
 
 #include "PAI.h"
-#include "Interfaces/InteractSystemInterface.h"
-#include "Interfaces\PAIInterface.h"
+#include "SkyCraft/Interfaces/Interact_CPP.h"
 
 UInteractSystem::UInteractSystem()
 {
@@ -37,7 +36,8 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 				InterruptIn.Pawn = CurrentP.Pawn;
 				InterruptIn.PAI = CurrentP.PAI;
 				FInterruptOut InterruptOut;
-				IInteractSystemInterface::Execute_ServerInterrupt(GetOwner(), InterruptIn, InterruptOut);
+				const IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(GetOwner());
+				Interact_CPP->ServerInterrupt(InterruptIn, InterruptOut);
 
 				CurrentP.PAI->Client_Interrupt(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PAI);
 			}

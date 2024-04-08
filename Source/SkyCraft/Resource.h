@@ -3,18 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "HealthSystem.h"
-#include "DA_Resource.h"
-#include "SkyTags.h"
 #include "GameFramework/Actor.h"
 #include "Interfaces/SkyTagInterface.h"
 #include "Interfaces/HealthSystemInterface.h"
 #include "Interfaces/InteractSystemInterface.h"
+#include "Interfaces/Interact_CPP.h"
 #include "Structs/ResourceStructs.h"
 #include "Resource.generated.h"
 
+class UHealthSystem;
+class USkyTags;
+class UDA_Resource;
+
 UCLASS(Blueprintable)
-class SKYCRAFT_API AResource : public AActor, public IInteractSystemInterface, public IHealthSystemInterface, public ISkyTagInterface
+class SKYCRAFT_API AResource : public AActor, public IInteractSystemInterface, public IInteract_CPP, public IHealthSystemInterface, public ISkyTagInterface
 {
 	GENERATED_BODY()
 
@@ -66,12 +68,12 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-	UFUNCTION(BlueprintNativeEvent)
-	void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut);
-	
-	UFUNCTION(BlueprintNativeEvent)
-	void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut);
 
+	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const override;
+	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const override;
+	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const override;
+	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const override;
+	
 	UFUNCTION(BlueprintNativeEvent)
 	UInteractSystem* GetInteractSystem();
 	

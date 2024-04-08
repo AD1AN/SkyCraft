@@ -19,7 +19,6 @@ class SKYCRAFT_API IInteractSystemInterface
 	GENERATED_BODY()
 
 	public:
-	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "InteractSystemInterface")
 	class UInteractSystem* GetInteractSystem();
 

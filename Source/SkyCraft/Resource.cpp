@@ -2,6 +2,10 @@
 
 
 #include "Resource.h"
+#include "DA_Resource.h"
+#include "HealthSystem.h"
+#include "InteractSystem.h"
+#include "SkyTags.h"
 
 AResource::AResource()
 {
@@ -68,12 +72,21 @@ FVector AResource::GetInteractLocation_Implementation()
 	return GetActorLocation();
 }
 
-void AResource::ClientInteract_Implementation(FInteractIn InteractIn, FInteractOut& InteractOut)
+void AResource::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
 {
 	InteractOut.Success = false;
 }
 
-void AResource::ServerInteract_Implementation(FInteractIn InteractIn, FInteractOut& InteractOut)
+void AResource::ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const
+{
+	
+}
+
+void AResource::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const
+{
+}
+
+void AResource::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
 {
 	InteractOut.Success = false;
 }

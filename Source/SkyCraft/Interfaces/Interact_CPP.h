@@ -3,13 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SkyCraft/Enums/InteractKey.h"
-#include "SkyCraft/Enums/InterruptedBy.h"
-#include "SkyCraft/InteractSystem.h"
 #include "UObject/Interface.h"
 #include "Interact_CPP.generated.h"
 
 class APAI;
+enum class EInteractKey : uint8;
+enum class EInterruptedBy : uint8;
 
 USTRUCT(BlueprintType)
 struct FInteractIn
@@ -62,7 +61,7 @@ struct FInterruptOut
 	bool Success;
 };
 
-UINTERFACE(MinimalAPI)
+UINTERFACE(MinimalAPI, meta = (CannotImplementInterfaceInBlueprint))
 class UInteract_CPP : public UInterface
 {
 	GENERATED_BODY()
@@ -75,14 +74,14 @@ class SKYCRAFT_API IInteract_CPP
 	public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Interact_CPP")
-	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut);
+	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const = 0;
 
 	UFUNCTION(BlueprintCallable, Category = "Interact_CPP")
-	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut);
+	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const = 0;
 	
 	UFUNCTION(BlueprintCallable, Category = "Interact_CPP")
-	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut);
+	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const = 0;
 	
 	UFUNCTION(BlueprintCallable, Category = "Interact_CPP")
-	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut);
+	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const = 0;
 };
