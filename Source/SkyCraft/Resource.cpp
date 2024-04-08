@@ -68,12 +68,12 @@ FVector AResource::GetInteractLocation_Implementation()
 	return GetActorLocation();
 }
 
-void AResource::ClientInteract_Implementation(FInteractIn In, FInteractOut& Out)
+void AResource::ClientInteract_Implementation(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
-	Out.Success = false;
+	InteractOut.Success = false;
 }
 
-void AResource::ServerInteract_Implementation(FInteractIn In, FInteractOut& Out)
+void AResource::ServerInteract_Implementation(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
-	Out.Success = false;
+	InteractOut.Success = false;
 }

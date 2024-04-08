@@ -12,5 +12,8 @@ struct FCurrentProlonged
 	EInteractKey InteractKey;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	APawn* InteractedPawn;
+	APawn* Pawn;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	class APAI* PAI;
 };

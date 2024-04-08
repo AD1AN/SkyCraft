@@ -67,10 +67,10 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 	UFUNCTION(BlueprintNativeEvent)
-	void ClientInteract(FInteractIn In, FInteractOut& Out);
+	void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut);
 	
 	UFUNCTION(BlueprintNativeEvent)
-	void ServerInteract(FInteractIn In, FInteractOut& Out);
+	void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut);
 
 	UFUNCTION(BlueprintNativeEvent)
 	UInteractSystem* GetInteractSystem();

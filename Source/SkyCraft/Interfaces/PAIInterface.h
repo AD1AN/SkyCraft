@@ -4,19 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "PlayerInfoInterface.generated.h"
+#include "PAIInterface.generated.h"
 
 UINTERFACE(MinimalAPI)
-class UPlayerInfoInterface : public UInterface
+class UPInfoInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class SKYCRAFT_API IPlayerInfoInterface
+class SKYCRAFT_API IPInfoInterface
 {
 	GENERATED_BODY()
 	
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="PlayerInfo")
-	APlayerInfo* GetPlayerInfo();
+	APAI* GetPInfo();
 };

@@ -3,9 +3,9 @@
 
 #include "InteractSystem.h"
 
-#include "PlayerInfo.h"
+#include "PAI.h"
 #include "Interfaces/InteractSystemInterface.h"
-#include "Interfaces\PlayerInfoInterface.h"
+#include "Interfaces\PAIInterface.h"
 
 UInteractSystem::UInteractSystem()
 {
@@ -25,21 +25,21 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	{
 		for (const FCurrentProlonged CurrentP : CurrentProlonged)
 		{
-			if (FVector::Distance(GetOwner()->GetActorLocation(), CurrentP.InteractedPawn->GetActorLocation()) > 300)
+			if (FVector::Distance(GetOwner()->GetActorLocation(), CurrentP.Pawn->GetActorLocation()) > 300)
 			{
-				RemoveProlonged(CurrentP.InteractedPawn);
+				RemoveProlonged(CurrentP.Pawn);
 
-				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.InteractedPawn);
+				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn);
 				
 				FInterruptIn InterruptIn;
 				InterruptIn.InterruptedBy = EInterruptedBy::Distance;
-				InterruptIn.InteractedKey = CurrentP.InteractKey;
-				InterruptIn.InteractedPawn = CurrentP.InteractedPawn;
+				InterruptIn.InteractKey = CurrentP.InteractKey;
+				InterruptIn.Pawn = CurrentP.Pawn;
+				InterruptIn.PAI = CurrentP.PAI;
 				FInterruptOut InterruptOut;
 				IInteractSystemInterface::Execute_ServerInterrupt(GetOwner(), InterruptIn, InterruptOut);
 
-				APlayerInfo* PP = IPlayerInfoInterface::Execute_GetPlayerInfo(CurrentP.InteractedPawn);
-				PP->Client_Interrupt(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.InteractedPawn);
+				CurrentP.PAI->Client_Interrupt(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PAI);
 			}
 		}
 	}
@@ -55,7 +55,7 @@ void UInteractSystem::RemoveProlonged(APawn* InteractedPawn)
 {
 	for (auto It = CurrentProlonged.CreateIterator(); It; ++It)
 	{
-		if (It->InteractedPawn == InteractedPawn)
+		if (It->Pawn == InteractedPawn)
 		{
 			It.RemoveCurrent();
 			if (CurrentProlonged.IsEmpty())

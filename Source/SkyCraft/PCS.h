@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "SkyPlayerController.generated.h"
+#include "PCS.generated.h"
 
 /**
- * 
+ * PCS - PlayerControllerSky
  */
 UCLASS()
-class SKYCRAFT_API ASkyPlayerController : public APlayerController
+class SKYCRAFT_API APCS : public APlayerController
 {
 	GENERATED_BODY()
 
