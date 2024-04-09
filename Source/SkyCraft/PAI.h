@@ -17,8 +17,8 @@ class SKYCRAFT_API APAI : public AActor
 public:	
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-	void Server_Interrupt(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI);
+	void Server_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI);
 
 	UFUNCTION(Client, Reliable) // DO NOT CALL, only for calling from Server_Interrupt
-	void Client_Interrupt(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI);
+	void Client_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI);
 };

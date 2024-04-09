@@ -21,10 +21,10 @@ class SKYCRAFT_API UInteractSystem : public UActorComponent
 public:	
 	UInteractSystem();
 	
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FClientInterrupted OnClientInterrupted;
 
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FServerInterrupted OnServerInterrupted;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

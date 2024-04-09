@@ -39,7 +39,7 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 				const IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(GetOwner());
 				Interact_CPP->ServerInterrupt(InterruptIn, InterruptOut);
 
-				CurrentP.PAI->Client_Interrupt(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PAI);
+				CurrentP.PAI->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PAI);
 			}
 		}
 	}
