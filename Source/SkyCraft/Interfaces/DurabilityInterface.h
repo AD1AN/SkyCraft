@@ -39,6 +39,6 @@ class SKYCRAFT_API IDurabilityInterface
 	GENERATED_BODY()
 
 	public:
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly)
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly, Category="DurabilityInterface")
 	void ApplyDurability(FApplyDurabilityIn In, FApplyDurabilityOut& Out);
 };

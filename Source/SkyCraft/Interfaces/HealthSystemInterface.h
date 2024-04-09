@@ -51,6 +51,9 @@ class SKYCRAFT_API IHealthSystemInterface
 	GENERATED_BODY()
 
 	public:
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly)
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly, Category="HealthSystemInterface")
 	void ApplyDamage(FApplyDamageIn In, FApplyDamageOut& Out);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly, Category="HealthSystemInterface")
+	UHealthSystem* GetHealthSystem();
 };

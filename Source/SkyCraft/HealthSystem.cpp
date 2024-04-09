@@ -3,8 +3,7 @@
 
 #include "HealthSystem.h"
 
-void UHealthSystem::BeginPlay()
+float UHealthSystem::HealthRatio()
 {
-	Super::BeginPlay();
+	return Health / MaxHealth;
 }
-
