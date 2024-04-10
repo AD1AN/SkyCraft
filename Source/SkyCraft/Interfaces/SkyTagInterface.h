@@ -27,6 +27,6 @@ class SKYCRAFT_API ISkyTagInterface
 	GENERATED_BODY()
 
 	public:
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category="SkyTagInterface")
 	void GetSkyTags(FGetSkyTagsOut& Out);
 };
