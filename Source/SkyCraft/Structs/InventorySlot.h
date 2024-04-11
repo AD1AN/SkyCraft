@@ -1,6 +1,10 @@
 ﻿#pragma once
-#include "../DA_Item.h"
+
+#include "SkyCraft/Structs/ItemProperty.h"
 #include "InventorySlot.generated.h"
+
+class UDA_Item;
+
 
 USTRUCT(BlueprintType)
 struct FInventorySlot
