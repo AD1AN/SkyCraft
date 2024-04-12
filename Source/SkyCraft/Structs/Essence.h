@@ -8,16 +8,16 @@ struct FEssence
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int32 R = 0;
+	int32 Red = 0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int32 G = 0;
+	int32 Green = 0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int32 B = 0;
+	int32 Blue = 0;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int32 C = 0;
+    int32 Cyan = 0;
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int32 M = 0;
+    int32 Magenta = 0;
     UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int32 Y = 0;
+    int32 Yellow = 0;
 };
