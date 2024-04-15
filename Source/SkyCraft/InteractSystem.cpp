@@ -30,14 +30,18 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn);
 				
-				FInterruptIn InterruptIn;
-				InterruptIn.InterruptedBy = EInterruptedBy::Distance;
-				InterruptIn.InteractKey = CurrentP.InteractKey;
-				InterruptIn.Pawn = CurrentP.Pawn;
-				InterruptIn.PAI = CurrentP.PAI;
-				FInterruptOut InterruptOut;
 				const IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(GetOwner());
-				Interact_CPP->ServerInterrupt(InterruptIn, InterruptOut);
+				if (Interact_CPP)
+				{
+					FInterruptIn InterruptIn;
+					InterruptIn.InterruptedBy = EInterruptedBy::Distance;
+					InterruptIn.InteractKey = CurrentP.InteractKey;
+					InterruptIn.Pawn = CurrentP.Pawn;
+					InterruptIn.PAI = CurrentP.PAI;
+					FInterruptOut InterruptOut;
+				
+					Interact_CPP->ServerInterrupt(InterruptIn, InterruptOut);
+				}
 
 				CurrentP.PAI->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PAI);
 			}

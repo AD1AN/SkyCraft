@@ -13,11 +13,4 @@ struct FEssence
 	int32 Green = 0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 Blue = 0;
-	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int32 Cyan = 0;
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int32 Magenta = 0;
-    UPROPERTY(BlueprintReadWrite, EditAnywhere)
-    int32 Yellow = 0;
 };

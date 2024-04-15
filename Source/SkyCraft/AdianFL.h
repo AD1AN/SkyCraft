@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "SkyCraft/Structs/Essence.h"
 #include "AdianFL.generated.h"
 
 UCLASS()
@@ -24,5 +25,13 @@ public:
 		}
 		return false;
 	}
-};
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static int32 EssenceTotal(const FEssence& Essence)
+	{
+		return Essence.Red + Essence.Green + Essence.Blue;
+	}
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static FLinearColor EssenceToRGB(const FEssence& Essence);
+};

@@ -7,8 +7,5 @@ enum class EEssenceColor : uint8
 {
 	Red,
 	Green,
-	Blue,
-	Cyan,
-	Magenta,
-	Yellow
+	Blue
 };
