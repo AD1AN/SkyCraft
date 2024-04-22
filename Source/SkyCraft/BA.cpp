@@ -1,27 +1,17 @@
 // ADIAN Copyrighted
 
-
 #include "BA.h"
+#include "Net/UnrealNetwork.h"
+#include "HealthSystem.h"
 
-// Sets default values
 ABA::ABA()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
+	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
 }
 
-// Called when the game starts or when spawned
-void ABA::BeginPlay()
+void ABA::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Super::BeginPlay();
-	
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABA, Grounded);
 }
-
-// Called every frame
-void ABA::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-

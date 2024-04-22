@@ -3,16 +3,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "DA_BA.h"
 #include "GameFramework/Actor.h"
 #include "BA.generated.h"
+
+class UHealthSystem;
+class UDA_BA;
 
 UCLASS()
 class SKYCRAFT_API ABA : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UHealthSystem* HealthSystem;
+	
 	ABA();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -21,12 +26,21 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	int32 ID_BA = 0;
 
+	UPROPERTY(BlueprintReadWrite)
+	TArray<ABA*> Supports;
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<ABA*> Depends;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bGridSnaps;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bOnlyBuildSnaps;
+	bool bOnlyBuildSnaps; // If true - can be placed on snaps
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bLinetraceFromStart;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bShowBuildSnaps;
 
@@ -37,15 +51,16 @@ public:
 	bool bDependByBuildSnap;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float BuildRotation = 90;
+	float BuildRotation = 90.0f;
 	
 	UPROPERTY(BlueprintReadWrite)
-	TArray<UMaterialInterface*> Materials;
+	TArray<UMaterialInterface*> BuildingMaterials;
 
-protected:
-	virtual void BeginPlay() override;
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	uint8 Grounded = 0;
+	
+	UPROPERTY(BlueprintReadOnly)
+	uint8 GroundedMax = 7;
 
-public:	
-	virtual void Tick(float DeltaTime) override;
-
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

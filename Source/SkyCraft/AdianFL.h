@@ -14,6 +14,7 @@ class SKYCRAFT_API UAdianFL : public UBlueprintFunctionLibrary
 
 public:
 	template<typename T>
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static bool ContainsArray(const TArray<T>& OuterArray, const TArray<T>& InnerArray)
 	{
 		for (const T& InnerElem : InnerArray)
