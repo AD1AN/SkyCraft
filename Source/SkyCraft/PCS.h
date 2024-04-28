@@ -7,7 +7,7 @@
 #include "PCS.generated.h"
 
 /**
- * PCS - PlayerControllerSky
+ * PCS - Player Controller Sky
  */
 UCLASS()
 class SKYCRAFT_API APCS : public APlayerController
