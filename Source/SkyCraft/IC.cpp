@@ -19,6 +19,14 @@ void UIC::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTic
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
+void UIC::RMB_Tap_Implementation()
+{
+}
+
+void UIC::LMB_Tap_Implementation()
+{
+}
+
 void UIC::Select_Implementation()
 {
 }
@@ -31,11 +39,11 @@ void UIC::LMB_Implementation(bool Pressed)
 {
 }
 
-void UIC::LMB_HoldStart_Implementation(bool Pressed)
+void UIC::LMB_HoldStart_Implementation()
 {
 }
 
-void UIC::LMB_HoldStop_Implementation(bool Pressed)
+void UIC::LMB_HoldStop_Implementation()
 {
 }
 

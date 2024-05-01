@@ -32,11 +32,15 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void LMB(bool Pressed);
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void LMB_HoldStart(bool Pressed);
+	void LMB_Tap();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void LMB_HoldStop(bool Pressed);
+	void LMB_HoldStart();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void LMB_HoldStop();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void RMB(bool Pressed);
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void RMB_Tap();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void RMB_HoldStart();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)

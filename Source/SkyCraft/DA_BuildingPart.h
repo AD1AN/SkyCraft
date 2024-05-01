@@ -21,6 +21,9 @@ public:
 	FText Name;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UTexture2D* Icon;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EBuildingPartResourceType ResourceType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -28,15 +31,6 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EBuildingPartSnapType SnapType;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool MultiBuild;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FText> MB_Names;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<UTexture2D*> Icons;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FInventorySlot> RequiredItems;
