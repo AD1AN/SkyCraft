@@ -52,7 +52,6 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 
 	for (uint16 _Row = 0; _Row < _GridSize-1; ++_Row)
 	{
-		
 		for (uint16 _Column = 0; _Column < _GridSize-1; ++_Column)
 		{
 			FVector LocalLoc = FVector(
