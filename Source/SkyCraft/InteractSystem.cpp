@@ -26,8 +26,6 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 		{
 			if (FVector::Distance(GetOwner()->GetActorLocation(), CurrentP.Pawn->GetActorLocation()) > 300)
 			{
-				RemoveProlonged(CurrentP.Pawn);
-
 				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn);
 				
 				const IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(GetOwner());
@@ -42,8 +40,8 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 				
 					Interact_CPP->ServerInterrupt(InterruptIn, InterruptOut);
 				}
-
-				CurrentP.PAI->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PAI);
+				if (IsValid(CurrentP.PAI)) { CurrentP.PAI->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PAI); }
+				RemoveProlonged(CurrentP.Pawn);
 			}
 		}
 	}
