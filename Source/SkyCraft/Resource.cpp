@@ -6,10 +6,12 @@
 #include "HealthSystem.h"
 #include "InteractSystem.h"
 #include "SkyTags.h"
+#include "Net/UnrealNetwork.h"
 
 AResource::AResource()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 	
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	SetRootComponent(StaticMesh);
@@ -24,6 +26,8 @@ AResource::AResource()
 void AResource::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!DA_Resource) return;
 
 	CurrentSize = DA_Resource->Size[ResourceSize];
 	
@@ -89,4 +93,13 @@ void AResource::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& Interru
 void AResource::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
 {
 	InteractOut.Success = false;
+}
+
+void AResource::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(AResource, DA_Resource, COND_None);
+	DOREPLIFETIME_CONDITION(AResource, ResourceSize, COND_None);
+	DOREPLIFETIME_CONDITION(AResource, SM_Variety, COND_None);
 }

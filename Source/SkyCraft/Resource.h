@@ -42,13 +42,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 LoadHealth = 403;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	UDA_Resource* DA_Resource;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	uint8 ResourceSize = 0;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	uint8 SM_Variety;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -65,6 +65,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
 	virtual void Tick(float DeltaTime) override;

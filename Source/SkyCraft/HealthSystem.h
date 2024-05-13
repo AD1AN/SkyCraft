@@ -16,10 +16,10 @@ class SKYCRAFT_API UHealthSystem : public UActorComponent
 
 public:	
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int32 Health = 404;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int32 MaxHealth = 404;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -34,6 +34,7 @@ public:
 	UHealthSystem()
 	{
 		PrimaryComponentTick.bCanEverTick = false;
+		PrimaryComponentTick.bStartWithTickEnabled = false;
 
 		for (EDamageGlobalType DGT : TEnumRange<EDamageGlobalType>())
 		{
@@ -43,5 +44,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	float HealthRatio();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 		
 };
