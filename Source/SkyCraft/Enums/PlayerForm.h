@@ -5,6 +5,7 @@
 UENUM(BlueprintType)
 enum class EPlayerForm : uint8
 {
+	Load,
 	Island,
 	Normal,
 	Spirit,
