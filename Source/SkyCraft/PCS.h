@@ -15,4 +15,7 @@ class SKYCRAFT_API APCS : public APlayerController
 	GENERATED_BODY()
 
 	virtual void PawnLeavingGame() override;
+	
+	UFUNCTION(BlueprintPure)
+	bool IsPawnInputEnabled(APawn* CheckPawn);
 };

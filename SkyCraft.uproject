@@ -475,6 +475,10 @@
 		{
 			"Name": "WorldPartitionHLODUtilities",
 			"Enabled": false
+		},
+		{
+			"Name": "RawInput",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [

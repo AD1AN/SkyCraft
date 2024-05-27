@@ -7,3 +7,8 @@ void APCS::PawnLeavingGame()
 {
 	
 }
+
+bool APCS::IsPawnInputEnabled(APawn* CheckPawn)
+{
+	return CheckPawn->InputEnabled();
+}
