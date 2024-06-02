@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "DA_DamageCauserInfo.h"
+#include "DataAssets/DA_DamageCauserInfo.h"
 #include "Components/ActorComponent.h"
 #include "Enums/DamageGlobalType.h"
 #include "HealthSystem.generated.h"

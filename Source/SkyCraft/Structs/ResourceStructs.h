@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "SkyCraft/DA_Item.h"
+#include "SkyCraft/DataAssets/DA_Item.h"
 #include "SM_Scalar.h"
 #include "ResourceStructs.generated.h"
 

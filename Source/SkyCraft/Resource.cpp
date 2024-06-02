@@ -2,7 +2,7 @@
 
 
 #include "Resource.h"
-#include "DA_Resource.h"
+#include "SkyCraft/DataAssets/DA_Resource.h"
 #include "HealthSystem.h"
 #include "InteractSystem.h"
 #include "SkyTags.h"

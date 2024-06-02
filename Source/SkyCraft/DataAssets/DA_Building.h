@@ -5,14 +5,14 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "SkyCraft/Structs/InventorySlot.h"
-#include "DA_BuildingPart.generated.h"
+#include "DA_Building.generated.h"
 
-class ABuildingPart;
-enum class EBuildingPartResourceType : uint8;
-enum class EBuildingPartSnapType : uint8;
+class ABuilding;
+enum class EBuildingResourceType : uint8;
+enum class EBuildingSnapType : uint8;
 
 UCLASS(BlueprintType)
-class SKYCRAFT_API UDA_BuildingPart : public UDataAsset
+class SKYCRAFT_API UDA_Building : public UDataAsset
 {
 	GENERATED_BODY()
 
@@ -24,13 +24,13 @@ public:
 	UTexture2D* Icon;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EBuildingPartResourceType ResourceType;
+	EBuildingResourceType ResourceType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<ABuildingPart> ClassBuildingPart;
+	TSubclassOf<ABuilding> ActorClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EBuildingPartSnapType SnapType;
+	EBuildingSnapType SnapType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FInventorySlot> RequiredItems;

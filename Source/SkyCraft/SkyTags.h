@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "DA_SkyTag.h"
+#include "DataAssets/DA_SkyTag.h"
 #include "SkyTags.generated.h"
 
 

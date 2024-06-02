@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SkyCraft/DA_DamageCauserInfo.h"
+#include "SkyCraft/DataAssets/DA_DamageCauserInfo.h"
 #include "UObject/Interface.h"
 #include "HealthSystemInterface.generated.h"
 

@@ -2,18 +2,18 @@
 
 #pragma once
 
-#include "BuildingPartSlot.generated.h"
+#include "BuildingSlot.generated.h"
 
-class UDA_BuildingPart;
+class UDA_Building;
 
 USTRUCT(BlueprintType)
-struct FBuildingPartSlot
+struct FBuildingSlot
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UDA_BuildingPart* DA_BuildingPart;
+	UDA_Building* DA_Building;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<UDA_BuildingPart*> BuildingPartChildren;
+	TArray<UDA_Building*> DA_Building_Children;
 };

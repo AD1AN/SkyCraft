@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "BuildingPartSnapType.generated.h"
+#include "BuildingSnapType.generated.h"
 
 UENUM(BlueprintType)
-enum class EBuildingPartSnapType : uint8
+enum class EBuildingSnapType : uint8
 {
 	Foundation,
 	HalfFoundation,

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "SkyCraft/DA_Durability.h"
+#include "SkyCraft/DataAssets/DA_Durability.h"
 #include "DurabilityInterface.generated.h"
 
 USTRUCT(BlueprintType)

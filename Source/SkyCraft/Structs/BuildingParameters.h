@@ -2,10 +2,10 @@
 
 #include "ArrayIDs.h"
 #include "ArrayInventorySlots.h"
-#include "SW_PlacedObject.generated.h"
+#include "BuildingParameters.generated.h"
 
 USTRUCT(BlueprintType)
-struct FSW_PlacedObject
+struct FBuildingParameters
 {
 	GENERATED_BODY()
 	

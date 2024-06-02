@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "BuildingPart.generated.h"
+#include "SkyCraft/Structs/BuildingParameters.h"
+#include "Building.generated.h"
 
 class UHealthSystem;
-class UDA_BuildingPart;
+class UDA_Building;
 
 UCLASS()
-class SKYCRAFT_API ABuildingPart : public AActor
+class SKYCRAFT_API ABuilding : public AActor
 {
 	GENERATED_BODY()
 	
@@ -18,19 +19,19 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UHealthSystem* HealthSystem;
 	
-	ABuildingPart();
+	ABuilding();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UDA_BuildingPart* DA_BuildingPart;
+	UDA_Building* DA_Building;
 	
 	UPROPERTY(BlueprintReadWrite)
-	int32 ID_BuildingPart = 0;
+	int32 ID = 0;
 
 	UPROPERTY(BlueprintReadWrite)
-	TArray<ABuildingPart*> Supports;
+	TArray<ABuilding*> Supports;
 
 	UPROPERTY(BlueprintReadWrite)
-	TArray<ABuildingPart*> Depends;
+	TArray<ABuilding*> Depends;
 	
 	UPROPERTY(BlueprintReadWrite)
 	TArray<UMaterialInterface*> AllMaterials;
@@ -40,6 +41,12 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly)
 	uint8 GroundedMax = 7;
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly)
+	FBuildingParameters SaveBuildingParameters();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly)
+	bool LoadBuildingParameters(FBuildingParameters BuildingParameters);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
