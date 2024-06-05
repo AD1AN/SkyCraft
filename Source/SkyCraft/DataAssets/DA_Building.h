@@ -24,35 +24,35 @@ public:
 	UTexture2D* Icon;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EBuildingResourceType ResourceType;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<ABuilding> ActorClass;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EBuildingSnapType SnapType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FInventorySlot> RequiredItems;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bCheckGrounded = true;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bGridSnaps;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bOnlySnaps; // If true - can be placed on snaps
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bShowSnaps;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bDependBySnap;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bTraceFromStart;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float YawRotation = 90.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bFreeBuilding;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
+	EBuildingSnapType SnapType;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
+	bool bCheckGrounded = true;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
+	bool bGridSnaps;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
+	bool bOnlySnaps; // If true - can be placed on snaps
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
+	bool bShowSnaps;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
+	bool bDependBySnap;
 };
