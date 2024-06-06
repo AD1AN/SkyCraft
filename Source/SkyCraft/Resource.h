@@ -80,4 +80,8 @@ public:
 	
 	UFUNCTION(BlueprintNativeEvent)
 	FVector GetInteractLocation();
+
+private:
+	UFUNCTION()
+	void ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) const;
 };

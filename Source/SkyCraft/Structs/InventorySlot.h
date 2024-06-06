@@ -5,7 +5,6 @@
 
 class UDA_Item;
 
-
 USTRUCT(BlueprintType)
 struct FInventorySlot
 {

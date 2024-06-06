@@ -7,6 +7,9 @@
 #include "SkyCraft/Structs/Essence.h"
 #include "AdianFL.generated.h"
 
+class IInterface_AssetUserData;
+class UAssetUserData;
+
 UCLASS()
 class SKYCRAFT_API UAdianFL : public UBlueprintFunctionLibrary
 {
@@ -35,4 +38,16 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static FLinearColor EssenceToRGB(const FEssence& Essence);
+
+	UFUNCTION(BlueprintCallable, Category="AdianFL", meta = (DeterminesOutputType = "Class"))
+	static UAssetUserData* GetAssetUserData(TScriptInterface<IInterface_AssetUserData> Object, UPARAM(meta = (AllowAbstract = "false")) TSubclassOf<UAssetUserData> Class);
+
+	UFUNCTION(BlueprintCallable, Category="AdianFL")
+	static TArray<UAssetUserData*> GetAssetUserDataArray(TScriptInterface<IInterface_AssetUserData> Object);
+
+	UFUNCTION(BlueprintCallable, Category="AdianFL", meta = (DeterminesOutputType = "Class"))
+	static UAssetUserData* AddAssetUserData(TScriptInterface<IInterface_AssetUserData> Object, UPARAM(meta = (AllowAbstract = "false")) TSubclassOf<UAssetUserData> Class);
+
+	UFUNCTION(BlueprintCallable, Category="AdianFL")
+	static void RemoveAssetUserData(TScriptInterface<IInterface_AssetUserData> Object, UPARAM(meta = (AllowAbstract = "false")) TSubclassOf<UAssetUserData> Class);
 };

@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include "SkyCraft/DataAssets/DA_Item.h"
-#include "SM_Scalar.h"
 #include "ResourceStructs.generated.h"
 
+class UDA_Item;
 
 USTRUCT(BlueprintType)
 struct FResourceLoot
@@ -34,13 +33,13 @@ struct FResourceSize
 	int32 Health = 100;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	TArray<UAssetUserData*> AssetUserData;
+	
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<FResourceLoot> Loot;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<UStaticMesh*> SM_Variety;
-	
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<FSM_Scalar> SM_Scalar;
 
 	FResourceSize()
 	{

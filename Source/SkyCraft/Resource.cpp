@@ -6,6 +6,8 @@
 #include "HealthSystem.h"
 #include "InteractSystem.h"
 #include "SkyTags.h"
+#include "AssetUserData/AUD_OverrideScale.h"
+#include "AssetUserData/AUD_SM_Scalar.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
@@ -32,6 +34,10 @@ void AResource::BeginPlay()
 	CurrentSize = DA_Resource->Size[ResourceSize];
 	
 	StaticMesh->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
+	
+	ImplementAssetUserData(DA_Resource->AssetUserData);
+	ImplementAssetUserData(CurrentSize.AssetUserData);
+	
 
 	if (!DA_Resource->InteractKeys.IsEmpty())
 	{
@@ -44,21 +50,6 @@ void AResource::BeginPlay()
 	
 	HealthSystem->MaxHealth = CurrentSize.Health;
 	HealthSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;
-
-	for (const FSM_Scalar GScalar : DA_Resource->GlobalSM_Scalars)
-	{
-		StaticMesh->SetScalarParameterForCustomPrimitiveData(GScalar.ParameterName, GScalar.Value);
-	}
-	
-	for (const FSM_Scalar SM_Scalar : CurrentSize.SM_Scalar)
-	{
-		StaticMesh->SetScalarParameterForCustomPrimitiveData(SM_Scalar.ParameterName, SM_Scalar.Value);
-	}
-
-	if (DA_Resource->ChangeScale)
-	{
-		StaticMesh->SetRelativeScale3D(DA_Resource->NewScale);
-	}
 }
 
 void AResource::Tick(float DeltaTime)
@@ -88,6 +79,24 @@ void AResource::ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& Interru
 
 void AResource::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const
 {
+}
+
+void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) const
+{
+	for (UAssetUserData* AUD : AssetUserDatas)
+	{
+		if (UAUD_SM_Scalar* aud_scalar = Cast<UAUD_SM_Scalar>(AUD))
+		{
+			StaticMesh->SetScalarParameterForCustomPrimitiveData(aud_scalar->ParameterName, aud_scalar->ParameterValue);
+			continue;
+		}
+		
+		if (UAUD_OverrideScale* aud_os = Cast<UAUD_OverrideScale>(AUD))
+		{
+			StaticMesh->SetRelativeScale3D(aud_os->NewScale);
+			continue;
+		}
+	}
 }
 
 void AResource::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
