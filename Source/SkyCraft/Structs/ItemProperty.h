@@ -21,13 +21,7 @@ struct FItemProperty
 	TArray<bool> Booleans;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FVector> WorldVectors;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FVector> LocalVectors;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FRotator> Rotators;
+	TArray<FString> Strings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FName> Names;

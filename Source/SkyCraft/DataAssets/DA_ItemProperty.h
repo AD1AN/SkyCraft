@@ -13,5 +13,5 @@ class SKYCRAFT_API UDA_ItemProperty : public UDataAsset
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool I_DONT_KNOW_WHAT_TO_DO_HERE = true;
+	FText PropertyText = FText::FromString("Property");
 };
