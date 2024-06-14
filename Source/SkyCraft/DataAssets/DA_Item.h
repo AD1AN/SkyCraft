@@ -18,9 +18,6 @@ class SKYCRAFT_API UDA_Item : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Name;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EItemType ItemType;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Description;
@@ -33,6 +30,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="Stacking", EditConditionHides))
 	int32 MaxStacking = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EItemType ItemType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<UIC> ItemComponent;

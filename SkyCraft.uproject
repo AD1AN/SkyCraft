@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.0",
+	"EngineAssociation": "5.3",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -23,11 +23,6 @@
 		{
 			"Name": "AdvancedSteamSessions",
 			"Enabled": true
-		},
-		{
-			"Name": "SmoothSyncPlugin",
-			"Enabled": false,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/c8f61b007fb44f4abcb7b0974cebff6b"
 		},
 		{
 			"Name": "AndroidMedia",
@@ -151,35 +146,11 @@
 			"Enabled": false
 		},
 		{
-			"Name": "ChaosEditor",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosNiagara",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosSolverPlugin",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosClothEditor",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosCloth",
-			"Enabled": false
-		},
-		{
 			"Name": "CameraShakePreviewer",
 			"Enabled": false
 		},
 		{
 			"Name": "CableComponent",
-			"Enabled": false
-		},
-		{
-			"Name": "CharacterAI",
 			"Enabled": false
 		},
 		{
@@ -279,22 +250,8 @@
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/846c2ad08f164f45b0335ecebf85361e"
 		},
 		{
-			"Name": "Perlin_Noise",
-			"Enabled": false,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/89195b347a1d4418ba7da964f2ab8e33"
-		},
-		{
 			"Name": "Metasound",
 			"Enabled": true
-		},
-		{
-			"Name": "StazHelper",
-			"Enabled": false
-		},
-		{
-			"Name": "GeneralMovement",
-			"Enabled": false,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/0a128683c41f4b59906c661b95ca8655"
 		},
 		{
 			"Name": "LogViewer",
@@ -302,19 +259,7 @@
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/4853cdc0a6a54d7b9c0712cbe72f6b68"
 		},
 		{
-			"Name": "AlembicImporter",
-			"Enabled": false
-		},
-		{
 			"Name": "AndroidDeviceProfileSelector",
-			"Enabled": false
-		},
-		{
-			"Name": "AnimationModifierLibrary",
-			"Enabled": false
-		},
-		{
-			"Name": "AnimationSharing",
 			"Enabled": false
 		},
 		{
@@ -330,23 +275,7 @@
 			"Enabled": false
 		},
 		{
-			"Name": "AssetManagerEditor",
-			"Enabled": false
-		},
-		{
-			"Name": "AssetTags",
-			"Enabled": false
-		},
-		{
-			"Name": "AudioCapture",
-			"Enabled": false
-		},
-		{
 			"Name": "AutomationUtils",
-			"Enabled": false
-		},
-		{
-			"Name": "BackChannel",
 			"Enabled": false
 		},
 		{
@@ -478,6 +407,72 @@
 		},
 		{
 			"Name": "RawInput",
+			"Enabled": true
+		},
+		{
+			"Name": "Bridge",
+			"Enabled": false,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
+		},
+		{
+			"Name": "ChaosCaching",
+			"Enabled": true
+		},
+		{
+			"Name": "AlembicImporter",
+			"Enabled": false
+		},
+		{
+			"Name": "ACLPlugin",
+			"Enabled": false
+		},
+		{
+			"Name": "ChaosNiagara",
+			"Enabled": false
+		},
+		{
+			"Name": "ChaosEditor",
+			"Enabled": false
+		},
+		{
+			"Name": "ChaosSolverPlugin",
+			"Enabled": false
+		},
+		{
+			"Name": "ChaosUserDataPT",
+			"Enabled": false
+		},
+		{
+			"Name": "DumpGPUServices",
+			"Enabled": false
+		},
+		{
+			"Name": "EnhancedInput",
+			"Enabled": false
+		},
+		{
+			"Name": "MsQuic",
+			"Enabled": false,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Linux",
+				"Mac"
+			]
+		},
+		{
+			"Name": "EditorScriptingUtilities",
+			"Enabled": true
+		},
+		{
+			"Name": "N10XSourceCodeAccess",
+			"Enabled": false
+		},
+		{
+			"Name": "OnlineSubsystemSteam",
 			"Enabled": true
 		}
 	],
