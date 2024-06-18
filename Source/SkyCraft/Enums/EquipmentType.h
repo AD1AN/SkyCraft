@@ -7,7 +7,6 @@ enum class EEquipmentType : uint8
 {
 	EQHead,
 	EQOutfit,
-	EQCloak,
 	EQHands,
 	EQFeet
 };

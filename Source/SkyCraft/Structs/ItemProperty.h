@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#include "SkyCraft/DataAssets/DA_ItemProperty.h"
+#include "CoreMinimal.h"
+#include "InventorySlotNested.h"
 #include "ItemProperty.generated.h"
 
 USTRUCT(BlueprintType)
@@ -9,7 +10,7 @@ struct FItemProperty
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UDA_ItemProperty* Property;
+	class UDA_ItemProperty* Property;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<float> Floats;
@@ -24,5 +25,8 @@ struct FItemProperty
 	TArray<FString> Strings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FName> Names;
+	TArray<FInventorySlotNested> NestedInventorySlots;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<class UDA_Item*> Items;
 };

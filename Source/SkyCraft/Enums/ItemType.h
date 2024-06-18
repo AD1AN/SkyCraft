@@ -5,9 +5,7 @@
 UENUM(BlueprintType)
 enum class EItemType : uint8
 {
-	Resource,
-	Usable,
-	Tool,
-	Weapon,
+	Item,
+	ItemComponent,
 	Equipment
 };

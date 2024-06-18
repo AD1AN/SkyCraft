@@ -8,7 +8,12 @@ public class SkyCraftTarget : TargetRules
 	public SkyCraftTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
-		DefaultBuildSettings = BuildSettingsVersion.V2;
+		
+		// Update build settings
+		DefaultBuildSettings = BuildSettingsVersion.Latest;
+
+		// Update include order version
+		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 
 		ExtraModuleNames.AddRange( new string[] { "SkyCraft" } );
 	}

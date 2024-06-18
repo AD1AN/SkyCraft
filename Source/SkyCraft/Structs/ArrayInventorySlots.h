@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "InventorySlot.h"
+#include "SkyCraft/Structs/InventorySlot.h"
 #include "ArrayInventorySlots.generated.h"
 
 USTRUCT(BlueprintType)
