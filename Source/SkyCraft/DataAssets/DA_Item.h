@@ -34,7 +34,7 @@ public:
 	bool Stacking = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="Stacking", EditConditionHides))
-	int32 MaxStacking = 1;
+	uint8 MaxStacking = 1;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) // ReadWrite - because of error for SearchInProperties()
 	TArray<FItemProperty> InitialProperties;

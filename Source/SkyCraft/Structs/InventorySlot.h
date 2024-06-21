@@ -13,7 +13,7 @@ struct FInventorySlot
 	class UDA_Item* DA_Item;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Quantity = 1;
+	uint8 Quantity = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FItemProperty> Properties;
