@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "SkyCraft/Structs/Uint8MinMax.h"
-#include "SkyCraft/Structs/SW_Resource.h"
+#include "Structs\SS_Resource.h"
 #include "ResourceGenerator.generated.h"
 
 class AResource;
@@ -54,6 +54,22 @@ struct FGenerateResourcesIn
 	FUint8MinMax SM_Variety;
 };
 
+
+USTRUCT(BlueprintType)
+struct FGenerateNPCsIn
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 MaxSpawnPoints;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSubclassOf<ANPC> NPC_Class;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float MaxFloorSlope;
+};
+
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
 class SKYCRAFT_API UResourceGenerator : public UActorComponent
 {
@@ -62,8 +78,11 @@ class SKYCRAFT_API UResourceGenerator : public UActorComponent
 public:	
 	UResourceGenerator();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	TArray<AResource*> SpawnedResources;
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<ANPC*> SpawnedNPCs;
 
 	UPROPERTY(EditAnywhere)
 	float AreaSize;
@@ -94,18 +113,19 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-public:	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+public:
 	UFUNCTION(BlueprintCallable)
 	void SetupGenerator(FSetupGeneratorIn SetupGeneratorIn);
 	
 	UFUNCTION(BlueprintCallable)
 	void GenerateResources(FGenerateResourcesIn GenerateResourcesIn);
+	
+	UFUNCTION(BlueprintCallable)
+	void GenerateNPCs(FGenerateNPCsIn GenerateNPCsIn);
 
 	UFUNCTION(BlueprintCallable)
-	void LoadResources(TArray<FSW_Resource> Resources);
+	void LoadResources(TArray<FSS_Resource> Resources);
 
 	UFUNCTION(BlueprintCallable)
-	TArray<FSW_Resource> SaveResources();
+	TArray<FSS_Resource> SaveResources();
 };

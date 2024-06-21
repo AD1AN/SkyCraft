@@ -2,6 +2,7 @@
 
 
 #include "PAI.h"
+#include "Net/UnrealNetwork.h"
 #include "InteractSystem.h"
 #include "Interfaces/InteractSystemInterface.h"
 #include "Interfaces/Interact_CPP.h"
@@ -41,4 +42,13 @@ void APAI::Client_InterruptActor_Implementation(AActor* InterruptActor, EInterru
 		FInterruptOut InterruptOut;
 		Interact_CPP->ClientInterrupt(InterruptIn, InterruptOut);
 	}
+}
+
+void APAI::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(APAI, AnalyzedObjects);
+	DOREPLIFETIME(APAI, AnalyzedItems);
+	DOREPLIFETIME(APAI, LearnedCraftItem);
 }

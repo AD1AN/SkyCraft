@@ -10,6 +10,8 @@
 #include "Engine/DataAsset.h"
 #include "DA_Item.generated.h"
 
+class UDA_AnalyzeObject;
+class UDA_EquipmentStats;
 class UDA_SkyTag;
 enum class EItemType : uint8;
 
@@ -39,6 +41,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<UDA_SkyTag*> SkyTags;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool RequireAnalyze = true;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<UDA_AnalyzeObject*> DA_AnalyzeObjects;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EItemType ItemType;
@@ -51,6 +59,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides))
 	EEquipmentType EquipmentType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides))
+	UDA_EquipmentStats* EquipmentStats;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides))
 	TSoftObjectPtr<USkeletalMesh> EQ_Male;

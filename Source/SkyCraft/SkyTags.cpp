@@ -6,6 +6,7 @@
 USkyTags::USkyTags()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 
 void USkyTags::OnRegister()

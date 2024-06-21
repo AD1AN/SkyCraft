@@ -6,10 +6,12 @@
 #include "Math/RandomStream.h"
 #include "HealthSystem.h"
 #include "AdianFL.h"
+#include "SkyCraft/NPC.h"
 
 UResourceGenerator::UResourceGenerator()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 
 void UResourceGenerator::BeginPlay()
@@ -20,11 +22,6 @@ void UResourceGenerator::BeginPlay()
 	{
 		NamesCollisionSkyTags.Add(cst->SkyTag);
 	}
-}
-
-void UResourceGenerator::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
 void UResourceGenerator::SetupGenerator(FSetupGeneratorIn SetupGeneratorIn)
@@ -93,9 +90,62 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 	Generations++;
 }
 
-void UResourceGenerator::LoadResources(TArray<FSW_Resource> Resources)
+void UResourceGenerator::GenerateNPCs(FGenerateNPCsIn GenerateNPCsIn)
 {
-	for (const FSW_Resource res : Resources)
+	const uint32 _SpawnPoints = GenerateNPCsIn.MaxSpawnPoints / ((3-ScaleRatio) - (ScaleRatio));
+	const float _GridSize = sqrt(_SpawnPoints);
+	const float _CellSize = AreaSize / _GridSize;
+	const float _MaxOffset = _CellSize * 0.25f;
+
+	FVector ActorLoc = GetOwner()->GetActorLocation();
+
+	FRandomStream _StreamX = GeneratorSeed + Generations;
+	FRandomStream _StreamY = GeneratorSeed + Generations + 1;
+
+	const float _IslandScale = FMath::Clamp(ScaleRatio, 0.25f, 0.5f);
+
+	for (uint16 _Row = 0; _Row < _GridSize-1; ++_Row)
+	{
+		for (uint16 _Column = 0; _Column < _GridSize-1; ++_Column)
+		{
+			FVector LocalLoc = FVector(
+				_StreamX.FRandRange(_MaxOffset * -1.f, _MaxOffset) + (_CellSize * _Column + _CellSize * 0.5f) * _IslandScale,
+				_StreamY.FRandRange(_MaxOffset * -1.f, _MaxOffset) + (_CellSize * _Row + _CellSize * 0.5f) * _IslandScale,
+				GroundAltitude);
+			FVector WorldLoc = LocalLoc + ActorLoc;
+			float ScaleXY = _IslandScale * (AreaSize / 2.f);
+			FVector StartLoc = WorldLoc - FVector(ScaleXY, ScaleXY, 0);
+			FVector EndLoc = StartLoc;
+			EndLoc.Z += LinetraceLength;
+
+			if (FHitResult HitResult; GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility))
+			{
+				if (UAdianFL::ContainsArray(HitResult.GetActor()->Tags, NamesCollisionSkyTags))
+				{
+					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateNPCsIn.MaxFloorSlope)
+					{
+						FTransform ResTransform;
+						ResTransform.SetLocation(HitResult.ImpactPoint + FVector(0,0,46));
+						ResTransform.SetRotation(FQuat(FRotator(0,_StreamX.FRandRange(-359.0f, 359.0f),0)));
+						ANPC* SpawnedNPC = GetWorld()->SpawnActor<ANPC>(GenerateNPCsIn.NPC_Class, ResTransform);
+						SpawnedNPCs.Add(SpawnedNPC);
+						// DrawDebugPoint(GetWorld(), ResTransform.GetLocation(), 20.f, FColor::Green, false, 555);
+					}
+				}
+			}
+			_StreamX = _StreamX.GetUnsignedInt();
+			_StreamY = _StreamY.GetUnsignedInt();
+			
+			// UE_LOG(LogTemp, Warning, TEXT("%f"), FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))));
+			// DrawDebugLine(GetWorld(), StartLoc, EndLoc, FColor::Red, false, 555);
+		}
+	}
+	Generations++;
+}
+
+void UResourceGenerator::LoadResources(TArray<FSS_Resource> Resources)
+{
+	for (const FSS_Resource res : Resources)
 	{
 		FTransform ResTransform;
 		ResTransform.SetLocation(res.RelativeLocation);
@@ -115,14 +165,14 @@ void UResourceGenerator::LoadResources(TArray<FSW_Resource> Resources)
 	}
 }
 
-TArray<FSW_Resource> UResourceGenerator::SaveResources()
+TArray<FSS_Resource> UResourceGenerator::SaveResources()
 {
-	TArray<FSW_Resource> SavedResources;
+	TArray<FSS_Resource> SavedResources;
 	for (const AResource* Res : SpawnedResources)
 	{
 		if (IsValid(Res))
 		{
-			FSW_Resource SW_Res;
+			FSS_Resource SW_Res;
 			SW_Res.RelativeLocation = Res->StaticMesh->GetRelativeLocation();
 			SW_Res.RelativeRotation = Res->StaticMesh->GetRelativeRotation();
 			SW_Res.DA_Resource = Res->DA_Resource;

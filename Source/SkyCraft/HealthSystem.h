@@ -21,6 +21,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int32 MaxHealth = 404;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	int32 Armor = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UDA_DamageCauserInfo*> Includes;

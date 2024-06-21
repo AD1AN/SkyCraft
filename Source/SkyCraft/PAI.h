@@ -6,6 +6,9 @@
 #include "GameFramework/Actor.h"
 #include "PAI.generated.h"
 
+class UDA_CraftItem;
+class UDA_Item;
+class UDA_AnalyzeObject;
 /*
  * PAI - Player All Info
  */
@@ -14,11 +17,22 @@ class SKYCRAFT_API APAI : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
+public:
+
+	UPROPERTY(Replicated, BlueprintReadWrite)
+	TArray<UDA_AnalyzeObject*> AnalyzedObjects;
+	
+	UPROPERTY(Replicated, BlueprintReadWrite)
+	TArray<UDA_Item*> AnalyzedItems;
+	
+	UPROPERTY(Replicated, BlueprintReadWrite)
+	TArray<UDA_CraftItem*> LearnedCraftItem;
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI);
 
 	UFUNCTION(Client, Reliable) // DO NOT CALL, only for calling from Server_Interrupt
 	void Client_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI);
+	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

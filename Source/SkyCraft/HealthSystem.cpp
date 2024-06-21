@@ -16,4 +16,5 @@ void UHealthSystem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	DOREPLIFETIME_CONDITION(UHealthSystem, Health, COND_None);
 	DOREPLIFETIME_CONDITION(UHealthSystem, MaxHealth, COND_None);
+	DOREPLIFETIME_CONDITION(UHealthSystem, Armor, COND_None);
 }

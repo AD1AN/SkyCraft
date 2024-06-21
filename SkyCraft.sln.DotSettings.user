@@ -1,4 +1,9 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/CustomBuildToolPath/@EntryValue">C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe</s:String>
+	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/DotNetCliExePath/@EntryValue">C:\Program Files\dotnet\dotnet.exe</s:String>
+	
+	<s:Boolean x:Key="/Default/Environment/Hierarchy/Build/SolutionBuilderNext/ShouldRestoreNugetPackages/@EntryValue">True</s:Boolean>
+	
 	<s:Boolean x:Key="/Default/UnloadedProject/UnloadedProjects/=fafd82b6_002D3e6d_002D37e8_002Dbebc_002Dd5e3b37c921c_0023Android_002EAutomation/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UnloadedProject/UnloadedProjects/=bab8120c_002De222_002D3d95_002Dafcd_002D77ac93a94b7d_0023Apple_002EAutomation/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UnloadedProject/UnloadedProjects/=e41bdb0e_002D4f5f_002D3e0b_002D913e_002Ddd0276d68b17_0023AutomationUtils_002EAutomation/@EntryIndexedValue">True</s:Boolean>
