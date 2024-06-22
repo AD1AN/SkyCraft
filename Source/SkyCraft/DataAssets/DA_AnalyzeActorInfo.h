@@ -4,12 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "DA_AnalyzeObject.generated.h"
+#include "DA_AnalyzeActorInfo.generated.h"
 
 class UDA_Item;
 
 UCLASS(BlueprintType)
-class SKYCRAFT_API UDA_AnalyzeObject : public UDataAsset
+class SKYCRAFT_API UDA_AnalyzeActorInfo : public UDataAsset
 {
 	GENERATED_BODY()
 	

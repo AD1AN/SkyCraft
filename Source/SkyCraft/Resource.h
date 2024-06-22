@@ -11,6 +11,7 @@
 #include "Structs/ResourceStructs.h"
 #include "Resource.generated.h"
 
+class UAnalyzeActorSystem;
 class UHealthSystem;
 class USkyTags;
 class UDA_Resource;
@@ -34,6 +35,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UInteractSystem* InteractSystem;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UAnalyzeActorSystem* AnalyzeActorSystem;
 
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

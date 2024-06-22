@@ -2,6 +2,8 @@
 
 
 #include "Resource.h"
+
+#include "AnalyzeActorSystem.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"
 #include "HealthSystem.h"
 #include "InteractSystem.h"
@@ -22,6 +24,7 @@ AResource::AResource()
 	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
 	SkyTags = CreateDefaultSubobject<USkyTags>(TEXT("SkyTags"));
 	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
+	AnalyzeActorSystem = CreateDefaultSubobject<UAnalyzeActorSystem>(TEXT("AnalyzeActorSystem"));
 	InteractSystem->bInteractable = false;
 }
 
@@ -31,8 +34,8 @@ void AResource::BeginPlay()
 
 	if (!DA_Resource) return;
 
+	AnalyzeActorSystem->DA_AnalyzeActorInfo = DA_Resource->DA_AnalyzeActorInfo;
 	CurrentSize = DA_Resource->Size[ResourceSize];
-	
 	StaticMesh->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
 	
 	ImplementAssetUserData(DA_Resource->AssetUserData);

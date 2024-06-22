@@ -451,10 +451,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "EnhancedInput",
-			"Enabled": false
-		},
-		{
 			"Name": "MsQuic",
 			"Enabled": false,
 			"SupportedTargetPlatforms": [

@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "AnalyzeObject.generated.h"
+#include "AnalyzeActorSystem.generated.h"
 
-class UDA_AnalyzeObject;
+class UDA_AnalyzeActorInfo;
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
-class SKYCRAFT_API UAnalyzeObject : public UActorComponent
+class SKYCRAFT_API UAnalyzeActorSystem : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	UAnalyzeObject();
+	UAnalyzeActorSystem();
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	UDA_AnalyzeObject* SpawnedResources;
+	UDA_AnalyzeActorInfo* DA_AnalyzeActorInfo;
 };

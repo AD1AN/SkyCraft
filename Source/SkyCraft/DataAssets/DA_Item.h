@@ -10,7 +10,7 @@
 #include "Engine/DataAsset.h"
 #include "DA_Item.generated.h"
 
-class UDA_AnalyzeObject;
+class UDA_AnalyzeActorInfo;
 class UDA_EquipmentStats;
 class UDA_SkyTag;
 enum class EItemType : uint8;
@@ -46,7 +46,7 @@ public:
 	bool RequireAnalyze = true;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<UDA_AnalyzeObject*> DA_AnalyzeObjects;
+	TArray<UDA_AnalyzeActorInfo*> DA_AnalyzeActorsInfo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EItemType ItemType;

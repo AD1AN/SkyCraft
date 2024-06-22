@@ -8,7 +8,7 @@
 
 class UDA_CraftItem;
 class UDA_Item;
-class UDA_AnalyzeObject;
+class UDA_AnalyzeActorInfo;
 /*
  * PAI - Player All Info
  */
@@ -20,10 +20,14 @@ class SKYCRAFT_API APAI : public AActor
 public:
 
 	UPROPERTY(Replicated, BlueprintReadWrite)
-	TArray<UDA_AnalyzeObject*> AnalyzedObjects;
+	TArray<UDA_AnalyzeActorInfo*> AnalyzedActorsInfo;
 	
-	UPROPERTY(Replicated, BlueprintReadWrite)
+	UPROPERTY(ReplicatedUsing=OnRep_AnalyzedItems, BlueprintReadWrite)
 	TArray<UDA_Item*> AnalyzedItems;
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedItemsChanged);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnAnalyzedItemsChanged OnAnalyzedItemsChanged;
 	
 	UPROPERTY(Replicated, BlueprintReadWrite)
 	TArray<UDA_CraftItem*> LearnedCraftItem;
@@ -33,6 +37,9 @@ public:
 
 	UFUNCTION(Client, Reliable) // DO NOT CALL, only for calling from Server_Interrupt
 	void Client_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI);
+		
+	UFUNCTION(BlueprintCallable)
+	void OnRep_AnalyzedItems() const;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

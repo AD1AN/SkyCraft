@@ -1,9 +1,9 @@
 // ADIAN Copyrighted
 
 
-#include "AnalyzeObject.h"
+#include "AnalyzeActorSystem.h"
 
-UAnalyzeObject::UAnalyzeObject()
+UAnalyzeActorSystem::UAnalyzeActorSystem()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;

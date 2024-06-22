@@ -8,7 +8,7 @@
 #include "SkyCraft/Structs/InteractKeySettings.h"
 #include "DA_Resource.generated.h"
 
-class UTestingEditInline;
+class UDA_AnalyzeActorInfo;
 class UDA_SkyTag;
 
 UCLASS(BlueprintType)
@@ -25,6 +25,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<UDA_SkyTag*> SkyTags;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UDA_AnalyzeActorInfo* DA_AnalyzeActorInfo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FInteractKeySettings> InteractKeys;
