@@ -35,9 +35,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UInteractSystem* InteractSystem;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UAnalyzeActorSystem* AnalyzeActorSystem;
 
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

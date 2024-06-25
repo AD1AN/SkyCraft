@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DA_AnalyzeEntity.h"
 #include "Engine/DataAsset.h"
 #include "SkyCraft/Structs/ResourceStructs.h"
 #include "SkyCraft/Structs/InteractKeySettings.h"
 #include "DA_Resource.generated.h"
 
-class UDA_AnalyzeActorInfo;
 class UDA_SkyTag;
 
 UCLASS(BlueprintType)
@@ -25,9 +25,6 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<UDA_SkyTag*> SkyTags;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UDA_AnalyzeActorInfo* DA_AnalyzeActorInfo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FInteractKeySettings> InteractKeys;

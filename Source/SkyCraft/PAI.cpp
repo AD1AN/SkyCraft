@@ -44,6 +44,11 @@ void APAI::Client_InterruptActor_Implementation(AActor* InterruptActor, EInterru
 	}
 }
 
+void APAI::OnRep_AnalyzedEntities() const
+{
+	OnAnalyzedEntitiesChanged.Broadcast();
+}
+
 void APAI::OnRep_AnalyzedItems() const
 {
 	OnAnalyzedItemsChanged.Broadcast();
@@ -53,7 +58,7 @@ void APAI::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(APAI, AnalyzedActorsInfo);
+	DOREPLIFETIME(APAI, AnalyzedEntities);
 	DOREPLIFETIME(APAI, AnalyzedItems);
 	DOREPLIFETIME(APAI, LearnedCraftItem);
 }

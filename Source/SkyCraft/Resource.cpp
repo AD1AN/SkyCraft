@@ -3,11 +3,11 @@
 
 #include "Resource.h"
 
-#include "AnalyzeActorSystem.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"
 #include "HealthSystem.h"
 #include "InteractSystem.h"
 #include "SkyTags.h"
+#include "AssetUserData/AUD_AnalyzeEntity.h"
 #include "AssetUserData/AUD_OverrideScale.h"
 #include "AssetUserData/AUD_SM_Scalar.h"
 #include "Net/UnrealNetwork.h"
@@ -24,7 +24,6 @@ AResource::AResource()
 	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
 	SkyTags = CreateDefaultSubobject<USkyTags>(TEXT("SkyTags"));
 	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
-	AnalyzeActorSystem = CreateDefaultSubobject<UAnalyzeActorSystem>(TEXT("AnalyzeActorSystem"));
 	InteractSystem->bInteractable = false;
 }
 
@@ -34,7 +33,6 @@ void AResource::BeginPlay()
 
 	if (!DA_Resource) return;
 
-	AnalyzeActorSystem->DA_AnalyzeActorInfo = DA_Resource->DA_AnalyzeActorInfo;
 	CurrentSize = DA_Resource->Size[ResourceSize];
 	StaticMesh->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
 	
@@ -97,6 +95,12 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 		if (UAUD_OverrideScale* aud_os = Cast<UAUD_OverrideScale>(AUD))
 		{
 			StaticMesh->SetRelativeScale3D(aud_os->NewScale);
+			continue;
+		}
+		
+		if (UAUD_AnalyzeEntity* aud_ae = Cast<UAUD_AnalyzeEntity>(AUD))
+		{
+			StaticMesh->AddAssetUserData(AUD);
 			continue;
 		}
 	}
