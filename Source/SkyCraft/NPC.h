@@ -18,9 +18,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UHealthSystem* HealthSystem;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USkyTags* SkyTags;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FSS_NPC SaveNPC();

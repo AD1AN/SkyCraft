@@ -2,14 +2,14 @@
 
 
 #include "Resource.h"
-
 #include "SkyCraft/DataAssets/DA_Resource.h"
 #include "HealthSystem.h"
 #include "InteractSystem.h"
-#include "SkyTags.h"
 #include "AssetUserData/AUD_AnalyzeEntity.h"
 #include "AssetUserData/AUD_OverrideScale.h"
+#include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_SM_Scalar.h"
+#include "Net/RepLayout.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
@@ -21,8 +21,10 @@ AResource::AResource()
 	SetRootComponent(StaticMesh);
 	StaticMesh->SetGenerateOverlapEvents(false);
 	
+	UAUD_SkyTags* SkyTags = CreateDefaultSubobject<UAUD_SkyTags>(TEXT("AUD_SkyTags"));
+	StaticMesh->AddAssetUserData(SkyTags);
+	
 	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
-	SkyTags = CreateDefaultSubobject<USkyTags>(TEXT("SkyTags"));
 	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
 	InteractSystem->bInteractable = false;
 }
@@ -47,7 +49,7 @@ void AResource::BeginPlay()
 		StaticMesh->SetGenerateOverlapEvents(true);
 	}
 	
-	SkyTags->DA_SkyTags.Append(DA_Resource->SkyTags);
+	StaticMesh->GetAssetUserData<UAUD_SkyTags>()->DA_SkyTags.Append(DA_Resource->SkyTags);
 	
 	HealthSystem->MaxHealth = CurrentSize.Health;
 	HealthSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;

@@ -6,6 +6,7 @@
 #include "Math/RandomStream.h"
 #include "HealthSystem.h"
 #include "AdianFL.h"
+#include "DataAssets/DA_SkyTag.h"
 #include "SkyCraft/NPC.h"
 
 UResourceGenerator::UResourceGenerator()

@@ -1,6 +1,5 @@
 ﻿#include "NPC.h"
 #include "HealthSystem.h"
-#include "SkyTags.h"
 #include "Structs\SS_NPC.h"
 
 ANPC::ANPC()
@@ -8,7 +7,6 @@ ANPC::ANPC()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
-	SkyTags = CreateDefaultSubobject<USkyTags>(TEXT("SkyTags"));
 }
 
 bool ANPC::LoadNPC_Implementation(FSS_NPC SS_NPC)

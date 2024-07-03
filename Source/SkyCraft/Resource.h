@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interfaces/SkyTagInterface.h"
 #include "Interfaces/HealthSystemInterface.h"
 #include "Interfaces/InteractSystemInterface.h"
 #include "Interfaces/Interact_CPP.h"
@@ -13,11 +12,10 @@
 
 class UAnalyzeActorSystem;
 class UHealthSystem;
-class USkyTags;
 class UDA_Resource;
 
 UCLASS(Blueprintable)
-class SKYCRAFT_API AResource : public AActor, public IInteractSystemInterface, public IInteract_CPP, public IHealthSystemInterface, public ISkyTagInterface
+class SKYCRAFT_API AResource : public AActor, public IInteractSystemInterface, public IInteract_CPP, public IHealthSystemInterface
 {
 	GENERATED_BODY()
 
@@ -29,9 +27,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UHealthSystem* HealthSystem;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	USkyTags* SkyTags;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UInteractSystem* InteractSystem;

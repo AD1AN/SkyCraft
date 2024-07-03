@@ -14,4 +14,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UDA_AnalyzeEntity* DA_AnalyzeEntity;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool OnlyThisComponent = true;
 };
