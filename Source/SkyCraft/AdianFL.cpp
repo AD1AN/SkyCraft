@@ -1,8 +1,9 @@
 // ADIAN Copyrighted
 
 #include "AdianFL.h"
-
+#include "AssetUserData/AUD_SkyTags.h"
 #include "Interfaces/Interface_AssetUserData.h"
+#include "SkyCraft/DataAssets/DA_SkyTag.h"
 
 FLinearColor UAdianFL::EssenceToRGB(const FEssence& Essence)
 {
@@ -69,4 +70,38 @@ void UAdianFL::RemoveAssetUserData(TScriptInterface<IInterface_AssetUserData> Ob
 	{
 		Object->RemoveUserDataOfClass(Class);
 	}
+}
+
+bool UAdianFL::ActorHasSkyTag(AActor* Actor, UDA_SkyTag* DA_SkyTag)
+{
+	if (!Actor || Actor->GetRootComponent()) return false;
+	
+	UAUD_SkyTags* AUD_SkyTags = Actor->GetRootComponent()->GetAssetUserData<UAUD_SkyTags>();
+	if (!AUD_SkyTags) return false;
+	
+	if (!AUD_SkyTags->DA_SkyTags.IsEmpty())
+	{
+		return AUD_SkyTags->DA_SkyTags.Contains(DA_SkyTag);
+	}
+	return false;
+}
+
+bool UAdianFL::ActorHasSkyTags(AActor* Actor, TArray<UDA_SkyTag*> DA_SkyTags)
+{
+	if (!Actor || Actor->GetRootComponent()) return false;
+	
+	UAUD_SkyTags* AUD_SkyTags = Actor->GetRootComponent()->GetAssetUserData<UAUD_SkyTags>();
+	if (!AUD_SkyTags) return false;
+	
+	if (!AUD_SkyTags->DA_SkyTags.IsEmpty())
+	{
+		return ContainsArray(AUD_SkyTags->DA_SkyTags, DA_SkyTags);
+	}
+	return false;
+}
+
+bool UAdianFL::IsServer(const UObject* WorldContextObject)
+{
+	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+	return World ? (World->GetNetMode() != NM_Client) : false;
 }

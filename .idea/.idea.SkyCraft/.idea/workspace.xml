@@ -18,9 +18,8 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/../../Program Files (x86)/Windows Kits/10/Include/10.0.18362.0/um/MSWSock.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/../../UE_5.0/Engine/Source/Runtime/Engine/Private/Components/CharacterMovementComponent.cpp" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../UE_5.3/Engine/Source/Runtime/Engine/Private/UnrealEngine.cpp" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../../UE_5.3/Engine/Source/ThirdParty/Steamworks/Steamv153/sdk/public/steam/steam_api_internal.h" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Source/SkyCraft/Structs/ItemPropertyInventorySlot.h" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -333,6 +332,13 @@
       <workItem from="1719194693052" duration="6936000" />
       <workItem from="1719366738081" duration="2929000" />
       <workItem from="1719991096055" duration="5035000" />
+      <workItem from="1719999004359" duration="594000" />
+      <workItem from="1720026996954" duration="2914000" />
+      <workItem from="1720065315465" duration="20265000" />
+      <workItem from="1720169499318" duration="709000" />
+      <workItem from="1720171445069" duration="31468000" />
+      <workItem from="1720283696586" duration="9958000" />
+      <workItem from="1720364681819" duration="8758000" />
     </task>
     <servers />
   </component>

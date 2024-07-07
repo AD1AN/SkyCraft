@@ -101,19 +101,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<UDA_SkyTag*> CollisionSkyTags;
-	TArray<FName> NamesCollisionSkyTags;
 
 	UPROPERTY(EditAnywhere)
 	int32 Generations;
-
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AResource> ResourceBPClass;
 	
-	
-protected:
-	virtual void BeginPlay() override;
-
-public:
 	UFUNCTION(BlueprintCallable)
 	void SetupGenerator(FSetupGeneratorIn SetupGeneratorIn);
 	

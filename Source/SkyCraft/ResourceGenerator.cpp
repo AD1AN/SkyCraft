@@ -6,23 +6,13 @@
 #include "Math/RandomStream.h"
 #include "HealthSystem.h"
 #include "AdianFL.h"
-#include "DataAssets/DA_SkyTag.h"
+#include "DataAssets/DA_Resource.h"
 #include "SkyCraft/NPC.h"
 
 UResourceGenerator::UResourceGenerator()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
-}
-
-void UResourceGenerator::BeginPlay()
-{
-	Super::BeginPlay();
-
-	for (const UDA_SkyTag* cst : CollisionSkyTags)
-	{
-		NamesCollisionSkyTags.Add(cst->SkyTag);
-	}
 }
 
 void UResourceGenerator::SetupGenerator(FSetupGeneratorIn SetupGeneratorIn)
@@ -36,6 +26,7 @@ void UResourceGenerator::SetupGenerator(FSetupGeneratorIn SetupGeneratorIn)
 
 void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResourcesIn)
 {
+	if (!GenerateResourcesIn.DA_Resource) return;
 	const uint32 _SpawnPoints = GenerateResourcesIn.MaxSpawnPoints / ((3-ScaleRatio) - (ScaleRatio));
 	const float _GridSize = sqrt(_SpawnPoints);
 	const float _CellSize = AreaSize / _GridSize;
@@ -64,14 +55,15 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 
 			if (FHitResult HitResult; GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility))
 			{
-				if (UAdianFL::ContainsArray(HitResult.GetActor()->Tags, NamesCollisionSkyTags))
+				if (UAdianFL::ActorHasSkyTags(HitResult.GetActor(), CollisionSkyTags))
 				{
 					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
 					{
 						FTransform ResTransform;
 						ResTransform.SetLocation(HitResult.ImpactPoint);
 						ResTransform.SetRotation(FQuat(FRotator(0,_StreamX.FRandRange(-359.0f, 359.0f),0)));
-						AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceBPClass, ResTransform);
+						UClass* ResourceClass = (GenerateResourcesIn.DA_Resource->OverrideResourceClass) ? GenerateResourcesIn.DA_Resource->OverrideResourceClass->GetClass() : AResource::StaticClass();
+						AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
 						SpawnedRes->DA_Resource = GenerateResourcesIn.DA_Resource;
 						SpawnedRes->ResourceSize = _StreamY.RandRange(GenerateResourcesIn.ResourceSize.Min, GenerateResourcesIn.ResourceSize.Max);
 						SpawnedRes->SM_Variety = _StreamX.RandRange(GenerateResourcesIn.SM_Variety.Min, GenerateResourcesIn.SM_Variety.Max);
@@ -93,6 +85,7 @@ void UResourceGenerator::GenerateResources(FGenerateResourcesIn GenerateResource
 
 void UResourceGenerator::GenerateNPCs(FGenerateNPCsIn GenerateNPCsIn)
 {
+	if (!GenerateNPCsIn.NPC_Class) return;
 	const uint32 _SpawnPoints = GenerateNPCsIn.MaxSpawnPoints / ((3-ScaleRatio) - (ScaleRatio));
 	const float _GridSize = sqrt(_SpawnPoints);
 	const float _CellSize = AreaSize / _GridSize;
@@ -121,7 +114,7 @@ void UResourceGenerator::GenerateNPCs(FGenerateNPCsIn GenerateNPCsIn)
 
 			if (FHitResult HitResult; GetWorld()->LineTraceSingleByChannel(HitResult, StartLoc, EndLoc, ECC_Visibility))
 			{
-				if (UAdianFL::ContainsArray(HitResult.GetActor()->Tags, NamesCollisionSkyTags))
+				if (UAdianFL::ActorHasSkyTags(HitResult.GetActor(), CollisionSkyTags))
 				{
 					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateNPCsIn.MaxFloorSlope)
 					{
@@ -148,10 +141,12 @@ void UResourceGenerator::LoadResources(TArray<FSS_Resource> Resources)
 {
 	for (const FSS_Resource res : Resources)
 	{
+		if (!res.DA_Resource) continue;
 		FTransform ResTransform;
 		ResTransform.SetLocation(res.RelativeLocation);
 		ResTransform.SetRotation(FQuat(res.RelativeRotation));
-		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceBPClass, ResTransform);
+		UClass* ResourceClass = (res.DA_Resource->OverrideResourceClass) ? res.DA_Resource->OverrideResourceClass->GetClass() : AResource::StaticClass();
+		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
 		SpawnedRes->bLoaded = true;
 		SpawnedRes->LoadHealth = res.Health;
 		SpawnedRes->DA_Resource = res.DA_Resource;

@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interfaces/HealthSystemInterface.h"
 #include "Interfaces/InteractSystemInterface.h"
 #include "Interfaces/Interact_CPP.h"
 #include "Structs/ResourceStructs.h"
@@ -15,7 +14,7 @@ class UHealthSystem;
 class UDA_Resource;
 
 UCLASS(Blueprintable)
-class SKYCRAFT_API AResource : public AActor, public IInteractSystemInterface, public IInteract_CPP, public IHealthSystemInterface
+class SKYCRAFT_API AResource : public AActor, public IInteractSystemInterface, public IInteract_CPP
 {
 	GENERATED_BODY()
 

@@ -7,6 +7,7 @@
 #include "SkyCraft/Structs/Essence.h"
 #include "AdianFL.generated.h"
 
+class UDA_SkyTag;
 class IInterface_AssetUserData;
 class UAssetUserData;
 
@@ -50,4 +51,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="AdianFL")
 	static void RemoveAssetUserData(TScriptInterface<IInterface_AssetUserData> Object, UPARAM(meta = (AllowAbstract = "false")) TSubclassOf<UAssetUserData> Class);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static bool ActorHasSkyTag(AActor* Actor, UDA_SkyTag* DA_SkyTag);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static bool ActorHasSkyTags(AActor* Actor, TArray<UDA_SkyTag*> DA_SkyTags);
+	
+	static bool IsServer(const UObject* WorldContextObject);
+	
 };

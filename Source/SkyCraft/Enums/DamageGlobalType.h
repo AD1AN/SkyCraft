@@ -10,12 +10,12 @@ enum class EDamageGlobalType : uint8
 	Strike,
 	Fire,
 	Cold,
-	Krazot,   // Red                  : Like a mini shockwave.
-	Zelis,    // Green                : Skin melts away.
-	Sinid,    // Blue                 : Skin petrifies and dies off.	          { Contact damage
-	Sias,     // Yellow = Red+Green   : Mini shockwave/melts away.                { Контактный урон
-	Tianit,   // Cyan   = Green+Blue  : Melts away/petrifies.
-	Fiolis,   // Purple = Red+Blue    : Mini shockwave/petrifies.
+	// Krazot,   // Red                  : Like a mini shockwave.
+	// Zelis,    // Green                : Skin melts away.
+	// Sinid,    // Blue                 : Skin petrifies and dies off.	          { Contact damage
+	// Sias,     // Yellow = Red+Green   : Mini shockwave/melts away.                { Контактный урон
+	// Tianit,   // Cyan   = Green+Blue  : Melts away/petrifies.
+	// Fiolis,   // Purple = Red+Blue    : Mini shockwave/petrifies.
 	Poison,
 	Psychic,
 	PositiveLightning,

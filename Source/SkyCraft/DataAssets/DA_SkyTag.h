@@ -11,7 +11,4 @@ class SKYCRAFT_API UDA_SkyTag : public UDataAsset
 {
 	GENERATED_BODY()
 
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FName SkyTag;
 };

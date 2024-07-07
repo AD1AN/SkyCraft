@@ -9,7 +9,6 @@
 #include "AssetUserData/AUD_OverrideScale.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_SM_Scalar.h"
-#include "Net/RepLayout.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
@@ -34,9 +33,12 @@ void AResource::BeginPlay()
 	Super::BeginPlay();
 
 	if (!DA_Resource) return;
+	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
 
 	CurrentSize = DA_Resource->Size[ResourceSize];
 	StaticMesh->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
+	StaticMesh->LDMaxDrawDistance = CurrentSize.DrawDistance;
+	NetCullDistanceSquared = CurrentSize.NetCullDistanceSquared;
 	
 	ImplementAssetUserData(DA_Resource->AssetUserData);
 	ImplementAssetUserData(CurrentSize.AssetUserData);
@@ -53,6 +55,9 @@ void AResource::BeginPlay()
 	
 	HealthSystem->MaxHealth = CurrentSize.Health;
 	HealthSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;
+
+	HealthSystem->DropLoot = true;
+	// HealthSystem->Loot = CurrentSize.Loot;
 }
 
 void AResource::Tick(float DeltaTime)
@@ -88,19 +93,21 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 {
 	for (UAssetUserData* AUD : AssetUserDatas)
 	{
-		if (UAUD_SM_Scalar* aud_scalar = Cast<UAUD_SM_Scalar>(AUD))
+		if (AUD->IsA<UAUD_SM_Scalar>())
 		{
+			UAUD_SM_Scalar* aud_scalar = Cast<UAUD_SM_Scalar>(AUD);
 			StaticMesh->SetScalarParameterForCustomPrimitiveData(aud_scalar->ParameterName, aud_scalar->ParameterValue);
 			continue;
 		}
 		
-		if (UAUD_OverrideScale* aud_os = Cast<UAUD_OverrideScale>(AUD))
+		if (AUD->IsA<UAUD_OverrideScale>())
 		{
+			UAUD_OverrideScale* aud_os = Cast<UAUD_OverrideScale>(AUD);
 			StaticMesh->SetRelativeScale3D(aud_os->NewScale);
 			continue;
 		}
 		
-		if (UAUD_AnalyzeEntity* aud_ae = Cast<UAUD_AnalyzeEntity>(AUD))
+		if (AUD->IsA<UAUD_AnalyzeEntity>())
 		{
 			StaticMesh->AddAssetUserData(AUD);
 			continue;

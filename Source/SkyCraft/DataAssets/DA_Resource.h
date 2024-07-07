@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "SkyCraft/Structs/ResourceStructs.h"
 #include "SkyCraft/Structs/InteractKeySettings.h"
+#include "SkyCraft/Resource.h"
 #include "DA_Resource.generated.h"
 
 class UDA_SkyTag;
@@ -14,17 +15,25 @@ UCLASS(BlueprintType)
 class SKYCRAFT_API UDA_Resource : public UDataAsset
 {
 	GENERATED_BODY()
-
+	
+	UDA_Resource()
+	{
+		OverrideResourceClass = AResource::StaticClass();
+	}
+	
 public:
-	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TSubclassOf<AResource> OverrideResourceClass;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TArray<UAssetUserData*> AssetUserData;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TArray<FResourceSize> Size;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TArray<UDA_SkyTag*> SkyTags;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TArray<FInteractKeySettings> InteractKeys;
 };

@@ -41,6 +41,12 @@ struct FResourceSize
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<UStaticMesh*> SM_Variety;
 
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	float DrawDistance = 300000.0f;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
+	float NetCullDistanceSquared = 225000000.0f;
+
 	FResourceSize()
 	{
 		Loot.Add(FResourceLoot{});
