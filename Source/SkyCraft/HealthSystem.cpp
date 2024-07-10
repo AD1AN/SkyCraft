@@ -24,7 +24,6 @@ void UHealthSystem::ApplyDamage(const FApplyDamageIn In)
 		return;
 	}
 	
-	
 	int32 _MultipliedDamage = In.BaseDamage;
 	
 	if (bInclusiveDamageOnly)

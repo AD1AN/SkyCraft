@@ -9,6 +9,7 @@
 #include "AssetUserData/AUD_OverrideScale.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_SM_Scalar.h"
+#include "AssetUserData/AUD_HealthSystem.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
@@ -18,6 +19,7 @@ AResource::AResource()
 	
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	SetRootComponent(StaticMesh);
+	StaticMesh->SetCollisionProfileName(TEXT("Resource"));
 	StaticMesh->SetGenerateOverlapEvents(false);
 	
 	UAUD_SkyTags* SkyTags = CreateDefaultSubobject<UAUD_SkyTags>(TEXT("AUD_SkyTags"));
@@ -43,7 +45,7 @@ void AResource::BeginPlay()
 	ImplementAssetUserData(DA_Resource->AssetUserData);
 	ImplementAssetUserData(CurrentSize.AssetUserData);
 	
-
+	
 	if (!DA_Resource->InteractKeys.IsEmpty())
 	{
 		InteractSystem->InteractKeys = DA_Resource->InteractKeys;
@@ -57,22 +59,12 @@ void AResource::BeginPlay()
 	HealthSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;
 
 	HealthSystem->DropLoot = true;
-	// HealthSystem->Loot = CurrentSize.Loot;
+	HealthSystem->Loot = CurrentSize.Loot;
 }
 
 void AResource::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-}
-
-UInteractSystem* AResource::GetInteractSystem_Implementation()
-{
-	return InteractSystem;
-}
-
-FVector AResource::GetInteractLocation_Implementation()
-{
-	return GetActorLocation();
 }
 
 void AResource::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
@@ -99,17 +91,32 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 			StaticMesh->SetScalarParameterForCustomPrimitiveData(aud_scalar->ParameterName, aud_scalar->ParameterValue);
 			continue;
 		}
-		
 		if (AUD->IsA<UAUD_OverrideScale>())
 		{
 			UAUD_OverrideScale* aud_os = Cast<UAUD_OverrideScale>(AUD);
 			StaticMesh->SetRelativeScale3D(aud_os->NewScale);
 			continue;
 		}
-		
 		if (AUD->IsA<UAUD_AnalyzeEntity>())
 		{
 			StaticMesh->AddAssetUserData(AUD);
+			continue;
+		}
+		if (AUD->IsA<UAUD_HealthSystem>())
+		{
+			UAUD_HealthSystem* aud_hs = Cast<UAUD_HealthSystem>(AUD);
+			HealthSystem->bInclusiveDamageOnly = aud_hs->bInclusiveDamageOnly;
+			if (HealthSystem->bInclusiveDamageOnly)
+			{
+				HealthSystem->InclusiveDamageDataAssets = aud_hs->InclusiveDamageDataAssets;
+			}
+			HealthSystem->DefaultTextForNonInclusive = aud_hs->DefaultTextForNonInclusive;
+			HealthSystem->ImmuneToDamageDataAssets = aud_hs->ImmuneToDamageDataAssets;
+			HealthSystem->DamageFX = aud_hs->DamageFX;
+			HealthSystem->DamageFXDefault = aud_hs->DamageFXDefault;
+			HealthSystem->DieFX = aud_hs->DieFX;
+			HealthSystem->DieFXDefault = aud_hs->DieFXDefault;
+			HealthSystem->DieHandle = aud_hs->DieHandle;
 			continue;
 		}
 	}
@@ -117,7 +124,7 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 
 void AResource::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
 {
-	InteractOut.Success = false;
+	InteractOut.Success = true;
 }
 
 void AResource::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

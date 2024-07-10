@@ -17,4 +17,8 @@ struct FInventorySlot
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FItemProperty> Properties;
+	
+	FInventorySlot()
+		: DA_Item(nullptr)
+	{}
 };

@@ -2,10 +2,10 @@
 
 
 #include "ResourceGenerator.h"
-#include "Resource.h"
 #include "Math/RandomStream.h"
 #include "HealthSystem.h"
 #include "AdianFL.h"
+#include "Resource.h"
 #include "DataAssets/DA_Resource.h"
 #include "SkyCraft/NPC.h"
 
@@ -145,7 +145,7 @@ void UResourceGenerator::LoadResources(TArray<FSS_Resource> Resources)
 		FTransform ResTransform;
 		ResTransform.SetLocation(res.RelativeLocation);
 		ResTransform.SetRotation(FQuat(res.RelativeRotation));
-		UClass* ResourceClass = (res.DA_Resource->OverrideResourceClass) ? res.DA_Resource->OverrideResourceClass->GetClass() : AResource::StaticClass();
+		TSubclassOf<AResource> ResourceClass = (res.DA_Resource->OverrideResourceClass) ? res.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
 		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
 		SpawnedRes->bLoaded = true;
 		SpawnedRes->LoadHealth = res.Health;

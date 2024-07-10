@@ -74,7 +74,8 @@ void UAdianFL::RemoveAssetUserData(TScriptInterface<IInterface_AssetUserData> Ob
 
 bool UAdianFL::ActorHasSkyTag(AActor* Actor, UDA_SkyTag* DA_SkyTag)
 {
-	if (!Actor || Actor->GetRootComponent()) return false;
+	if (!IsValid(Actor)) return false;
+	if (!IsValid(Actor->GetRootComponent())) return false;
 	
 	UAUD_SkyTags* AUD_SkyTags = Actor->GetRootComponent()->GetAssetUserData<UAUD_SkyTags>();
 	if (!AUD_SkyTags) return false;
@@ -88,7 +89,8 @@ bool UAdianFL::ActorHasSkyTag(AActor* Actor, UDA_SkyTag* DA_SkyTag)
 
 bool UAdianFL::ActorHasSkyTags(AActor* Actor, TArray<UDA_SkyTag*> DA_SkyTags)
 {
-	if (!Actor || Actor->GetRootComponent()) return false;
+	if (!IsValid(Actor)) return false;
+	if (!IsValid(Actor->GetRootComponent())) return false;
 	
 	UAUD_SkyTags* AUD_SkyTags = Actor->GetRootComponent()->GetAssetUserData<UAUD_SkyTags>();
 	if (!AUD_SkyTags) return false;

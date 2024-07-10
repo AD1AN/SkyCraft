@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Enums/DamageGlobalType.h"
 #include "SkyCraft/Structs/Loot.h"
-#include "NiagaraFunctionLibrary.h"
+#include "SkyCraft/Structs/DamageFX.h"
 #include "HealthSystem.generated.h"
 
 class UDA_Item;
@@ -33,6 +33,14 @@ struct FApplyDamageIn
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FVector DamageLocation;
+	
+	FApplyDamageIn()
+	: BaseDamage(0),
+	DamageGlobalType(EDamageGlobalType::Pure),
+	DamageDataAsset(nullptr),
+	EntityDealer(nullptr),
+	DamageLocation(FVector::ZeroVector)
+	{}
 };
 
 UENUM()
@@ -40,18 +48,6 @@ enum class EDieHandle
 {
 	JustDestroy,
 	CustomOnDieEvent
-};
-
-USTRUCT()
-struct FDamageFX
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditDefaultsOnly)
-	USoundBase* Sound;
-
-	UPROPERTY(EditDefaultsOnly)
-	UNiagaraSystem* Niagara;
 };
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))

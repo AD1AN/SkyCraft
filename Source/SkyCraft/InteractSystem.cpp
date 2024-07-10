@@ -46,6 +46,15 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	}
 }
 
+FVector UInteractSystem::GetInteractLocation()
+{
+	FVector FinalInteractLocation = GetOwner()->GetActorLocation();
+	FinalInteractLocation = FinalInteractLocation + (GetOwner()->GetActorRightVector() * InteractLocation.X);
+	FinalInteractLocation = FinalInteractLocation + (GetOwner()->GetActorForwardVector() * InteractLocation.Y);
+	FinalInteractLocation.Z += InteractLocation.Z;
+	return FinalInteractLocation;
+}
+
 void UInteractSystem::AddProlonged(FCurrentProlonged AddProlonged)
 {
 	CurrentProlonged.Add(AddProlonged);
@@ -54,11 +63,11 @@ void UInteractSystem::AddProlonged(FCurrentProlonged AddProlonged)
 
 void UInteractSystem::RemoveProlonged(APawn* InteractedPawn)
 {
-	for (auto It = CurrentProlonged.CreateIterator(); It; ++It)
+	for (auto Iterate = CurrentProlonged.CreateIterator(); Iterate; ++Iterate)
 	{
-		if (It->Pawn == InteractedPawn)
+		if (Iterate->Pawn == InteractedPawn)
 		{
-			It.RemoveCurrent();
+			Iterate.RemoveCurrent();
 			if (CurrentProlonged.IsEmpty())
 			{
 				SetComponentTickEnabled(false);

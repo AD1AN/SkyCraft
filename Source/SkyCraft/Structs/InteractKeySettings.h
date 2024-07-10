@@ -23,4 +23,12 @@ struct FInteractKeySettings
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	bool bProlonged;
+	
+	FInteractKeySettings()
+	: InteractKey(EInteractKey::Interact1),
+	  Text(FText::GetEmpty()),
+	  bCheckPlayer(false),
+	  PlayerForm({EPlayerForm::Normal}),
+	  bProlonged(false)
+	{}
 };

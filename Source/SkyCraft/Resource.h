@@ -6,15 +6,15 @@
 #include "GameFramework/Actor.h"
 #include "Interfaces/InteractSystemInterface.h"
 #include "Interfaces/Interact_CPP.h"
-#include "Structs/ResourceStructs.h"
+#include "SkyCraft/Structs/ResourceSize.h"
 #include "Resource.generated.h"
 
+class UDA_Resource;
 class UAnalyzeActorSystem;
 class UHealthSystem;
-class UDA_Resource;
 
 UCLASS(Blueprintable)
-class SKYCRAFT_API AResource : public AActor, public IInteractSystemInterface, public IInteract_CPP
+class SKYCRAFT_API AResource : public AActor, public IInteract_CPP
 {
 	GENERATED_BODY()
 
@@ -69,12 +69,6 @@ public:
 	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const override;
 	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const override;
 	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const override;
-	
-	UFUNCTION(BlueprintNativeEvent)
-	UInteractSystem* GetInteractSystem();
-	
-	UFUNCTION(BlueprintNativeEvent)
-	FVector GetInteractLocation();
 
 private:
 	UFUNCTION()

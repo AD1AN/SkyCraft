@@ -36,8 +36,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FCurrentProlonged> CurrentProlonged;
 	
+	UPROPERTY(EditDefaultsOnly)
+	FVector InteractLocation;
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector GetInteractLocation();
 	
 	UFUNCTION(BlueprintCallable)
 	void AddProlonged(FCurrentProlonged AddProlonged);

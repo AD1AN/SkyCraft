@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "SkyCraft/Structs/ResourceStructs.h"
 #include "SkyCraft/Structs/InteractKeySettings.h"
 #include "SkyCraft/Resource.h"
 #include "DA_Resource.generated.h"

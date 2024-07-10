@@ -44,6 +44,7 @@ void USuffocationSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 			FApplyDamageIn DamageIn;
 			DamageIn.BaseDamage = (HealthSystem->MaxHealth * DamagePercent) / 100;
 			DamageIn.DamageGlobalType = EDamageGlobalType::Pure;
+			DamageIn.DamageDataAsset = DamageDataAsset;
 			HealthSystem->ApplyDamage(DamageIn);
 		}
 		else
