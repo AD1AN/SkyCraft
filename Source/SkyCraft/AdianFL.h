@@ -7,6 +7,7 @@
 #include "SkyCraft/Structs/Essence.h"
 #include "AdianFL.generated.h"
 
+struct FRelativeBox;
 class UDA_SkyTag;
 class IInterface_AssetUserData;
 class UAssetUserData;
@@ -57,7 +58,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static bool ActorHasSkyTags(AActor* Actor, TArray<UDA_SkyTag*> DA_SkyTags);
+
+	UFUNCTION(BlueprintCallable, Category="AdianFL")
+	static void ResolveStaticMeshCustomPrimitiveData(UStaticMeshComponent* StaticMeshComponent);
+
+	static bool RandomBoolWithWeight(float Weight);
+	static FVector RandomPointInRelativeBox(const AActor* Actor, const FRelativeBox RelativeBox);
 	
-	static bool IsServer(const UObject* WorldContextObject);
-	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static AActor* GetRootActor(AActor* StartActor);
 };

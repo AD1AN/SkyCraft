@@ -2,7 +2,7 @@
 
 
 #include "SkyCharacter.h"
-#include "SkyCharacterMovementComponent.h"
+#include "SkyCraft/Components/SkyCharacterMovementComponent.h"
 
 //ASkyCharacter::ASkyCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<USkyCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 ASkyCharacter::ASkyCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "SkyCraft/Structs/InventorySlot.h"
+#include "SkyCraft/Structs/Slot.h"
 #include "DA_CraftItem.generated.h"
 
 enum class ECraftItemType : uint8;
@@ -19,8 +19,8 @@ public:
 	ECraftItemType CraftItemType;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TArray<FInventorySlot> Inputs;
+	TArray<FSlot> Inputs;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	FInventorySlot Output;
+	FSlot Output;
 };

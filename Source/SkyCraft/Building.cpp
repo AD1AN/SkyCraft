@@ -1,8 +1,8 @@
 // ADIAN Copyrighted
 
 #include "Building.h"
+#include "SkyCraft/Components/HealthSystem.h"
 #include "Net/UnrealNetwork.h"
-#include "HealthSystem.h"
 
 ABuilding::ABuilding()
 {

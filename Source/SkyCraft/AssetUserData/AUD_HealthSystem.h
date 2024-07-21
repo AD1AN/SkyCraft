@@ -26,16 +26,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<UDataAsset*, FText> ImmuneToDamageDataAssets;
 	
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TMap<UDataAsset*, FDamageFX> DamageFX;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FDamageFX DamageFXDefault;
 	
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TMap<UDataAsset*, FDamageFX> DieFX;
 	
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FDamageFX DieFXDefault;
 	
 	UPROPERTY(EditDefaultsOnly)

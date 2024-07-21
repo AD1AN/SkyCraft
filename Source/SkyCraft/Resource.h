@@ -21,15 +21,9 @@ class SKYCRAFT_API AResource : public AActor, public IInteract_CPP
 public:
 	AResource();
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UStaticMeshComponent* StaticMesh;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UHealthSystem* HealthSystem;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UInteractSystem* InteractSystem;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UHealthSystem* HealthSystem = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UInteractSystem* InteractSystem = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bLoaded = false;
@@ -38,7 +32,7 @@ public:
 	int32 LoadHealth = 403;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
-	UDA_Resource* DA_Resource;
+	UDA_Resource* DA_Resource = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	uint8 ResourceSize = 0;

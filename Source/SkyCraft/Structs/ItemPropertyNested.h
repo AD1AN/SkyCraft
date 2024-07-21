@@ -9,7 +9,7 @@ struct FItemPropertyNested
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UDA_ItemProperty* Property;
+	class UDA_ItemProperty* Property = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<float> Floats;

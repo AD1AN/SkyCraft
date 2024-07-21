@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "SkyCraft/Structs/InventorySlot.h"
+#include "SkyCraft/Structs/Slot.h"
 #include "ArrayInventorySlots.generated.h"
 
 USTRUCT(BlueprintType)
@@ -9,5 +9,5 @@ struct FArrayInventorySlots
 	GENERATED_BODY()
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	TArray<FInventorySlot> InventorySlots;
+	TArray<FSlot> InventorySlots;
 };

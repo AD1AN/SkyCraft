@@ -1,16 +1,15 @@
 ﻿#pragma once
 
-#include "NiagaraFunctionLibrary.h"
 #include "DamageFX.generated.h"
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FDamageFX
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly)
-	USoundBase* Sound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	class USoundBase* Sound = nullptr;
 
-	UPROPERTY(EditDefaultsOnly)
-	UNiagaraSystem* Niagara;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	class UNiagaraSystem* Niagara = nullptr;
 };

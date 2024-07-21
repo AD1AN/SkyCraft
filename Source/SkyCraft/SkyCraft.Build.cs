@@ -8,9 +8,34 @@ public class SkyCraft : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "Niagara" });
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore",
+			"Niagara"
+		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.AddRange(new string[] 
+		{ 
+			"EditorStyle",            // For editor style and utilities
+			"UnrealEd",               // Core editor functionality
+			"AssetTools",             // For asset management
+			"PropertyEditor"          // For property customization and editor extensions
+		});
+		
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[]
+			{
+				"UnrealEd",
+				"LevelEditor",
+				"EditorStyle",
+				"AssetTools",
+				"PropertyEditor"
+			});
+		}
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

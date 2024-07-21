@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Loot.h"
+#include "DropItem.h"
 #include "ResourceSize.generated.h"
 
 USTRUCT(BlueprintType)
@@ -15,7 +15,7 @@ struct FResourceSize
 	TArray<UAssetUserData*> AssetUserData;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TArray<FLoot> Loot;
+	TArray<FDropItem> DropItems;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	TArray<UStaticMesh*> SM_Variety;
@@ -28,7 +28,7 @@ struct FResourceSize
 
 	FResourceSize()
 	{
-		Loot.Add(FLoot{});
+		DropItems.Add(FDropItem{});
 		SM_Variety.Add(nullptr);
 	}
 };

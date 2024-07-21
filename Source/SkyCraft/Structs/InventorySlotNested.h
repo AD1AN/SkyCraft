@@ -10,7 +10,7 @@ struct FInventorySlotNested
 	GENERATED_BODY()
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UDA_Item* DA_Item;
+	class UDA_Item* DA_Item = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	uint8 Quantity = 1;

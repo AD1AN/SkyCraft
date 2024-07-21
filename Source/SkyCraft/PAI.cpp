@@ -3,7 +3,7 @@
 
 #include "PAI.h"
 #include "Net/UnrealNetwork.h"
-#include "InteractSystem.h"
+#include "SkyCraft/Components/InteractSystem.h"
 #include "Interfaces/InteractSystemInterface.h"
 #include "Interfaces/Interact_CPP.h"
 

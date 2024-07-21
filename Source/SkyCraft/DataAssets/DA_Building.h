@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "SkyCraft/Structs/InventorySlot.h"
+#include "SkyCraft/Structs/Slot.h"
 #include "DA_Building.generated.h"
 
 class ABuilding;
@@ -27,7 +27,7 @@ public:
 	TSubclassOf<ABuilding> ActorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FInventorySlot> RequiredItems;
+	TArray<FSlot> RequiredItems;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bTraceFromStart;

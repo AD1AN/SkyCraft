@@ -1,6 +1,6 @@
 ﻿#include "NPC.h"
-#include "HealthSystem.h"
-#include "Structs\SS_NPC.h"
+#include "SkyCraft/Components/HealthSystem.h"
+#include "SkyCraft/Structs/SS_NPC.h"
 
 ANPC::ANPC()
 {

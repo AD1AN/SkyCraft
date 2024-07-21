@@ -2,8 +2,10 @@
 
 #include "AdianFL.h"
 #include "AssetUserData/AUD_SkyTags.h"
+#include "AssetUserData/AUD_StaticMeshCustomPrimitiveData.h"
 #include "Interfaces/Interface_AssetUserData.h"
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
+#include "Structs/RelativeBox.h"
 
 FLinearColor UAdianFL::EssenceToRGB(const FEssence& Essence)
 {
@@ -102,8 +104,45 @@ bool UAdianFL::ActorHasSkyTags(AActor* Actor, TArray<UDA_SkyTag*> DA_SkyTags)
 	return false;
 }
 
-bool UAdianFL::IsServer(const UObject* WorldContextObject)
+void UAdianFL::ResolveStaticMeshCustomPrimitiveData(UStaticMeshComponent* StaticMeshComponent)
 {
-	UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-	return World ? (World->GetNetMode() != NM_Client) : false;
+	UAUD_StaticMeshCustomPrimitiveData* SMCPD = StaticMeshComponent->GetStaticMesh()->GetAssetUserData<UAUD_StaticMeshCustomPrimitiveData>();
+	if (!SMCPD) return;
+	for (FCustomPrimitiveDataEntry Entry : SMCPD->CPDArray)
+	{
+		StaticMeshComponent->SetScalarParameterForCustomPrimitiveData(Entry.Name, Entry.Value);
+	}
+}
+
+bool UAdianFL::RandomBoolWithWeight(float Weight)
+{
+	if (Weight <= 0.0f) return false;
+	return Weight >= FMath::FRandRange(0.0f, 1.0f);
+}
+
+FVector UAdianFL::RandomPointInRelativeBox(const AActor* Actor, const FRelativeBox RelativeBox)
+{
+	if (!IsValid(Actor)) return FVector::Zero();
+	const FVector ALoc = Actor->GetActorLocation();
+	const FVector BoxMin = ALoc + RelativeBox.RelativeCenter - RelativeBox.Size;
+	const FVector BoxMax = ALoc + RelativeBox.RelativeCenter + RelativeBox.Size;
+	return FVector(	FMath::RandRange(BoxMin.X, BoxMax.X),
+					FMath::RandRange(BoxMin.Y, BoxMax.Y),
+					FMath::RandRange(BoxMin.Z, BoxMax.Z));
+}
+
+AActor* UAdianFL::GetRootActor(AActor* StartActor)
+{
+	if (!IsValid(StartActor)) return nullptr;
+
+	AActor* CurrentParent = StartActor;
+	AActor* LastValidParent = CurrentParent;
+
+	while (IsValid(CurrentParent))
+	{
+		LastValidParent = CurrentParent;
+		CurrentParent = CurrentParent->GetAttachParentActor();
+	}
+
+	return LastValidParent;
 }
