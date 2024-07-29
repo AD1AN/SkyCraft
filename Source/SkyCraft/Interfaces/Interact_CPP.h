@@ -74,14 +74,14 @@ class SKYCRAFT_API IInteract_CPP
 	public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Interact_CPP")
-	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const = 0;
+	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) = 0;
 
 	UFUNCTION(BlueprintCallable, Category = "Interact_CPP")
-	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const = 0;
+	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) = 0;
 	
 	UFUNCTION(BlueprintCallable, Category = "Interact_CPP")
-	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const = 0;
+	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) = 0;
 	
 	UFUNCTION(BlueprintCallable, Category = "Interact_CPP")
-	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const = 0;
+	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) = 0;
 };

@@ -8,7 +8,7 @@
 #include "SkyCraft/Enums/DropDirectionType.h"
 #include "SkyCraft/Enums/DropLocationType.h"
 #include "SkyCraft/Structs/DropItem.h"
-#include "SkyCraft/Structs/DamageFX.h"
+#include "SkyCraft/Structs/FX.h"
 #include "SkyCraft/Structs/RelativeBox.h"
 #include "HealthSystem.generated.h"
 
@@ -35,11 +35,11 @@ struct FApplyDamageIn
 	UObject* EntityDealer = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	FVector DamageLocation = FVector::ZeroVector;
+	FVector HitLocation = FVector::ZeroVector;
 };
 
 UENUM()
-enum class EDieHandle
+enum class EDieHandle : uint8
 {
 	JustDestroy,
 	CustomOnDieEvent
@@ -53,13 +53,19 @@ class SKYCRAFT_API UHealthSystem : public UActorComponent
 public:
 	UHealthSystem();
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnDamage, EDamageGlobalType, DamageGlobalType, UDataAsset*, DA_Item, float, DamageRatio);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnDamage, EDamageGlobalType, DamageGlobalType, UDataAsset*, DA_Item, float, DamageRatio, FVector, HitLocation);
 	UPROPERTY(BlueprintAssignable)
 	FOnDamage OnDamage;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnDamage(EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, float DamageRatio, FVector HitLocation);
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie);
 	UPROPERTY(BlueprintAssignable)
 	FOnDie OnDie;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnDie();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int32 Health = 404;
@@ -88,17 +94,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<EDamageGlobalType, float> MultiplyDamageType;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TMap<UDataAsset*, FDamageFX> DamageFX;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DamageFXDefault;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDataAsset*, FFXArray> DamageFX;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DieFXDefault;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDataAsset*, FFXArray> DieFX;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FDamageFX DamageFXDefault;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TMap<UDataAsset*, FDamageFX> DieFX;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FDamageFX DieFXDefault;
+	UPROPERTY(EditDefaultsOnly)
+	USoundAttenuation* AttenuationSettings = nullptr;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	EDieHandle DieHandle;
@@ -125,17 +128,17 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void ApplyDamage(const FApplyDamageIn In);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_DamageFX(UDataAsset* DamageDataAsset, FVector DamageLocation);
+	UPROPERTY(VisibleInstanceOnly)
+	class AGSS* GSS = nullptr;
 
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
-	void Multicast_DieFX(UDataAsset* DamageDataAsset = nullptr);
-
+	void SpawnDamageFX(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector, USceneComponent* AttachTo = nullptr);
+	void SpawnDieFX(UDataAsset* DamageDataAsset = nullptr, FVector OriginLocation = FVector::ZeroVector, USceneComponent* AttachTo = nullptr);
+	
 	UFUNCTION(BlueprintCallable)
 	float HealthRatio();
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void Die(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector);
-
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

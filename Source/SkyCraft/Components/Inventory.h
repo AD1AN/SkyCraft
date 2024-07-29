@@ -30,14 +30,16 @@ public:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite)
 	int32 HoveredSlotIndex;
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInsertSlot, int32, SlotIndex);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInsertSlot, FSlot, InsertedSlot);
 	UPROPERTY(BlueprintAssignable) FOnInsertSlot OnInsertSlot;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInsertSlotFailed);
+	UPROPERTY(BlueprintAssignable) FOnInsertSlotFailed OnInsertSlotFailed;
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	bool InsertSlot(FSlot InsertingSlot);
 	
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnInsertSlotBroadcast(int32 SlotIndex);
+	UFUNCTION(NetMulticast, Reliable) void Multicast_OnInsertSlotBroadcast(FSlot InsertedSlot);
+	UFUNCTION(NetMulticast, Reliable) void Multicast_OnInsertSlotFailedBroadcast();
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangeSlot, int32, SlotIndex);
 	UPROPERTY(BlueprintAssignable) FOnChangeSlot OnChangeSlot;

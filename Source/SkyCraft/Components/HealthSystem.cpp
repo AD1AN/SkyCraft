@@ -4,15 +4,17 @@
 #include "HealthSystem.h"
 #include "SkyCraft/AdianFL.h"
 #include "SkyCraft/DroppedItem.h"
-#include "Kismet/GameplayStatics.h"
-#include "NiagaraFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "SkyCraft/GSS.h"
 
 UHealthSystem::UHealthSystem()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	SetIsReplicatedByDefault(true);
+	
+	static ConstructorHelpers::FObjectFinder<USoundAttenuation> AttenuationAsset(TEXT("/Game/Audio/NormalAttenuation.NormalAttenuation"));
+	if (AttenuationAsset.Succeeded()) AttenuationSettings = AttenuationAsset.Object;
 
 	for (EDamageGlobalType DGT : TEnumRange<EDamageGlobalType>())
 	{
@@ -20,8 +22,21 @@ UHealthSystem::UHealthSystem()
 	}
 }
 
+void UHealthSystem::Multicast_OnDamage_Implementation(EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, float DamageRatio, FVector HitLocation)
+{
+	OnDamage.Broadcast(DamageGlobalType, DamageDataAsset, DamageRatio, HitLocation);
+}
+
+void UHealthSystem::Multicast_OnDie_Implementation()
+{
+	OnDie.Broadcast();
+}
+
 void UHealthSystem::ApplyDamage(const FApplyDamageIn In)
 {
+	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
+	AActor* RootActor = UAdianFL::GetRootActor(GetOwner());
+	
 	if (!IsValid(In.DamageDataAsset))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("ApplyDamage: DamageDataAsset Empty! THIS SHOULD NOT HAPPEN!"));
@@ -45,69 +60,69 @@ void UHealthSystem::ApplyDamage(const FApplyDamageIn In)
 	if (_MultipliedDamage > 0)
 	{
 		Health = Health - _MultipliedDamage;
-		OnDamage.Broadcast(In.DamageGlobalType, In.DamageDataAsset, static_cast<float>(_MultipliedDamage) / static_cast<float>((MaxHealth>0) ? MaxHealth : _MultipliedDamage));
-		Multicast_DamageFX(In.DamageDataAsset, In.DamageLocation);
+		Multicast_OnDamage(In.DamageGlobalType, In.DamageDataAsset, static_cast<float>(_MultipliedDamage) / static_cast<float>((MaxHealth>0) ? MaxHealth : _MultipliedDamage), In.HitLocation);
 		if (Health <= 0)
 		{
-			OnDie.Broadcast();
+			Multicast_OnDie();
 			if (DieHandle == EDieHandle::JustDestroy)
 			{
-				Die(In.DamageDataAsset, In.DamageLocation);
+				Die(In.DamageDataAsset, In.HitLocation);
 			}
+			
+			FVector OriginLocation = GetOwner()->GetActorLocation();
+			USceneComponent* AttachTo = nullptr;
+			if (IsValid(GetOwner())) AttachTo = GetOwner()->GetRootComponent();
+			else if (IsValid(RootActor)) AttachTo = RootActor->GetRootComponent();
+			if (IsValid(AttachTo)) OriginLocation = AttachTo->GetOwner()->GetTransform().InverseTransformPosition(OriginLocation);
+			SpawnDieFX(In.DamageDataAsset, OriginLocation, AttachTo);
 		}
+
+		FVector HitLocation = In.HitLocation;
+		USceneComponent* AttachTo = nullptr;
+		if (IsValid(GetOwner())) AttachTo = GetOwner()->GetRootComponent();
+		else if (IsValid(RootActor)) AttachTo = RootActor->GetRootComponent();
+		if (IsValid(AttachTo)) HitLocation = AttachTo->GetOwner()->GetTransform().InverseTransformPosition(HitLocation);
+		SpawnDamageFX(In.DamageDataAsset, HitLocation, AttachTo);
 	}
 }
 
-void UHealthSystem::Multicast_DamageFX_Implementation(UDataAsset* DamageDataAsset, FVector DamageLocation)
+void UHealthSystem::SpawnDamageFX(UDataAsset* DamageDataAsset, FVector HitLocation, USceneComponent* AttachTo)
 {
-	if (FDamageFX* FX = DamageFX.Find(DamageDataAsset))
+	if (IsValid(DamageDataAsset))
 	{
-		if (FX->Sound)
+		if (FFXArray* FXArray = DamageFX.Find(DamageDataAsset))
 		{
-			UGameplayStatics::PlaySoundAtLocation(this, FX->Sound, DamageLocation);
-		}
-		if (FX->Niagara)
-		{
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FX->Niagara, DamageLocation);
+			for (FFX FX : FXArray->FXs)
+			{
+				if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, HitLocation, AttachTo, AttenuationSettings);
+			}
+			return;
 		}
 	}
-	else
+
+	for (FFX FX : DamageFXDefault)
 	{
-		if (DamageFXDefault.Sound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, DamageFXDefault.Sound, DamageLocation);
-		}
-		if (DamageFXDefault.Niagara)
-		{
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, DamageFXDefault.Niagara, DamageLocation);
-		}
+		if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, HitLocation, AttachTo, AttenuationSettings);
 	}
 }
 
-void UHealthSystem::Multicast_DieFX_Implementation(UDataAsset* DamageDataAsset)
+void UHealthSystem::SpawnDieFX(UDataAsset* DamageDataAsset, FVector OriginLocation, USceneComponent* AttachTo)
 {
-	if (!IsValid(DamageDataAsset)) return;
-	if (FDamageFX* FX = DieFX.Find(DamageDataAsset))
+	if (IsValid(DamageDataAsset))
 	{
-		if (FX->Sound)
+		if (FFXArray* FXArray = DieFX.Find(DamageDataAsset))
 		{
-			UGameplayStatics::PlaySoundAtLocation(this, FX->Sound, GetOwner()->GetActorLocation());
-		}
-		if (FX->Niagara)
-		{
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, FX->Niagara, GetOwner()->GetActorLocation());
+			for (FFX FX : FXArray->FXs)
+			{
+				if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, OriginLocation, AttachTo, AttenuationSettings);
+			}
+			return;
 		}
 	}
-	else
+	
+	for (FFX FX : DieFXDefault)
 	{
-		if (DieFXDefault.Sound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, DieFXDefault.Sound, GetOwner()->GetActorLocation());
-		}
-		if (DieFXDefault.Niagara)
-		{
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, DieFXDefault.Niagara, GetOwner()->GetActorLocation());
-		}
+		if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, OriginLocation, AttachTo, AttenuationSettings);
 	}
 }
 
@@ -119,7 +134,6 @@ float UHealthSystem::HealthRatio()
 
 void UHealthSystem::Die(UDataAsset* DamageDataAsset, FVector HitLocation)
 {
-	Multicast_DieFX(DamageDataAsset);
 	if (bDropItems)
 	{
 		for (FDropItem DropItem : DropItems)
@@ -150,7 +164,7 @@ void UHealthSystem::Die(UDataAsset* DamageDataAsset, FVector HitLocation)
 				DropInventorySlot.Quantity = FMath::RandRange(DropItem.Min, DropItem.Max);
 				DroppedItem->Slot = DropInventorySlot;
 				AActor* RootActor = UAdianFL::GetRootActor(GetOwner());
-				USceneComponent* FoundAPO = Cast<USceneComponent>(RootActor->FindComponentByTag(USceneComponent::StaticClass(), "AttachedPhysicsObjects"));
+				USceneComponent* FoundAPO = RootActor->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
 				if (IsValid(FoundAPO)) DroppedItem->AttachedToIsland = RootActor;
 				DroppedItem->DropDirectionType = DropDirectionType;
 				DroppedItem->DropDirection = DropDirection;

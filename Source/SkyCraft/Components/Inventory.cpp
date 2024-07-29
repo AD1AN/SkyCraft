@@ -13,23 +13,89 @@ UInventory::UInventory()
 
 bool UInventory::InsertSlot(FSlot InsertingSlot)
 {
+	if (!IsValid(InsertingSlot.DA_Item)) return false;
+
 	int32 SlotIndex = 0;
-	for (FSlot Slot : Slots)
+	if (InsertingSlot.DA_Item->bCanStack)
 	{
-		if (!IsValid(Slot.DA_Item))
+		TArray<int32> SlotsOverflow;
+		int16 InsertingLeft = InsertingSlot.Quantity;
+		bool CanInsert = false;
+		for (FSlot Slot : Slots)
 		{
-			Multicast_ChangeSlot(SlotIndex, InsertingSlot);
-			Multicast_OnInsertSlotBroadcast(SlotIndex);
+			if (!IsValid(Slot.DA_Item))
+			{
+				Slot.DA_Item = InsertingSlot.DA_Item;
+				Slot.Quantity = static_cast<uint8>(InsertingLeft);
+				Slot.Properties = InsertingSlot.Properties;
+				Multicast_ChangeSlot(SlotIndex, Slot);
+				CanInsert = true;
+				break;
+			}
+			
+			if (Slot.DA_Item == InsertingSlot.DA_Item)
+			{
+				if (Slot.Quantity < Slot.DA_Item->MaxQuantity)
+				{
+					int16 CombinedQuantity = static_cast<int16>(Slot.Quantity) + InsertingLeft;
+					if (CombinedQuantity > InsertingSlot.DA_Item->MaxQuantity)
+					{
+						SlotsOverflow.Add(SlotIndex);
+						InsertingLeft = CombinedQuantity - static_cast<int16>(InsertingSlot.DA_Item->MaxQuantity);
+					}
+					else
+					{
+						Slot.Quantity = static_cast<uint8>(CombinedQuantity);
+						Multicast_ChangeSlot(SlotIndex, Slot);
+						CanInsert = true;
+						break;
+					}
+				}
+			}
+			SlotIndex++;
+		}
+
+		if (CanInsert)
+		{
+			for (int i = 0; i < SlotsOverflow.Num(); ++i)
+			{
+				SlotIndex = SlotsOverflow[i];
+				FSlot NewSlot;
+				NewSlot.DA_Item = InsertingSlot.DA_Item;
+				NewSlot.Quantity = InsertingSlot.DA_Item->MaxQuantity;
+				NewSlot.Properties = Slots[SlotIndex].Properties;
+				Multicast_ChangeSlot(SlotIndex, NewSlot);
+			}
+			Multicast_OnInsertSlotBroadcast(InsertingSlot);
 			return true;
 		}
-		SlotIndex++;
 	}
+	else
+	{
+		for (FSlot Slot : Slots)
+		{
+			if (!IsValid(Slot.DA_Item))
+			{
+				Multicast_ChangeSlot(SlotIndex, InsertingSlot);
+				Multicast_OnInsertSlotBroadcast(InsertingSlot);
+				return true;
+			}
+			SlotIndex++;
+		}
+	}
+	
+	Multicast_OnInsertSlotFailedBroadcast();
 	return false;
 }
 
-void UInventory::Multicast_OnInsertSlotBroadcast_Implementation(int32 SlotIndex)
+void UInventory::Multicast_OnInsertSlotFailedBroadcast_Implementation()
 {
-	OnInsertSlot.Broadcast(SlotIndex);
+	OnInsertSlotFailed.Broadcast();
+}
+
+void UInventory::Multicast_OnInsertSlotBroadcast_Implementation(FSlot InsertedSlot)
+{
+	OnInsertSlot.Broadcast(InsertedSlot);
 }
 
 void UInventory::Multicast_ChangeSlot_Implementation(int32 SlotIndex, FSlot NewSlot)
@@ -62,15 +128,15 @@ void UInventory::DropIn(int32 SlotIndex, UInventory* DragInventory, int32 DragSl
 	{
 		if (Slot.DA_Item == DragSlot.DA_Item) // if items match
 		{
-			if (Slot.DA_Item->Stacking && Slot.Quantity < Slot.DA_Item->MaxStacking) // If can stack and not full stack
+			if (Slot.DA_Item->bCanStack && Slot.Quantity < Slot.DA_Item->MaxQuantity) // If can stack and not full stack
 			{
 				int16 AddedQuantities = static_cast<int16>(Slot.Quantity) + static_cast<int16>(DragQuantity);
-				if (AddedQuantities > Slot.DA_Item->MaxStacking) // if new stack is overflows?
+				if (AddedQuantities > Slot.DA_Item->MaxQuantity) // if new stack is overflows?
 				{
-					Slot.Quantity = Slot.DA_Item->MaxStacking;
+					Slot.Quantity = Slot.DA_Item->MaxQuantity;
 					Multicast_ChangeSlot(SlotIndex, Slot);
 					
-					uint16 LeftAddedQuantity = AddedQuantities - static_cast<int16>(Slot.DA_Item->MaxStacking);
+					uint16 LeftAddedQuantity = AddedQuantities - static_cast<int16>(Slot.DA_Item->MaxQuantity);
 					DragSlot.Quantity = static_cast<uint8>(LeftAddedQuantity) + DragLeftQuantity;
 					DragInventory->Multicast_ChangeSlot(DragSlotIndex, DragSlot);
 				}
@@ -92,11 +158,12 @@ void UInventory::DropIn(int32 SlotIndex, UInventory* DragInventory, int32 DragSl
 			}
 			else Swap(SlotIndex, DragInventory, DragSlotIndex);
 		}
+		else Swap(SlotIndex, DragInventory, DragSlotIndex);
 	}
 	else
 	{
-		Slot.Quantity = DragQuantity;
-		Multicast_ChangeSlot(SlotIndex, Slot);
+		DragSlot.Quantity = DragQuantity;
+		Multicast_ChangeSlot(SlotIndex, DragSlot);
 		
 		if (DragLeftQuantity > 0) // Double code!
 		{
@@ -137,8 +204,8 @@ void UInventory::Swap(int32 SlotIndex, UInventory* OtherInventory, int32 OtherSl
 	const FSlot Slot = Slots[SlotIndex];
 	if (!CanDropIn(Slot)) return;
 
-	Multicast_ChangeSlot(OtherSlotIndex, OtherSlot);
-	OtherInventory->Multicast_ChangeSlot(SlotIndex, Slot);
+	Multicast_ChangeSlot(SlotIndex, OtherSlot);
+	OtherInventory->Multicast_ChangeSlot(OtherSlotIndex, Slot);
 }
 
 void UInventory::Spend(FSlot SpendSlot)

@@ -24,5 +24,5 @@ struct FItemComponentParameters
 	TArray<FString> Strings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<UDA_Item*> Items;
+	TArray<class UDA_Item*> Items;
 };

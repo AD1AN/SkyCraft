@@ -77,17 +77,17 @@ void AResource::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AResource::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
+void AResource::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
 	InteractOut.Success = false;
 }
 
-void AResource::ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const
+void AResource::ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut)
 {
 	
 }
 
-void AResource::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const
+void AResource::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut)
 {
 }
 
@@ -116,17 +116,20 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 			}
 			HealthSystem->DefaultTextForNonInclusive = aud_hs->DefaultTextForNonInclusive;
 			HealthSystem->ImmuneToDamageDataAssets = aud_hs->ImmuneToDamageDataAssets;
-			HealthSystem->DamageFX = aud_hs->DamageFX;
-			HealthSystem->DamageFXDefault = aud_hs->DamageFXDefault;
-			HealthSystem->DieFX = aud_hs->DieFX;
-			HealthSystem->DieFXDefault = aud_hs->DieFXDefault;
+
+			UStaticMesh* SizeSM = CurrentSize.SM_Variety[SM_Variety];
+			HealthSystem->DamageFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DamageFXDefault, SizeSM);
+			HealthSystem->DamageFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DamageFX, SizeSM);
+			HealthSystem->DieFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DieFXDefault, SizeSM);
+			HealthSystem->DieFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DieFX, SizeSM);
+			HealthSystem->AttenuationSettings = aud_hs->AttenuationSettings;
 			HealthSystem->DieHandle = aud_hs->DieHandle;
 			continue;
 		}
 	}
 }
 
-void AResource::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
+void AResource::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
 	InteractOut.Success = true;
 }
@@ -135,7 +138,7 @@ void AResource::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION(AResource, DA_Resource, COND_None);
-	DOREPLIFETIME_CONDITION(AResource, ResourceSize, COND_None);
-	DOREPLIFETIME_CONDITION(AResource, SM_Variety, COND_None);
+	DOREPLIFETIME_CONDITION(AResource, DA_Resource, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AResource, ResourceSize, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AResource, SM_Variety, COND_InitialOnly);
 }

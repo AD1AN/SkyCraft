@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "SkyCraft/Enums/EquipmentType.h"
-#include "SkyCraft/IC.h"
+#include "SkyCraft/Components/ItemComponent.h"
 #include "SkyCraft/Structs/ItemProperty.h"
 #include "SkyCraft/Structs/ItemComponentParameters.h"
 #include "Engine/DataAsset.h"
@@ -34,10 +34,10 @@ public:
 	TSoftObjectPtr<UStaticMesh> ItemStaticMesh;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	bool Stacking = false;
+	bool bCanStack = false;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="Stacking", EditConditionHides))
-	uint8 MaxStacking = 1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bCanStack", EditConditionHides))
+	uint8 MaxQuantity = 1;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite) // ReadWrite - because of error for SearchInProperties()
 	TArray<FItemProperty> InitialProperties;
@@ -55,7 +55,7 @@ public:
 	EItemType ItemType;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType!=EItemType::Item", EditConditionHides))
-	TSubclassOf<UIC> ItemComponent;
+	TSubclassOf<UItemComponent> ItemComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType!=EItemType::Item", EditConditionHides))
 	FItemComponentParameters ItemComponentParameters;

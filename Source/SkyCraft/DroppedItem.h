@@ -21,7 +21,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class UNiagaraComponent* NiagaraComponent = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class USuffocationSystem* SuffocationSystem = nullptr;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UInteractSystem* InteractSystem = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class UInteractSystem* InteractSystem = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly)
 	AActor* PlayerPickedUp = nullptr;
@@ -29,6 +29,9 @@ public:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn="true"))
 	AActor* AttachedToIsland = nullptr;
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_AttachTo(USceneComponent* SceneComponent);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true"), Replicated)
 	FSlot Slot;
@@ -42,6 +45,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true"))
 	FVector2D RandomMagnitude = FVector2D(1,4);
 
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFailPickUp, ADroppedItem*, DroppedItem);
+	UPROPERTY(BlueprintAssignable) FOnFailPickUp OnFailPickUp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn))
+	TArray<AActor*> IgnorePlayers;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -49,14 +58,15 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const override;
-	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const override;
-	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const override;
-	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const override;
+	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;
+	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;
+	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) override;
+	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) override;
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void PickedUp(AActor* Player = nullptr);
+	void StartPickUp(AActor* Player = nullptr);
+	void FailPickUp();
 	
 private:
 	void OnMeshLoaded();

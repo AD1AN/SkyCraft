@@ -3,6 +3,7 @@
 #include "DroppedItem.h"
 #include "AdianFL.h"
 #include "NiagaraComponent.h"
+#include "Components/Inventory.h"
 #include "Components/SphereComponent.h"
 #include "SkyCraft/Components/InteractSystem.h"
 #include "SkyCraft/Components/SuffocationSystem.h"
@@ -22,7 +23,7 @@ ADroppedItem::ADroppedItem()
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	SetRootComponent(SphereComponent);
 	SphereComponent->InitSphereRadius(10.0f);
-	SphereComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly); // If EnableQuery then PickedUp() can happen faster BeginPlay()
+	SphereComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly); // If EnableQuery then StartPickUp() can happen faster BeginPlay()
 	SphereComponent->SetUseCCD(true); // Stops falling through the ground at high velocity.
 	
 	// SphereComponent Physics
@@ -40,7 +41,7 @@ ADroppedItem::ADroppedItem()
 
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraComponent"));
 	NiagaraComponent->SetupAttachment(SphereComponent);
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> NiagaraSystemAsset(TEXT("/Game/Particles/NS_Essence.NS_Essence"));
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> NiagaraSystemAsset(TEXT("/Game/Niagara/NS_DroppedItem.NS_DroppedItem"));
 	if (NiagaraSystemAsset.Succeeded()) NiagaraComponent->SetAsset(NiagaraSystemAsset.Object);
 	
 	SuffocationSystem = CreateDefaultSubobject<USuffocationSystem>(TEXT("SuffocationSystem"));
@@ -69,12 +70,10 @@ void ADroppedItem::BeginPlay()
 		SphereComponent->SetSimulatePhysics(true);
 		if (IsValid(AttachedToIsland))
 		{
-			USceneComponent* AttachScene = Cast<USceneComponent>(AttachedToIsland->FindComponentByTag(USceneComponent::StaticClass(), "AttachedPhysicsObjects"));
+			USceneComponent* AttachScene = AttachedToIsland->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
 			if (IsValid(AttachScene))
 			{
-				FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepWorldTransform);
-				AttachmentTransformRules.bWeldSimulatedBodies = true;
-				AttachToComponent(AttachScene, AttachmentTransformRules);
+				Multicast_AttachTo(AttachScene);
 			}
 		}
 
@@ -124,35 +123,51 @@ void ADroppedItem::BeginPlay()
 		FStreamableManager& StreamableManager = UAssetManager::GetStreamableManager();
 		StreamableManager.RequestAsyncLoad(Slot.DA_Item->ItemStaticMesh.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ADroppedItem::OnMeshLoaded));
 	}
-	SphereComponent->SetCollisionProfileName("ItemLoot"); // Prevents PickedUp() trigger faster BeginPlay()
+	SphereComponent->SetCollisionProfileName("ItemLoot"); // Prevents StartPickUp() trigger faster BeginPlay()
 }
 
 void ADroppedItem::Tick(float DeltaSeconds)
 {
 	if (PlayerPickedUp)
 	{
-		if (!IsValid(PlayerPickedUp)) Destroy(); // TODO: Reset state instead of destroying it
+		if (!IsValid(PlayerPickedUp)) FailPickUp();
 	
 		RelativeDistanceInterpolation = FMath::FInterpTo(RelativeDistanceInterpolation, 1.0f,DeltaSeconds,2);
 		const FVector RelativeDistance = PlayerPickedUp->GetActorLocation() - GetActorLocation();
 		SetActorLocation(GetActorLocation() + (RelativeDistance * RelativeDistanceInterpolation));
-		if (FVector::Distance(GetActorLocation(), PlayerPickedUp->GetActorLocation()) <= 10.0f)
+		if (FVector::Distance(GetActorLocation(), PlayerPickedUp->GetActorLocation()) <= 25.0f)
 		{
-			Destroy();
+			UInventory* PlayerInventory = PlayerPickedUp->FindComponentByTag<UInventory>("Inventory");
+			if (IsValid(PlayerInventory))
+			{
+				if (PlayerInventory->InsertSlot(Slot)) Destroy();
+				else FailPickUp();
+			}
+			else
+			{
+				FailPickUp();
+			}
 		}
 	}
+}
+
+void ADroppedItem::Multicast_AttachTo_Implementation(USceneComponent* SceneComponent)
+{
+	FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepWorldTransform);
+	AttachmentTransformRules.bWeldSimulatedBodies = true;
+	AttachToComponent(SceneComponent, AttachmentTransformRules);
 }
 
 void ADroppedItem::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
-	
+
 	AActor* RootActor = UAdianFL::GetRootActor(Other);
 	
 	if (!IsValid(RootActor)) return;
 	if (AttachedToIsland != RootActor)
 	{
-		USceneComponent* APO = Cast<USceneComponent>(RootActor->FindComponentByTag(USceneComponent::StaticClass(), "AttachedPhysicsObjects"));
+		USceneComponent* APO = RootActor->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
 		if (!IsValid(APO)) return;
 		FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepWorldTransform);
 		AttachmentTransformRules.bWeldSimulatedBodies = true;
@@ -165,20 +180,32 @@ void ADroppedItem::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimit
 	}
 }
 
-void ADroppedItem::PickedUp(AActor* Player)
+void ADroppedItem::StartPickUp(AActor* Player)
 {
 	if (!IsValid(Player))
 	{
-		Destroy();
-		GEngine->AddOnScreenDebugMessage(-1,555.0f,FColor::Red,TEXT("DroppedItem: PickedUp() Player is not valid! fix it!"));
+		GEngine->AddOnScreenDebugMessage(-1,555.0f,FColor::Red,TEXT("DroppedItem: StartPickUp() Player is not valid! fix it!"));
 		return;
 	}
+	if (IgnorePlayers.Contains(Player)) return;
 	
 	PlayerPickedUp = Player;
 	SphereComponent->SetSimulatePhysics(false);
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	InteractSystem->SetInteractable(false);
+	RelativeDistanceInterpolation = 0;
 	SetActorTickEnabled(true);
+}
+
+void ADroppedItem::FailPickUp()
+{
+	if (IsValid(PlayerPickedUp)) IgnorePlayers.Add(PlayerPickedUp);
+	// OnFailPickUp.Broadcast(this);
+	SetActorTickEnabled(false);
+	PlayerPickedUp = nullptr;
+	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	SphereComponent->SetSimulatePhysics(true);
+	InteractSystem->SetInteractable(true);
 }
 
 void ADroppedItem::OnMeshLoaded()
@@ -189,17 +216,17 @@ void ADroppedItem::OnMeshLoaded()
 	SetupStaticMesh();
 }
 
-void ADroppedItem::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
+void ADroppedItem::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
 	InteractOut.Success = false;
 }
 
-void ADroppedItem::ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const
+void ADroppedItem::ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut)
 {
 	
 }
 
-void ADroppedItem::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const
+void ADroppedItem::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut)
 {
 }
 
@@ -209,8 +236,14 @@ void ADroppedItem::SetupStaticMesh()
 	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
 }
 
-void ADroppedItem::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const
+void ADroppedItem::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
+	UInventory* PlayerInventory = InteractIn.Pawn->FindComponentByTag<UInventory>("Inventory");
+	if (!IsValid(PlayerInventory)) return;
+	if (PlayerInventory->InsertSlot(Slot))
+	{
+		Destroy();
+	}
 	InteractOut.Success = true;
 }
 

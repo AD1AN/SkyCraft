@@ -64,7 +64,15 @@ public:
 
 	static bool RandomBoolWithWeight(float Weight);
 	static FVector RandomPointInRelativeBox(const AActor* Actor, const FRelativeBox RelativeBox);
-	
+
+	// Return most root actor, if there's no root actor then return self.
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static AActor* GetRootActor(AActor* StartActor);
+	
+	// Return most root actor, if there's no root actor then return nullptr.
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static AActor* FindRootActor(AActor* StartActor);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static FVector ToLocalSpace(FVector WorldLocation, AActor* ToActor);
 };

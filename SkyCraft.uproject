@@ -146,10 +146,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "CameraShakePreviewer",
-			"Enabled": false
-		},
-		{
 			"Name": "CableComponent",
 			"Enabled": false
 		},

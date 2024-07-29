@@ -32,7 +32,7 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 			{
 				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn);
 				
-				const IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(GetOwner());
+				IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(GetOwner());
 				if (Interact_CPP)
 				{
 					FInterruptIn InterruptIn;

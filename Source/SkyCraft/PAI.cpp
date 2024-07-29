@@ -13,7 +13,7 @@ void APAI::Server_InterruptActor_Implementation(AActor* InterruptActor, EInterru
 	InteractSystem->RemoveProlonged(Pawn);
 	InteractSystem->OnServerInterrupted.Broadcast(InterruptedBy, InteractKey, Pawn);
 
-	const IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(InterruptActor);
+	IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(InterruptActor);
 	if (Interact_CPP)
 	{
 		FInterruptIn InterruptIn;

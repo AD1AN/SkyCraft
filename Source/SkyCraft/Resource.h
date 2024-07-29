@@ -59,10 +59,10 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const override;
-	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) const override;
-	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const override;
-	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) const override;
+	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;
+	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;
+	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) override;
+	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) override;
 
 private:
 	UFUNCTION()

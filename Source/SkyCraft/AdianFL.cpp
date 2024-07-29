@@ -133,16 +133,38 @@ FVector UAdianFL::RandomPointInRelativeBox(const AActor* Actor, const FRelativeB
 
 AActor* UAdianFL::GetRootActor(AActor* StartActor)
 {
-	if (!IsValid(StartActor)) return nullptr;
+	if (!StartActor) return nullptr;
 
 	AActor* CurrentParent = StartActor;
 	AActor* LastValidParent = CurrentParent;
 
-	while (IsValid(CurrentParent))
+	while (CurrentParent)
 	{
 		LastValidParent = CurrentParent;
 		CurrentParent = CurrentParent->GetAttachParentActor();
 	}
 
 	return LastValidParent;
+}
+
+AActor* UAdianFL::FindRootActor(AActor* StartActor)
+{
+	if (!StartActor) return nullptr;
+
+	AActor* CurrentParent = StartActor;
+	AActor* LastValidParent = CurrentParent;
+
+	while (CurrentParent)
+	{
+		LastValidParent = CurrentParent;
+		CurrentParent = CurrentParent->GetAttachParentActor();
+	}
+
+	if (LastValidParent == StartActor) return nullptr;
+	return LastValidParent;
+}
+
+FVector UAdianFL::ToLocalSpace(FVector WorldLocation, AActor* ToActor)
+{
+	return ToActor->GetTransform().InverseTransformPosition(WorldLocation);
 }
