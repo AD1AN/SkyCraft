@@ -174,7 +174,7 @@ void ADroppedItem::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimit
 		AttachToComponent(APO, AttachmentTransformRules);
 		AttachedToIsland = RootActor;
 	}
-	if (FMath::Acos(FVector::DotProduct(HitNormal, FVector::UpVector)) <= 89.0f)
+	if (FMath::Acos(FVector::DotProduct(HitNormal, FVector::UpVector)) <= 45.0f)
 	{
 		SphereComponent->PutRigidBodyToSleep();
 	}

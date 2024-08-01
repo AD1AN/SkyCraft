@@ -27,7 +27,7 @@ public:
 	float SuffocationAltitudeUnder = -1000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SuffocationAltitudeAbove = 130000.0f;
+	float SuffocationAltitudeAbove = 200000.0f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ESuffocationType SuffocationType = ESuffocationType::TickDamagePercent;
