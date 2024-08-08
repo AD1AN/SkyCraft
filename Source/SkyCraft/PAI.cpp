@@ -4,12 +4,11 @@
 #include "PAI.h"
 #include "Net/UnrealNetwork.h"
 #include "SkyCraft/Components/InteractSystem.h"
-#include "Interfaces/InteractSystemInterface.h"
 #include "Interfaces/Interact_CPP.h"
 
 void APAI::Server_InterruptActor_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI)
 {
-	UInteractSystem* InteractSystem = IInteractSystemInterface::Execute_GetInteractSystem(InterruptActor);
+	UInteractSystem* InteractSystem = InterruptActor->FindComponentByClass<UInteractSystem>();
 	InteractSystem->RemoveProlonged(Pawn);
 	InteractSystem->OnServerInterrupted.Broadcast(InterruptedBy, InteractKey, Pawn);
 
@@ -28,7 +27,7 @@ void APAI::Server_InterruptActor_Implementation(AActor* InterruptActor, EInterru
 
 void APAI::Client_InterruptActor_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI)
 {
-	const UInteractSystem* InteractSystem = IInteractSystemInterface::Execute_GetInteractSystem(InterruptActor);
+	const UInteractSystem* InteractSystem = InterruptActor->FindComponentByClass<UInteractSystem>();
 	InteractSystem->OnClientInterrupted.Broadcast(InterruptedBy, InteractKey, Pawn);
 	
 	IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(InterruptActor);

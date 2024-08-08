@@ -1,6 +1,5 @@
 // ADIAN Copyrighted
 
-
 #include "SkyActor.h"
 
 ASkyActor::ASkyActor()

@@ -1,20 +1,20 @@
 // ADIAN Copyrighted
 
-
 #include "EntityGenerator.h"
 #include "Math/RandomStream.h"
 #include "HealthSystem.h"
 #include "SkyCraft/AdianFL.h"
+#include "SkyCraft/Island.h"
+#include "SkyCraft/Structs/SS_IslandStatic.h"
 #include "SkyCraft/Resource.h"
-#include "SkyCraft/DataAssets/DA_Resource.h"
 #include "SkyCraft/NPC.h"
+#include "SkyCraft/DataAssets/DA_Resource.h"
 
 UEntityGenerator::UEntityGenerator()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
-
 void UEntityGenerator::SetupGenerator(FSetupGeneratorIn SetupGeneratorIn)
 {
 	AreaSize = SetupGeneratorIn.AreaSize;
@@ -23,10 +23,9 @@ void UEntityGenerator::SetupGenerator(FSetupGeneratorIn SetupGeneratorIn)
 	GroundAltitude = SetupGeneratorIn.GroundAltitude;
 	LinetraceLength = SetupGeneratorIn.LinetraceLength;
 }
-
 void UEntityGenerator::GenerateResources(FGenerateResourcesIn GenerateResourcesIn)
 {
-	if (!GenerateResourcesIn.DA_Resource) return;
+	if (!IsValid(GenerateResourcesIn.DA_Resource)) return;
 	const uint32 _SpawnPoints = GenerateResourcesIn.MaxSpawnPoints / ((3-ScaleRatio) - (ScaleRatio));
 	const float _GridSize = sqrt(_SpawnPoints);
 	const float _CellSize = AreaSize / _GridSize;
@@ -39,6 +38,9 @@ void UEntityGenerator::GenerateResources(FGenerateResourcesIn GenerateResourcesI
 
 	const float _IslandScale = FMath::Clamp(ScaleRatio, 0.25f, 0.5f);
 
+	FEntities* FoundLOD = SpawnedLODs.Find(GenerateResourcesIn.LOD);
+	if (!FoundLOD) FoundLOD = &SpawnedLODs.Add(GenerateResourcesIn.LOD, FEntities{});
+	
 	for (uint16 _Row = 0; _Row < _GridSize-1; ++_Row)
 	{
 		for (uint16 _Column = 0; _Column < _GridSize-1; ++_Column)
@@ -57,7 +59,7 @@ void UEntityGenerator::GenerateResources(FGenerateResourcesIn GenerateResourcesI
 			{
 				if (UAdianFL::ActorHasSkyTags(HitResult.GetActor(), CollisionSkyTags))
 				{
-					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.MaxFloorSlope)
+					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateResourcesIn.DA_Resource->MaxFloorSlope)
 					{
 						FTransform ResTransform;
 						ResTransform.SetLocation(HitResult.ImpactPoint);
@@ -72,7 +74,7 @@ void UEntityGenerator::GenerateResources(FGenerateResourcesIn GenerateResourcesI
 						SpawnedRes->SM_Variety = (VarietyNum >= 1) ? _StreamX.RandRange(0, VarietyNum-1) : 0;
 						SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepWorldTransform);
 						SpawnedRes->FinishSpawning(ResTransform);
-						SpawnedResources.Add(SpawnedRes);
+						FoundLOD->Resources.Add(SpawnedRes);
 					}
 				}
 			}
@@ -85,7 +87,6 @@ void UEntityGenerator::GenerateResources(FGenerateResourcesIn GenerateResourcesI
 	}
 	Generations++;
 }
-
 void UEntityGenerator::GenerateNPCs(FGenerateNPCsIn GenerateNPCsIn)
 {
 	if (!GenerateNPCsIn.NPC_Class) return;
@@ -94,12 +95,17 @@ void UEntityGenerator::GenerateNPCs(FGenerateNPCsIn GenerateNPCsIn)
 	const float _CellSize = AreaSize / _GridSize;
 	const float _MaxOffset = _CellSize * 0.25f;
 
+	if (!IsValid(GetOwner())) return;
+	AIsland* Island = Cast<AIsland>(GetOwner());
 	FVector ActorLoc = GetOwner()->GetActorLocation();
 
 	FRandomStream _StreamX = GeneratorSeed + Generations;
 	FRandomStream _StreamY = GeneratorSeed + Generations + 1;
 
 	const float _IslandScale = FMath::Clamp(ScaleRatio, 0.25f, 0.5f);
+	
+	FEntities* FoundLOD = SpawnedLODs.Find(GenerateNPCsIn.LOD);
+	if (!FoundLOD) FoundLOD = &SpawnedLODs.Add(GenerateNPCsIn.LOD, FEntities{});
 
 	for (uint16 _Row = 0; _Row < _GridSize-1; ++_Row)
 	{
@@ -124,65 +130,121 @@ void UEntityGenerator::GenerateNPCs(FGenerateNPCsIn GenerateNPCsIn)
 						FTransform ResTransform;
 						ResTransform.SetLocation(HitResult.ImpactPoint + FVector(0,0,46));
 						ResTransform.SetRotation(FQuat(FRotator(0,_StreamX.FRandRange(-359.0f, 359.0f),0)));
-						ANPC* SpawnedNPC = GetWorld()->SpawnActor<ANPC>(GenerateNPCsIn.NPC_Class, ResTransform);
-						SpawnedNPCs.Add(SpawnedNPC);
-						// DrawDebugPoint(GetWorld(), ResTransform.GetLocation(), 20.f, FColor::Green, false, 555);
+						ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(GenerateNPCsIn.NPC_Class, ResTransform);
+						SpawnedNPC->Island = Island;
+						SpawnedNPC->FinishSpawning(ResTransform);
+						FoundLOD->NPCs.Add(SpawnedNPC);
 					}
 				}
 			}
 			_StreamX = _StreamX.GetUnsignedInt();
 			_StreamY = _StreamY.GetUnsignedInt();
-			
-			// UE_LOG(LogTemp, Warning, TEXT("%f"), FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))));
-			// DrawDebugLine(GetWorld(), StartLoc, EndLoc, FColor::Red, false, 555);
 		}
 	}
 	Generations++;
 }
-
-void UEntityGenerator::LoadResources(TArray<FSS_Resource> Resources)
+TArray<FSS_IslandLOD> UEntityGenerator::SaveLODs()
 {
-	for (const FSS_Resource res : Resources)
+	TArray<FSS_IslandLOD> SavedLODs;
+	for (const TPair<int32, FEntities>& LOD : SpawnedLODs)
 	{
-		if (!res.DA_Resource) continue;
+		FSS_IslandLOD SavingLOD;
+		SavingLOD.LOD = LOD.Key;
+		
+		for (AResource* Res : LOD.Value.Resources)
+		{
+			if (!IsValid(Res)) continue;
+			FSS_Resource SS_Res;
+			SS_Res.RelativeLocation = Res->StaticMeshComponent->GetRelativeLocation();
+			SS_Res.RelativeRotation = Res->StaticMeshComponent->GetRelativeRotation();
+			SS_Res.DA_Resource = Res->DA_Resource;
+			SS_Res.ResourceSize = Res->ResourceSize;
+			SS_Res.SM_Variety = Res->SM_Variety;
+			SS_Res.Health = Res->HealthSystem->Health;
+			SS_Res.Growing = Res->Growing;
+			SS_Res.GrowMarkTime = Res->GrowMarkTime;
+			SS_Res.GrowSavedTime = Res->GrowSavedTime;
+			SavingLOD.Resources.Add(SS_Res);
+		}
+		
+		for (ANPC* NPC : LOD.Value.NPCs)
+		{
+			if (!IsValid(NPC)) continue;
+			FSS_NPC SS_NPC;
+			SS_NPC = NPC->SaveNPC();
+			SavingLOD.NPCs.Add(SS_NPC);
+		}
+		
+		SavedLODs.Add(SavingLOD);
+	}
+	return SavedLODs;
+}
+void UEntityGenerator::LoadResources(TArray<FSS_Resource> Resources, int32 LOD)
+{
+	if (Resources.IsEmpty()) return;
+	FEntities* SpawnedLOD = SpawnedLODs.Find(LOD);
+	if (!SpawnedLOD) SpawnedLOD = &SpawnedLODs.Add(LOD, FEntities{});
+	for (const FSS_Resource Res : Resources)
+	{
+		if (!Res.DA_Resource) continue;
 		FTransform ResTransform;
-		ResTransform.SetLocation(res.RelativeLocation);
-		ResTransform.SetRotation(FQuat(res.RelativeRotation));
-		TSubclassOf<AResource> ResourceClass = (res.DA_Resource->OverrideResourceClass) ? res.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+		ResTransform.SetLocation(Res.RelativeLocation);
+		ResTransform.SetRotation(FQuat(Res.RelativeRotation));
+		TSubclassOf<AResource> ResourceClass = (Res.DA_Resource->OverrideResourceClass) ? Res.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
 		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
 		SpawnedRes->bLoaded = true;
-		SpawnedRes->LoadHealth = res.Health;
-		SpawnedRes->DA_Resource = res.DA_Resource;
-		SpawnedRes->ResourceSize = res.ResourceSize;
-		SpawnedRes->SM_Variety = res.SM_Variety;
-		SpawnedRes->Growing = res.Growing;
-		SpawnedRes->GrowMarkTime = res.GrowMarkTime;
-		SpawnedRes->GrowSavedTime = res.GrowSavedTime;
+		SpawnedRes->LoadHealth = Res.Health;
+		SpawnedRes->DA_Resource = Res.DA_Resource;
+		SpawnedRes->ResourceSize = Res.ResourceSize;
+		SpawnedRes->SM_Variety = Res.SM_Variety;
+		SpawnedRes->Growing = Res.Growing;
+		SpawnedRes->GrowMarkTime = Res.GrowMarkTime;
+		SpawnedRes->GrowSavedTime = Res.GrowSavedTime;
 		SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
 		SpawnedRes->FinishSpawning(ResTransform);
-		SpawnedResources.Add(SpawnedRes);
+		SpawnedLOD->Resources.Add(SpawnedRes);
 	}
 }
-
-TArray<FSS_Resource> UEntityGenerator::SaveResources()
+void UEntityGenerator::LoadNPCs(TArray<FSS_NPC> NPCs, int32 LOD)
 {
-	TArray<FSS_Resource> SavedResources;
-	for (const AResource* Res : SpawnedResources)
+	if (NPCs.IsEmpty()) return;
+	FEntities* SpawnedLOD = SpawnedLODs.Find(LOD);
+	if (!SpawnedLOD) SpawnedLOD = &SpawnedLODs.Add(LOD, FEntities{});
+	for (const FSS_NPC npc : NPCs)
 	{
-		if (IsValid(Res))
+		if (!IsValid(npc.NPC_Class)) return;
+		ANPC* SpawnedNPC = GetWorld()->SpawnActor<ANPC>(npc.NPC_Class, npc.Transform);
+		SpawnedNPC->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
+		SpawnedNPC->HealthSystem->Health = npc.Health;
+		SpawnedNPC->LoadNPC(npc);
+		SpawnedLOD->NPCs.Add(SpawnedNPC);
+	}
+}
+bool UEntityGenerator::LoadLOD(TArray<FSS_IslandLOD> SS_LODs, int32 LoadLOD)
+{
+	for (const FSS_IslandLOD SS_LOD : SS_LODs)
+	{
+		if (SS_LOD.LOD != LoadLOD) continue;
+		LoadResources(SS_LOD.Resources, LoadLOD);
+		LoadNPCs(SS_LOD.NPCs, LoadLOD);
+		return true;
+	}
+	return false;
+}
+void UEntityGenerator::DestroyLODs()
+{
+	for (TPair<int32, FEntities> LOD : SpawnedLODs)
+	{
+		for (AResource* Res : LOD.Value.Resources)
 		{
-			FSS_Resource SW_Res;
-			SW_Res.RelativeLocation = Res->StaticMeshComponent->GetRelativeLocation();
-			SW_Res.RelativeRotation = Res->StaticMeshComponent->GetRelativeRotation();
-			SW_Res.DA_Resource = Res->DA_Resource;
-			SW_Res.ResourceSize = Res->ResourceSize;
-			SW_Res.SM_Variety = Res->SM_Variety;
-			SW_Res.Health = Res->HealthSystem->Health;
-			SW_Res.Growing = Res->Growing;
-			SW_Res.GrowMarkTime = Res->GrowMarkTime;
-			SW_Res.GrowSavedTime = Res->GrowSavedTime;
-			SavedResources.Add(SW_Res);
+			if (!IsValid(Res)) return;
+			Res->Destroy();
+		}
+		for (ANPC* NPC : LOD.Value.NPCs)
+		{
+			if (!IsValid(NPC)) return;
+			NPC->Destroy();
 		}
 	}
-	return SavedResources;
+	SpawnedLODs.Empty();
 }

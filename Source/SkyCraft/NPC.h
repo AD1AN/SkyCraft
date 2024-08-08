@@ -5,23 +5,22 @@
 #include "NPC.generated.h"
 
 class UHealthSystem;
-class USkyTags;
+class AIsland;
 struct FSS_NPC;
 
 UCLASS()
 class SKYCRAFT_API ANPC : public AVoxelCharacter
 {
 	GENERATED_BODY()
-
 public:
 	ANPC();
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) UHealthSystem* HealthSystem;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UHealthSystem* HealthSystem;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) AIsland* Island;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FSS_NPC SaveNPC();
-	
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	bool LoadNPC(FSS_NPC NPC_Parameters);
+	virtual void BeginPlay() override;
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) FSS_NPC SaveNPC();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) bool LoadNPC(FSS_NPC NPC_Parameters);
+	UFUNCTION() void ChangedLOD();
+	UFUNCTION() void UpdateSettings();
 };

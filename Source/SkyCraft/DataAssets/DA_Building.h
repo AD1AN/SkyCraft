@@ -15,44 +15,18 @@ UCLASS(BlueprintType)
 class SKYCRAFT_API UDA_Building : public UDataAsset
 {
 	GENERATED_BODY()
-
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FText Name;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UTexture2D* Icon;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TSubclassOf<ABuilding> ActorClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FSlot> RequiredItems;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bTraceFromStart;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float YawRotation = 90.0f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	bool bFreeBuilding;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
-	EBuildingSnapType SnapType;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
-	bool bCheckGrounded = true;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
-	bool bGridSnaps;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
-	bool bOnlySnaps; // If true - can be placed on snaps
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
-	bool bShowSnaps;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides))
-	bool bDependBySnap;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) FText Name;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) UTexture2D* Icon = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TSubclassOf<ABuilding> ActorClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<FSlot> RequiredItems;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bTraceFromStart;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) float YawRotation = 90.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) bool bFreeBuilding;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides)) EBuildingSnapType SnapType;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides)) bool bCheckGrounded = true;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides)) bool bGridSnaps;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides)) bool bOnlySnaps; // If true - can be placed on snaps
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides)) bool bShowSnaps;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="!bFreeBuilding", EditConditionHides)) bool bDependBySnap;
 };

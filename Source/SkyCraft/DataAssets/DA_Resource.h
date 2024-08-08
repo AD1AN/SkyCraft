@@ -21,18 +21,10 @@ class SKYCRAFT_API UDA_Resource : public UDataAsset
 	}
 	
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TSubclassOf<AResource> OverrideResourceClass;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TArray<UAssetUserData*> AssetUserData;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TArray<FResourceSize> Size;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TArray<UDA_SkyTag*> SkyTags;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TArray<FInteractKeySettings> InteractKeys;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSubclassOf<AResource> OverrideResourceClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<UAssetUserData*> AssetUserData;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FResourceSize> Size;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<UDA_SkyTag*> SkyTags;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) float MaxFloorSlope = 35.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FInteractKeySettings> InteractKeys;
 };
