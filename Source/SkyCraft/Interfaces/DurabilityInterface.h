@@ -11,21 +11,17 @@ USTRUCT(BlueprintType)
 struct FApplyDurabilityIn
 {
 	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	UDA_Durability* DA_Durability;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_Durability* DA_Durability;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) class UInventory* Inventory = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 SlotIndex;
 };
 
 USTRUCT(BlueprintType)
 struct FApplyDurabilityOut
 {
 	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	bool Applied;
-	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	bool Broke;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool Applied;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool Broke;
 };
 
 UINTERFACE(MinimalAPI)

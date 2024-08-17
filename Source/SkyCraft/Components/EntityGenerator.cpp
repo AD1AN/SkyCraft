@@ -128,7 +128,7 @@ void UEntityGenerator::GenerateNPCs(FGenerateNPCsIn GenerateNPCsIn)
 					if (FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(HitResult.ImpactNormal, FVector::UpVector))) < GenerateNPCsIn.MaxFloorSlope)
 					{
 						FTransform ResTransform;
-						ResTransform.SetLocation(HitResult.ImpactPoint + FVector(0,0,46));
+						ResTransform.SetLocation(HitResult.ImpactPoint + FVector(0,0,100));
 						ResTransform.SetRotation(FQuat(FRotator(0,_StreamX.FRandRange(-359.0f, 359.0f),0)));
 						ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(GenerateNPCsIn.NPC_Class, ResTransform);
 						SpawnedNPC->Island = Island;
@@ -208,12 +208,18 @@ void UEntityGenerator::LoadResources(TArray<FSS_Resource> Resources, int32 LOD)
 void UEntityGenerator::LoadNPCs(TArray<FSS_NPC> NPCs, int32 LOD)
 {
 	if (NPCs.IsEmpty()) return;
+	if (!IsValid(GetOwner())) return;
+	AIsland* Island = Cast<AIsland>(GetOwner());
 	FEntities* SpawnedLOD = SpawnedLODs.Find(LOD);
 	if (!SpawnedLOD) SpawnedLOD = &SpawnedLODs.Add(LOD, FEntities{});
 	for (const FSS_NPC npc : NPCs)
 	{
 		if (!IsValid(npc.NPC_Class)) return;
-		ANPC* SpawnedNPC = GetWorld()->SpawnActor<ANPC>(npc.NPC_Class, npc.Transform);
+		FTransform LoadTransform = npc.Transform;
+		LoadTransform.SetLocation(npc.Transform.GetLocation() + FVector(0,0,100));
+		ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(npc.NPC_Class, LoadTransform);
+		SpawnedNPC->Island = Island;
+		SpawnedNPC->FinishSpawning(LoadTransform);
 		SpawnedNPC->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
 		SpawnedNPC->HealthSystem->Health = npc.Health;
 		SpawnedNPC->LoadNPC(npc);

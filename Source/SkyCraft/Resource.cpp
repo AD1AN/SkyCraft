@@ -11,7 +11,6 @@
 #include "AssetUserData/AUD_OverrideScale.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_HealthSystem.h"
-#include "Enums/DropDirectionType.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
@@ -29,6 +28,7 @@ AResource::AResource()
 	StaticMeshComponent->AddAssetUserData(SkyTags);
 	
 	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
+	
 	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
 	InteractSystem->bInteractable = false;
 }
@@ -49,7 +49,6 @@ void AResource::BeginPlay()
 	ImplementAssetUserData(DA_Resource->AssetUserData);
 	ImplementAssetUserData(CurrentSize.AssetUserData);
 	
-	
 	if (!DA_Resource->InteractKeys.IsEmpty())
 	{
 		InteractSystem->InteractKeys = DA_Resource->InteractKeys;
@@ -61,14 +60,7 @@ void AResource::BeginPlay()
 	
 	HealthSystem->MaxHealth = CurrentSize.Health;
 	HealthSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;
-
-	HealthSystem->bDropItems = true;
-	HealthSystem->DropLocationType = EDropLocationType::RandomPointInBox;
-	FRelativeBox RelativeBox;
-	RelativeBox.RelativeCenter = FVector(0,0,300);
-	RelativeBox.Size = FVector(10,10,200);
-	HealthSystem->DropInRelativeBox = RelativeBox;
-	HealthSystem->DropDirectionType = EDropDirectionType::RandomDirection;
+	
 	HealthSystem->DropItems = CurrentSize.DropItems;
 }
 
@@ -124,6 +116,12 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 			HealthSystem->DieFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DieFX, SizeSM);
 			HealthSystem->AttenuationSettings = aud_hs->AttenuationSettings;
 			HealthSystem->DieHandle = aud_hs->DieHandle;
+			HealthSystem->bDropItems = aud_hs->bDropItems;
+			if (!aud_hs->bDropItems) continue;
+			HealthSystem->DropLocationType = aud_hs->DropLocationType;
+			HealthSystem->DropInRelativeBox = aud_hs->DropInRelativeBox;
+			HealthSystem->DropDirectionType = aud_hs->DropDirectionType;
+			HealthSystem->DropDirection = aud_hs->DropDirection;
 			continue;
 		}
 	}

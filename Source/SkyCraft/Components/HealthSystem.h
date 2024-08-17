@@ -100,27 +100,18 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DieFXDefault;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDataAsset*, FFXArray> DieFX;
 
-	UPROPERTY(EditDefaultsOnly)
-	USoundAttenuation* AttenuationSettings = nullptr;
+	UPROPERTY(EditDefaultsOnly) USoundAttenuation* AttenuationSettings = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) EDieHandle DieHandle;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	EDieHandle DieHandle;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bDropItems = false;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bDropItems = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
 	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
 	FRelativeBox DropInRelativeBox;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
 	EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
 	FVector DropDirection = FVector::ZeroVector;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
 	TArray<FDropItem> DropItems;
 	

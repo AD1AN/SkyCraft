@@ -2,6 +2,7 @@
 
 #include "NPCParameters.h"
 #include "SS_Building.h"
+#include "Slot.h"
 #include "SS_IslandStatic.generated.h"
 
 class UDA_Resource;
@@ -32,6 +33,14 @@ struct FSS_Resource
 };
 
 USTRUCT(BlueprintType)
+struct FSS_DroppedItem
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FVector RelativeLocation = FVector::ZeroVector;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FSlot Slot;
+};
+
+USTRUCT(BlueprintType)
 struct FSS_IslandLOD
 {
 	GENERATED_BODY()
@@ -44,6 +53,7 @@ USTRUCT(BlueprintType)
 struct FSS_IslandStatic
 {
 	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Building> Buildings;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_IslandLOD> IslandLODs;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Building> Buildings;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_DroppedItem> DroppedItems;
 };

@@ -265,6 +265,7 @@ void UInventory::Multicast_AddProperty_Implementation(int32 SlotIndex, FItemProp
 {
 	if (!Slots.IsValidIndex(SlotIndex)) return;
 	Slots[SlotIndex].Properties.Add(NewProperty);
+	OnChangePropertySlot.Broadcast(SlotIndex);
 }
 
 void UInventory::Multicast_ChangeProperty_Implementation(int32 SlotIndex, int32 PropertyIndex, FItemProperty NewProperty)
@@ -272,7 +273,7 @@ void UInventory::Multicast_ChangeProperty_Implementation(int32 SlotIndex, int32 
 	if (!Slots.IsValidIndex(SlotIndex)) return;
 	if (!Slots[SlotIndex].Properties.IsValidIndex(PropertyIndex)) return;
 	Slots[SlotIndex].Properties[PropertyIndex] = NewProperty;
-	OnChangeSlot.Broadcast(SlotIndex);
+	OnChangePropertySlot.Broadcast(SlotIndex);
 }
 
 bool UInventory::IsValidSlot(const UInventory* OtherInventory, const int32 OtherSlotIndex)

@@ -2,7 +2,6 @@
 
 #include "NPC.h"
 #include "Island.h"
-#include "GameFramework/PawnMovementComponent.h"
 #include "SkyCraft/Components/HealthSystem.h"
 #include "SkyCraft/Structs/SS_IslandStatic.h"
 

@@ -19,6 +19,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) AIsland* Island;
 
 	virtual void BeginPlay() override;
+	// virtual void Tick(float DeltaSeconds) override;
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) FSS_NPC SaveNPC();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) bool LoadNPC(FSS_NPC NPC_Parameters);
 	UFUNCTION() void ChangedLOD();

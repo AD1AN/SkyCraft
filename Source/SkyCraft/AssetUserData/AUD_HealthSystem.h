@@ -3,6 +3,9 @@
 #include "CoreMinimal.h"
 #include "Engine/AssetUserData.h"
 #include "SkyCraft/Structs/FX.h"
+#include "SkyCraft/Structs/RelativeBox.h"
+#include "SkyCraft/Enums/DropLocationType.h"
+#include "SkyCraft/Enums/DropDirectionType.h"
 #include "AUD_HealthSystem.generated.h"
 
 enum class EDieHandle : uint8;
@@ -43,6 +46,16 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly)
 	EDieHandle DieHandle;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bDropItems = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
+	FRelativeBox DropInRelativeBox;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	EDropDirectionType DropDirectionType = EDropDirectionType::RandomDirection;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
+	FVector DropDirection = FVector::ZeroVector;
 
 	TArray<FFX> DynamicNiagaraVarsArrayFX(TArray<FFX> ArrayFX, UStaticMesh* StaticMesh);
 	TMap<UDataAsset*, FFXArray> DynamicNiagaraVarsMapFX(TMap<UDataAsset*, FFXArray> MapFX, UStaticMesh* StaticMesh);

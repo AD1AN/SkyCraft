@@ -33,7 +33,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FDateTime GrowSavedTime;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FResourceSize CurrentSize;
 
-	virtual void BeginPlay() override;
+	UFUNCTION(BlueprintCallable) virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;

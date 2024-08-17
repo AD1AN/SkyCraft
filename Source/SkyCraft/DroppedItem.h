@@ -27,29 +27,24 @@ public:
 	AActor* PlayerPickedUp = nullptr;
 	float RelativeDistanceInterpolation = 0.0f;
 
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn="true"))
+	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, meta=(ExposeOnSpawn="true"))
 	AActor* AttachedToIsland = nullptr;
-	
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_AttachTo(USceneComponent* SceneComponent);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true"), Replicated)
 	FSlot Slot;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true"))
-	EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true"))
-	FVector DropDirection = FVector::ZeroVector;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true"))
-	FVector2D RandomMagnitude = FVector2D(1,4);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true")) EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true")) FVector DropDirection = FVector::ZeroVector;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true")) FVector2D RandomMagnitude = FVector2D(1,4);
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFailPickUp, ADroppedItem*, DroppedItem);
 	UPROPERTY(BlueprintAssignable) FOnFailPickUp OnFailPickUp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn))
 	TArray<AActor*> IgnorePlayers;
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_AttachTo(USceneComponent* SceneComponent);
 
 protected:
 	virtual void BeginPlay() override;

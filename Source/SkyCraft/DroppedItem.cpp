@@ -2,6 +2,7 @@
 
 #include "DroppedItem.h"
 #include "AdianFL.h"
+#include "Island.h"
 #include "NiagaraComponent.h"
 #include "Components/Inventory.h"
 #include "Components/SphereComponent.h"
@@ -74,6 +75,10 @@ void ADroppedItem::BeginPlay()
 			if (IsValid(AttachScene))
 			{
 				Multicast_AttachTo(AttachScene);
+				if (IIslandInterface* IslandInterface = Cast<IIslandInterface>(AttachedToIsland))
+				{
+					IslandInterface->AddDroppedItem(this);
+				}
 			}
 		}
 
@@ -172,7 +177,18 @@ void ADroppedItem::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimit
 		FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepWorldTransform);
 		AttachmentTransformRules.bWeldSimulatedBodies = true;
 		AttachToComponent(APO, AttachmentTransformRules);
+		if (IsValid(AttachedToIsland))
+		{
+			if (IIslandInterface* IslandInterface = Cast<IIslandInterface>(AttachedToIsland))
+			{
+				IslandInterface->RemoveDroppedItem(this);
+			}
+		}
 		AttachedToIsland = RootActor;
+		if (IIslandInterface* IslandInterface = Cast<IIslandInterface>(AttachedToIsland))
+		{
+			IslandInterface->AddDroppedItem(this);
+		}
 	}
 	if (FMath::Acos(FVector::DotProduct(HitNormal, FVector::UpVector)) <= 45.0f)
 	{
