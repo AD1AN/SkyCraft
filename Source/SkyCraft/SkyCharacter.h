@@ -18,15 +18,13 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	
-	/** This event called before ActorComponents BeginPlay(). */
-	UFUNCTION(BlueprintImplementableEvent)
-	void PreBeginPlay();
+	UFUNCTION(BlueprintImplementableEvent) void EarlyBeginPlay();
 
 public:	
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	virtual void PostInitializeComponents() override;
 	bool ForceSetBase = false;
 	virtual void SetBase(UPrimitiveComponent* NewBase, FName BoneName, bool bNotifyActor) override
 	{

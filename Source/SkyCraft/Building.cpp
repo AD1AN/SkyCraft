@@ -6,6 +6,8 @@
 
 ABuilding::ABuilding()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
 }
 

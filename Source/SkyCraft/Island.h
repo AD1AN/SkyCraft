@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "VoxelWorld.h"
 #include "SkyCraft/Interfaces/IslandInterface.h"
+#include "Structs/SS_Constellation.h"
 #include "Structs/SS_IslandStatic.h"
 #include "Island.generated.h"
 
@@ -21,6 +22,7 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnChangeLOD OnChangeLOD;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) int32 CurrentLOD = -1;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) TArray<ADroppedItem*> DroppedItems;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) TArray<FSS_Constellation> SS_Constellations;
 
 	UFUNCTION(BlueprintCallable) TArray<FSS_DroppedItem> SaveDroppedItems();
 	UFUNCTION(BlueprintCallable) void LoadDroppedItems(TArray<FSS_DroppedItem> SS_DroppedItems);

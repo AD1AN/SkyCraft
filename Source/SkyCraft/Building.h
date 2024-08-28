@@ -18,6 +18,7 @@ class SKYCRAFT_API ABuilding : public AActor
 public:
 	ABuilding();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UHealthSystem* HealthSystem;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_Building* DA_Building = nullptr;
 	UPROPERTY(BlueprintReadWrite) int32 ID = 0;
 	UPROPERTY(BlueprintReadWrite) TArray<ABuilding*> Supports;

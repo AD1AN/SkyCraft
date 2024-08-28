@@ -11,10 +11,8 @@ ASkyCharacter::ASkyCharacter(const FObjectInitializer& ObjectInitializer) : Supe
 
 }
 
-// Called when the game starts or when spawned
 void ASkyCharacter::BeginPlay()
 {
-	PreBeginPlay();
 	Super::BeginPlay();
 }
 
@@ -28,7 +26,12 @@ void ASkyCharacter::Tick(float DeltaTime)
 void ASkyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
 
+void ASkyCharacter::PostInitializeComponents()
+{
+	EarlyBeginPlay();
+	Super::PostInitializeComponents();
 }
 
 void ASkyCharacter::Jump()
