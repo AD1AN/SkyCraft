@@ -13,8 +13,9 @@ class SKYCRAFT_API UDA_Constellation : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) FText Name;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) UTexture2D* Icon = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) TSubclassOf<AConstellation> ActorClass;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) int32 RequireEssence = 100000;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) FText Name;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) FText Description;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) UTexture2D* Icon = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) TSubclassOf<AConstellation> ActorClass;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) int32 RequireEssence = 100000;
 };

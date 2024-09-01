@@ -2,6 +2,8 @@
 
 #include "Island.h"
 #include "DroppedItem.h"
+#include "Net/UnrealNetwork.h"
+#include "Net/Core/PushModel/PushModel.h"
 
 AIsland::AIsland()
 {
@@ -45,5 +47,35 @@ void AIsland::AddDroppedItem(ADroppedItem* DroppedItem)
 void AIsland::RemoveDroppedItem(ADroppedItem* DroppedItem)
 {
 	DroppedItems.Remove(DroppedItem);
+}
+
+void AIsland::AddConstellation(FSS_Constellation NewConstellation)
+{
+	SS_Constellations.Add(NewConstellation);
+	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Constellations, this);
+}
+
+void AIsland::RemoveConstellation(FSS_Constellation RemoveConstellation)
+{
+	for (int32 i = 0; i < SS_Constellations.Num(); i++)
+	{
+		if (SS_Constellations[i].DA_Constellation == RemoveConstellation.DA_Constellation)
+		{
+			SS_Constellations.RemoveAt(i);
+			MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Constellations, this);
+			return;
+		}
+	}
+}
+
+void AIsland::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+	Params.RepNotifyCondition = REPNOTIFY_Always;
+	
+	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, SS_Constellations, Params);
 }
 

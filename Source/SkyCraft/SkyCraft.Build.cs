@@ -14,7 +14,8 @@ public class SkyCraft : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"InputCore",
-			"Niagara"
+			"Niagara",
+			"NetCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] 

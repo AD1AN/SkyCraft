@@ -7,9 +7,6 @@ struct FRelativeBox
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FVector RelativeCenter = FVector::ZeroVector;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FVector Size = FVector::ZeroVector;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) FVector RelativeCenter = FVector::ZeroVector;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) FVector Size = FVector::ZeroVector;
 };
