@@ -11,6 +11,18 @@ AIsland::AIsland()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 }
 
+void AIsland::SetIslandSize(int32 NewSize)
+{
+	IslandSize = NewSize;
+	OnRep_IslandSize();
+	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, IslandSize, this);
+}
+
+void AIsland::OnRep_IslandSize()
+{
+	OnIslandSize.Broadcast();
+}
+
 TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
 {
 	TArray<FSS_DroppedItem> SavedDroppedItems;
@@ -74,8 +86,9 @@ void AIsland::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
-	Params.RepNotifyCondition = REPNOTIFY_Always;
+	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, SS_Constellations, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, IslandSize, Params);
 }
 

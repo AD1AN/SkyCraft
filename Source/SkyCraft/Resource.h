@@ -20,18 +20,18 @@ class SKYCRAFT_API AResource : public AActor, public IInteract_CPP
 public:
 	AResource();
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent = nullptr;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UHealthSystem* HealthSystem = nullptr;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class UInteractSystem* InteractSystem = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bLoaded = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) int32 LoadHealth = 403;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) UDA_Resource* DA_Resource = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) uint8 ResourceSize = 0;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) uint8 SM_Variety;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool Growing = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) FDateTime GrowMarkTime;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) FDateTime GrowSavedTime;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) FResourceSize CurrentSize;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) UStaticMeshComponent* StaticMeshComponent = nullptr;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) UHealthSystem* HealthSystem = nullptr;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) class UInteractSystem* InteractSystem = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bLoaded = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 LoadHealth = 403;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) UDA_Resource* DA_Resource = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) uint8 ResourceSize = 0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) uint8 SM_Variety;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool Growing = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FDateTime GrowMarkTime;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FDateTime GrowSavedTime;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FResourceSize CurrentSize;
 
 	UFUNCTION(BlueprintCallable) virtual void BeginPlay() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

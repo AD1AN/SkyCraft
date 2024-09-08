@@ -18,6 +18,14 @@ class SKYCRAFT_API AIsland : public AVoxelWorld, public IIslandInterface
 
 public:
 	AIsland();
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
+	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
+	
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, ReplicatedUsing=OnRep_IslandSize) int32 IslandSize = 5;
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(int32 NewSize);
+	UFUNCTION() void OnRep_IslandSize();
+	
+
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangeLOD);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnChangeLOD OnChangeLOD;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) int32 CurrentLOD = -1;

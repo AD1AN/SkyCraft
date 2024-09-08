@@ -311,10 +311,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "GameplayTagsEditor",
-			"Enabled": false
-		},
-		{
 			"Name": "GeometryCache",
 			"Enabled": false
 		},
@@ -471,6 +467,15 @@
 			"Name": "NPC_Optimizator",
 			"Enabled": false,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/1d7dbb65f6b24b2db0401a80d07e84d9"
+		},
+		{
+			"Name": "NiagaraUIRenderer",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/fd24d23ca57b4c59a4e4b7368da250bd",
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"Android"
+			]
 		}
 	],
 	"TargetPlatforms": [

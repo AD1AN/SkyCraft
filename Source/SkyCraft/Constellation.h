@@ -16,6 +16,8 @@ class SKYCRAFT_API AConstellation : public AActor
 	
 public:
 	AConstellation();
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) class UNiagaraComponent* NiagaraComponent = nullptr;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) class UInteractSystem* InteractSystem = nullptr;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) UDA_Constellation* DA_Constellation = nullptr;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) FRelativeBox PreviewCollision;

@@ -2,6 +2,7 @@
 
 #include "Constellation.h"
 #include "NiagaraComponent.h"
+#include "Components/InteractSystem.h"
 
 AConstellation::AConstellation()
 {
@@ -9,6 +10,11 @@ AConstellation::AConstellation()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	bNetUseOwnerRelevancy = true;
 	SetReplicates(true);
+	
+	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraComponent"));
+	SetRootComponent(NiagaraComponent);
+	
+	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
 }
 
 void AConstellation::SetPreviewColor(bool Allowed)
