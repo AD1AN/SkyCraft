@@ -24,10 +24,10 @@ public:
 	USuffocationSystem();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SuffocationAltitudeUnder = -1000.0f;
+	float SuffocationAltitudeUnder = 50000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SuffocationAltitudeAbove = 200000.0f;
+	float SuffocationAltitudeAbove = 150000.0f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	ESuffocationType SuffocationType = ESuffocationType::TickDamagePercent;

@@ -12,6 +12,14 @@ class UDA_SkyTag;
 class IInterface_AssetUserData;
 class UAssetUserData;
 
+USTRUCT(BlueprintType)
+struct FUniformSubtractOut
+{
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly) FEssence FinalEssence;
+	UPROPERTY(BlueprintReadOnly) FEssence SubtractedEssence;
+};
+
 UCLASS()
 class SKYCRAFT_API UAdianFL : public UBlueprintFunctionLibrary
 {
@@ -35,8 +43,21 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static int32 EssenceTotal(const FEssence& Essence)
 	{
-		return Essence.Red + Essence.Green + Essence.Blue;
+		return Essence.R + Essence.G + Essence.B;
 	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL", meta=(CompactNodeTitle="+", Keywords="+, Add"))
+	static FEssence AddEssence(const FEssence A, const FEssence B)
+	{
+		FEssence Result;
+		Result.R = A.R + B.R;
+		Result.G = A.G + B.G;
+		Result.B = A.B + B.B;
+		return Result;
+	}
+
+	UFUNCTION(BlueprintCallable, Category="AdianFL")
+	static UPARAM(DisplayName="Out") FUniformSubtractOut UniformSubtract(FEssence Essence, int32 TotalSubtract);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static FLinearColor EssenceToRGB(const FEssence& Essence);

@@ -7,17 +7,68 @@
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
 #include "Structs/RelativeBox.h"
 
+FUniformSubtractOut UAdianFL::UniformSubtract(FEssence Essence, int32 TotalToSubtract)
+{
+	FUniformSubtractOut Out;
+	Out.FinalEssence = Essence;
+
+    int32 TotalSum = Essence.R + Essence.G + Essence.B;
+
+    if (TotalSum == 0) return Out;
+
+    const float Proportion = static_cast<float>(TotalToSubtract) / static_cast<float>(TotalSum);
+
+    Out.SubtractedEssence.R = FMath::RoundToInt(Essence.R * Proportion);
+    Out.SubtractedEssence.G = FMath::RoundToInt(Essence.G * Proportion);
+    Out.SubtractedEssence.B = FMath::RoundToInt(Essence.B * Proportion);
+
+    Essence.R = FMath::Max(0, Essence.R - Out.SubtractedEssence.R);
+    Essence.G = FMath::Max(0, Essence.G - Out.SubtractedEssence.G);
+    Essence.B = FMath::Max(0, Essence.B - Out.SubtractedEssence.B);
+
+	const int32 TotalSubtracted = (Out.SubtractedEssence.R) + (Out.SubtractedEssence.G) + (Out.SubtractedEssence.B);
+
+    // Adjust for Rounding Differences
+    const int32 Difference = TotalToSubtract - TotalSubtracted;
+    if (Difference != 0)
+    {
+        // Distribute the remaining difference
+        for (int32 i = 0; i < Difference; ++i)
+        {
+            // Find the largest remaining value to subtract from
+            if (Essence.R > 0 && (Essence.R >= Essence.G && Essence.R >= Essence.B))
+            {
+                Out.SubtractedEssence.R += 1;  // Increment the subtraction value for R
+                Essence.R -= 1;  // Update the new value for R
+            }
+            else if (Essence.G > 0 && (Essence.G >= Essence.R && Essence.G >= Essence.B))
+            {
+                Out.SubtractedEssence.G += 1;  // Increment the subtraction value for G
+                Essence.G -= 1;  // Update the new value for G
+            }
+            else if (Essence.B > 0)
+            {
+                Out.SubtractedEssence.B += 1;  // Increment the subtraction value for B
+                Essence.B -= 1;  // Update the new value for B
+            }
+        }
+    }
+	
+	Out.FinalEssence = Essence;
+	return Out;
+}
+
 FLinearColor UAdianFL::EssenceToRGB(const FEssence& Essence)
 {
-	const uint32 EssencePositiveMax = FMath::Max3(Essence.Red, Essence.Green, Essence.Blue);
+	const uint32 EssencePositiveMax = FMath::Max3(Essence.R, Essence.G, Essence.B);
 	if (EssencePositiveMax == 0)
 	{
 		return FLinearColor(0.5f,0.5f,0.5f,1.f);
 	}
 	FLinearColor RGB;
-	RGB.R = static_cast<float>(Essence.Red) / EssencePositiveMax;
-	RGB.G = static_cast<float>(Essence.Green) / EssencePositiveMax;
-	RGB.B = static_cast<float>(Essence.Blue) / EssencePositiveMax;
+	RGB.R = static_cast<float>(Essence.R) / EssencePositiveMax;
+	RGB.G = static_cast<float>(Essence.G) / EssencePositiveMax;
+	RGB.B = static_cast<float>(Essence.B) / EssencePositiveMax;
 	RGB.A = 1.f;
 	return RGB;
 }
@@ -29,7 +80,7 @@ UAssetUserData* UAdianFL::GetAssetUserData(TScriptInterface<IInterface_AssetUser
 		return Object->GetAssetUserDataOfClass(Class);
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 TArray<UAssetUserData*> UAdianFL::GetAssetUserDataArray(TScriptInterface<IInterface_AssetUserData> Object)
@@ -49,13 +100,13 @@ TArray<UAssetUserData*> UAdianFL::GetAssetUserDataArray(TScriptInterface<IInterf
 
 UAssetUserData* UAdianFL::AddAssetUserData(TScriptInterface<IInterface_AssetUserData> Object, TSubclassOf<UAssetUserData> Class)
 {
-	UAssetUserData* UserData = NULL;
+	UAssetUserData* UserData = nullptr;
 
 	if (UObject* ObjectPtr = Object.GetObject())
 	{
 		UserData = Object->GetAssetUserDataOfClass(Class);
 
-		if (UserData == NULL)
+		if (UserData == nullptr)
 		{
 			UserData = NewObject<UAssetUserData>(ObjectPtr, Class, NAME_None, RF_Transactional);
 			Object->AddAssetUserData(UserData);
