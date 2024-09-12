@@ -25,12 +25,12 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FServerInterrupted, EInterruptedBy, InterruptedBy, EInteractKey, InteractedKey, APawn*, InteractedPawn);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FServerInterrupted OnServerInterrupted;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated) bool bInteractable = true;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Replicated) bool bInteractable = true;
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, BlueprintAuthorityOnly) void SetInteractable(bool isInteractable);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FInteractKeySettings> InteractKeys;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FCurrentProlonged> CurrentProlonged;
-	UPROPERTY(EditDefaultsOnly) FVector InteractLocation;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) TArray<FInteractKeySettings> InteractKeys;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) TArray<FCurrentProlonged> CurrentProlonged;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector InteractLocation;
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	

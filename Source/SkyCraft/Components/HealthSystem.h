@@ -8,6 +8,7 @@
 #include "SkyCraft/Enums/DropDirectionType.h"
 #include "SkyCraft/Enums/DropLocationType.h"
 #include "SkyCraft/Structs/DropItem.h"
+#include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/FX.h"
 #include "SkyCraft/Structs/RelativeBox.h"
 #include "HealthSystem.generated.h"
@@ -94,27 +95,33 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<EDamageGlobalType, float> MultiplyDamageType;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DamageFXDefault;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDataAsset*, FFXArray> DamageFX;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DamageFXDefault;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDataAsset*, FFXArray> DamageFX;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DieFXDefault;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDataAsset*, FFXArray> DieFX;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DieFXDefault;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDataAsset*, FFXArray> DieFX;
 
 	UPROPERTY(EditDefaultsOnly) USoundAttenuation* AttenuationSettings = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) EDieHandle DieHandle;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) EDieHandle DieHandle;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bDropItems = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
-	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
-	FRelativeBox DropInRelativeBox;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
-	EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
-	FVector DropDirection = FVector::ZeroVector;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropItems = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems", EditConditionHides))
 	TArray<FDropItem> DropItems;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropEssence = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence", EditConditionHides))
+	TArray<FEssence> DropEssences;
 	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems || bDropEssence", EditConditionHides))
+	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="(bDropItems || bDropEssence) && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
+	FRelativeBox DropInRelativeBox;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems || bDropEssence", EditConditionHides))
+	EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="(bDropItems || bDropEssence) && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
+	FVector DropDirection = FVector::ZeroVector;
+	
+		
 	// ApplyDamage only on server side.
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void ApplyDamage(const FApplyDamageIn In);

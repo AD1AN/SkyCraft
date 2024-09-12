@@ -135,8 +135,11 @@ void AResource::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut
 void AResource::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME_CONDITION(AResource, DA_Resource, COND_InitialOnly);
-	DOREPLIFETIME_CONDITION(AResource, ResourceSize, COND_InitialOnly);
-	DOREPLIFETIME_CONDITION(AResource, SM_Variety, COND_InitialOnly);
+	
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+	
+	DOREPLIFETIME_WITH_PARAMS_FAST(AResource, DA_Resource, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AResource, ResourceSize, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AResource, SM_Variety, Params);
 }

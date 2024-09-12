@@ -7,12 +7,12 @@
 #include "PAIInterface.generated.h"
 
 UINTERFACE(MinimalAPI)
-class UPInfoInterface : public UInterface
+class UPAInfoInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class SKYCRAFT_API IPInfoInterface
+class SKYCRAFT_API IPAInfoInterface
 {
 	GENERATED_BODY()
 	

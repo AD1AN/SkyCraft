@@ -23,20 +23,15 @@ class SKYCRAFT_API USuffocationSystem : public UActorComponent
 public:	
 	USuffocationSystem();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SuffocationAltitudeUnder = 50000.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SuffocationAltitudeAbove = 150000.0f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ESuffocationType SuffocationType = ESuffocationType::TickDamagePercent;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float SuffocationAltitudeUnder = 50000.0f;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float SuffocationAltitudeAbove = 150000.0f;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) ESuffocationType SuffocationType = ESuffocationType::TickDamagePercent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="SuffocationType==ESuffocationType::TickDamagePercent", EditConditionHides, ClampMin="1", ClampMax="100", UIMin="1", UIMax="100"))
 	uint8 DamagePercent = 10;
 	
 	UPROPERTY(EditDefaultsOnly)
-	UDataAsset* DamageDataAsset;	
+	UDataAsset* DamageDataAsset;
 	
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

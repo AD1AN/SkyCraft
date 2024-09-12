@@ -85,7 +85,11 @@ void UIC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION(UIC, isBeginPlayIC, COND_None); // Don't use COND_InitialOnly, If RPC is called then COND_InitialOnly not sends.
-	DOREPLIFETIME_CONDITION(UIC, Main, COND_None); // Don't use COND_InitialOnly, If RPC is called then COND_InitialOnly not sends.
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
+	
+	DOREPLIFETIME_WITH_PARAMS_FAST(UIC, isBeginPlayIC, Params); // Don't use COND_InitialOnly, If RPC is called then COND_InitialOnly not sends.
+	DOREPLIFETIME_WITH_PARAMS_FAST(UIC, Main, Params); // Don't use COND_InitialOnly, If RPC is called then COND_InitialOnly not sends.
 }
 

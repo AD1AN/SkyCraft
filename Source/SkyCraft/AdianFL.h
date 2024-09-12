@@ -41,7 +41,7 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
-	static int32 EssenceTotal(const FEssence& Essence)
+	static UPARAM(DisplayName="Total") int32 EssenceTotal(const FEssence& Essence)
 	{
 		return Essence.R + Essence.G + Essence.B;
 	}
@@ -60,7 +60,7 @@ public:
 	static UPARAM(DisplayName="Out") FUniformSubtractOut UniformSubtract(FEssence Essence, int32 TotalSubtract);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
-	static FLinearColor EssenceToRGB(const FEssence& Essence);
+	static UPARAM(DisplayName="Color") FLinearColor EssenceToRGB(const FEssence& Essence);
 
 	UFUNCTION(BlueprintCallable, Category="AdianFL", meta = (DeterminesOutputType = "Class"))
 	static UAssetUserData* GetAssetUserData(TScriptInterface<IInterface_AssetUserData> Object, UPARAM(meta = (AllowAbstract = "false")) TSubclassOf<UAssetUserData> Class);
