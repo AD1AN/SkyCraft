@@ -8,6 +8,7 @@ AIslandArchon::AIslandArchon()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+	SetReplicates(true);
 }
 
 void AIslandArchon::SetCrystal(bool newCrystal)
@@ -17,7 +18,7 @@ void AIslandArchon::SetCrystal(bool newCrystal)
 	MARK_PROPERTY_DIRTY_FROM_NAME(AIslandArchon, Crystal, this);
 }
 
-void AIslandArchon::OnRep_Crystal()
+void AIslandArchon::OnRep_Crystal_Implementation()
 {
 	OnCrystal.Broadcast();
 }

@@ -243,12 +243,12 @@ void UEntityGenerator::DestroyLODs()
 	{
 		for (AResource* Res : LOD.Value.Resources)
 		{
-			if (!IsValid(Res)) return;
+			if (!IsValid(Res)) continue;
 			Res->Destroy();
 		}
 		for (ANPC* NPC : LOD.Value.NPCs)
 		{
-			if (!IsValid(NPC)) return;
+			if (!IsValid(NPC)) continue;
 			NPC->Destroy();
 		}
 	}

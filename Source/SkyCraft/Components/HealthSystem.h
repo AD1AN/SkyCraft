@@ -68,8 +68,15 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_OnDie();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealth);
+	UPROPERTY(BlueprintAssignable)
+	FOnHealth OnHealth;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_Health)
 	int32 Health = 404;
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHealth(int32 NewHealth);
+	UFUNCTION() void OnRep_Health() const { OnHealth.Broadcast(); };
 
 	// MaxHealth should never be 0 or less!
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, meta=(ClampMin="1", UIMin="1"))

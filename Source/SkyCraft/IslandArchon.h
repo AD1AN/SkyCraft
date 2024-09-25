@@ -18,9 +18,9 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCrystal);
 	UPROPERTY(BlueprintAssignable) FOnCrystal OnCrystal;
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, ReplicatedUsing=OnRep_Crystal) bool Crystal = true;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, ReplicatedUsing=OnRep_Crystal, meta=(ExposeOnSpawn)) bool Crystal = true;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetCrystal(bool newCrystal);
-	UFUNCTION() void OnRep_Crystal();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void OnRep_Crystal();
 
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

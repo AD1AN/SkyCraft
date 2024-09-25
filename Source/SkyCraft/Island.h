@@ -21,7 +21,7 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
 	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
 	
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, ReplicatedUsing=OnRep_IslandSize) int32 IslandSize = 5;
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_IslandSize, meta=(ExposeOnSpawn)) int32 IslandSize = 5;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(int32 NewSize);
 	UFUNCTION() void OnRep_IslandSize();
 	

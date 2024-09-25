@@ -18,29 +18,36 @@ class SKYCRAFT_API APAI : public AActor
 	GENERATED_BODY()
 	
 public:
-	
 	UPROPERTY(ReplicatedUsing=OnRep_AnalyzedEntities, BlueprintReadWrite)
 	TArray<UDA_AnalyzeEntity*> AnalyzedEntities;
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedEntitiesChanged);
-	UPROPERTY(BlueprintAssignable, BlueprintCallable)
-	FOnAnalyzedEntitiesChanged OnAnalyzedEntitiesChanged;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedEntities);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnAnalyzedEntities OnAnalyzedEntities;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_AnalyzedItems, BlueprintReadWrite)
 	TArray<UDA_Item*> AnalyzedItems;
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedItemsChanged);
-	UPROPERTY(BlueprintAssignable, BlueprintCallable)
-	FOnAnalyzedItemsChanged OnAnalyzedItemsChanged;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedItems);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnAnalyzedItems OnAnalyzedItems;
 	
-	UPROPERTY(Replicated, BlueprintReadWrite)
-	TArray<UDA_CraftItem*> LearnedCraftItem;
+	UPROPERTY(ReplicatedUsing=OnRep_LearnedCraftItems, BlueprintReadWrite)
+	TArray<UDA_CraftItem*> LearnedCraftItems;
 	
-	UFUNCTION(BlueprintCallable)
-	void OnRep_AnalyzedEntities() const;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLearnedCraftItems);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnLearnedCraftItems OnLearnedCraftItems;
 	
-	UFUNCTION(BlueprintCallable)
-	void OnRep_AnalyzedItems() const;
+	UFUNCTION(BlueprintCallable) void OnRep_AnalyzedEntities() const;
+	UFUNCTION(BlueprintCallable) void OnRep_AnalyzedItems() const;
+	UFUNCTION(BlueprintCallable) void OnRep_LearnedCraftItems() const;
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddAnalyzedEntities(UDA_AnalyzeEntity* AddEntity);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnalyzedEntities(TArray<UDA_AnalyzeEntity*> NewEntities);
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddAnalyzedItems(UDA_Item* AddItem);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnalyzedItems(TArray<UDA_Item*> NewItems);
+	
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddLearnedCraftItems(UDA_CraftItem* Adding);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetLearnedCraftItems(TArray<UDA_CraftItem*> New);
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APAI* PAI);

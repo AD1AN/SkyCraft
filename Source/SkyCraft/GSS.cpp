@@ -4,6 +4,8 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
+#include "Net/Core/PushModel/PushModel.h"
 #include "Structs/FX.h"
 
 AGSS::AGSS(){}
@@ -33,4 +35,48 @@ void AGSS::Multicast_SpawnFXAttached_Implementation(FFX FX, FVector LocalLocatio
 			}
 		}
 	}
+}
+
+void AGSS::SetHostPlayer(APSS* Host)
+{
+	HostPlayer = Host;
+	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, HostPlayer, this);
+}
+
+void AGSS::AddConnectedPlayer(APSS* PlayerState)
+{
+	ConnectedPlayers.Add(PlayerState);
+	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, ConnectedPlayers, this);
+	OnConnectedPlayers.Broadcast();
+}
+
+void AGSS::RemoveConnectedPlayer(APSS* PlayerState)
+{
+	ConnectedPlayers.Remove(PlayerState);
+	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, ConnectedPlayers, this);
+	OnConnectedPlayers.Broadcast();
+}
+
+void AGSS::CleanConnectedPlayer()
+{
+	ConnectedPlayers.Empty();
+	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, ConnectedPlayers, this);
+	OnConnectedPlayers.Broadcast();
+}
+
+void AGSS::OnRep_ConnectedPlayers()
+{
+	OnConnectedPlayers.Broadcast();
+}
+
+void AGSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
+	
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, HostPlayer, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, ConnectedPlayers, Params);
 }

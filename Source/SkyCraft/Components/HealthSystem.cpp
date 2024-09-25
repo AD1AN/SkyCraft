@@ -1,10 +1,10 @@
 // ADIAN Copyrighted
 
-
 #include "HealthSystem.h"
 #include "SkyCraft/AdianFL.h"
 #include "SkyCraft/DroppedItem.h"
 #include "Net/UnrealNetwork.h"
+#include "Net/Core/PushModel/PushModel.h"
 #include "SkyCraft/GSS.h"
 
 UHealthSystem::UHealthSystem()
@@ -20,6 +20,18 @@ UHealthSystem::UHealthSystem()
 	{
 		MultiplyDamageType.Add(DGT, 1.0f);
 	}
+}
+
+void UHealthSystem::SetHealth(int32 NewHealth)
+{
+	Health = FMath::Clamp(NewHealth, 0, MaxHealth);;
+	if (Health <= 0)
+	{
+		Multicast_OnDie();
+		SpawnDieFX();
+	}
+	MARK_PROPERTY_DIRTY_FROM_NAME(UHealthSystem, Health, this);
+	OnHealth.Broadcast();
 }
 
 void UHealthSystem::Multicast_OnDamage_Implementation(EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, float DamageRatio, FVector HitLocation)
@@ -59,7 +71,7 @@ void UHealthSystem::ApplyDamage(const FApplyDamageIn In)
 	
 	if (_MultipliedDamage > 0)
 	{
-		Health = Health - _MultipliedDamage;
+		SetHealth(Health - _MultipliedDamage);
 		Multicast_OnDamage(In.DamageGlobalType, In.DamageDataAsset, static_cast<float>(_MultipliedDamage) / static_cast<float>((MaxHealth>0) ? MaxHealth : _MultipliedDamage), In.HitLocation);
 		if (Health <= 0)
 		{
@@ -178,8 +190,12 @@ void UHealthSystem::Die(UDataAsset* DamageDataAsset, FVector HitLocation)
 void UHealthSystem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
-	DOREPLIFETIME_CONDITION(UHealthSystem, Health, COND_None);
-	DOREPLIFETIME_CONDITION(UHealthSystem, MaxHealth, COND_None);
-	DOREPLIFETIME_CONDITION(UHealthSystem, Armor, COND_None);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UHealthSystem, Health, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UHealthSystem, MaxHealth, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UHealthSystem, Armor, Params);
 }
