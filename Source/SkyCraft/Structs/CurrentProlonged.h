@@ -15,5 +15,5 @@ struct FCurrentProlonged
 	APawn* Pawn;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	class APAI* PAI;
+	class APSS* PSS;
 };

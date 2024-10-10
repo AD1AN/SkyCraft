@@ -5,6 +5,7 @@
 #include "SkyCraft/DroppedItem.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
+#include "SkyCraft/DamageNumbers.h"
 #include "SkyCraft/GSS.h"
 
 UHealthSystem::UHealthSystem()
@@ -12,17 +13,20 @@ UHealthSystem::UHealthSystem()
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	SetIsReplicatedByDefault(true);
+
+	static ConstructorHelpers::FClassFinder<ADamageNumbers> DamageNumbersClassAsset(TEXT("/Game/Blueprints/BP_DamageNumbers"));
+	if (DamageNumbersClassAsset.Succeeded()) DamageNumbersClass = DamageNumbersClassAsset.Class;
 	
 	static ConstructorHelpers::FObjectFinder<USoundAttenuation> AttenuationAsset(TEXT("/Game/Audio/NormalAttenuation.NormalAttenuation"));
 	if (AttenuationAsset.Succeeded()) AttenuationSettings = AttenuationAsset.Object;
-
+	
 	for (EDamageGlobalType DGT : TEnumRange<EDamageGlobalType>())
 	{
 		MultiplyDamageType.Add(DGT, 1.0f);
 	}
 }
 
-void UHealthSystem::SetHealth(int32 NewHealth)
+void UHealthSystem::AuthSetHealth(int32 NewHealth)
 {
 	Health = FMath::Clamp(NewHealth, 0, MaxHealth);;
 	if (Health <= 0)
@@ -34,9 +38,21 @@ void UHealthSystem::SetHealth(int32 NewHealth)
 	OnHealth.Broadcast();
 }
 
-void UHealthSystem::Multicast_OnDamage_Implementation(EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, float DamageRatio, FVector HitLocation)
+void UHealthSystem::Multicast_OnDamage_Implementation(USceneComponent* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, int32 Damage, float DamageRatio, FVector HitLocation)
 {
 	OnDamage.Broadcast(DamageGlobalType, DamageDataAsset, DamageRatio, HitLocation);
+	
+	if (IsNetMode(NM_DedicatedServer)) return;
+	if (!DamageNumbersClass) return;
+	FTransform DamageTransform;
+	DamageTransform.SetLocation(HitLocation);
+	ADamageNumbers* SpawnedDamageNumbers = GetWorld()->SpawnActorDeferred<ADamageNumbers>(DamageNumbersClass, DamageTransform);
+	SpawnedDamageNumbers->Damage = Damage;
+	SpawnedDamageNumbers->FinishSpawning(DamageTransform);
+	
+	SpawnedDamageNumbers->SetActorEnableCollision(false);
+	const FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+	SpawnedDamageNumbers->AttachToComponent(AttachTo, AttachmentRules);
 }
 
 void UHealthSystem::Multicast_OnDie_Implementation()
@@ -44,16 +60,17 @@ void UHealthSystem::Multicast_OnDie_Implementation()
 	OnDie.Broadcast();
 }
 
-void UHealthSystem::ApplyDamage(const FApplyDamageIn In)
+void UHealthSystem::AuthApplyDamage(const FApplyDamageIn In)
 {
 	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
 	AActor* RootActor = UAdianFL::GetRootActor(GetOwner());
 	
-	if (!IsValid(In.DamageDataAsset))
+	if (!IsValid(In.DamageDataAsset)) // DamageDataAsset SHOULD BE VALID!
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("ApplyDamage: DamageDataAsset Empty! THIS SHOULD NOT HAPPEN!"));
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("AuthApplyDamage: DamageDataAsset Empty! THIS SHOULD NOT HAPPEN!"));
 		return;
 	}
+	
 	int32 _MultipliedDamage = In.BaseDamage;
 	if (bInclusiveDamageOnly)
 	{
@@ -71,30 +88,31 @@ void UHealthSystem::ApplyDamage(const FApplyDamageIn In)
 	
 	if (_MultipliedDamage > 0)
 	{
-		SetHealth(Health - _MultipliedDamage);
-		Multicast_OnDamage(In.DamageGlobalType, In.DamageDataAsset, static_cast<float>(_MultipliedDamage) / static_cast<float>((MaxHealth>0) ? MaxHealth : _MultipliedDamage), In.HitLocation);
-		if (Health <= 0)
-		{
-			Multicast_OnDie();
-			if (DieHandle == EDieHandle::JustDestroy)
-			{
-				Die(In.DamageDataAsset, In.HitLocation);
-			}
-			
-			FVector OriginLocation = GetOwner()->GetActorLocation();
-			USceneComponent* AttachTo = nullptr;
-			if (IsValid(GetOwner())) AttachTo = GetOwner()->GetRootComponent();
-			else if (IsValid(RootActor)) AttachTo = RootActor->GetRootComponent();
-			if (IsValid(AttachTo)) OriginLocation = AttachTo->GetOwner()->GetTransform().InverseTransformPosition(OriginLocation);
-			SpawnDieFX(In.DamageDataAsset, OriginLocation, AttachTo);
-		}
-
+		AuthSetHealth(Health - _MultipliedDamage);
+		
 		FVector HitLocation = In.HitLocation;
 		USceneComponent* AttachTo = nullptr;
 		if (IsValid(GetOwner())) AttachTo = GetOwner()->GetRootComponent();
 		else if (IsValid(RootActor)) AttachTo = RootActor->GetRootComponent();
 		if (IsValid(AttachTo)) HitLocation = AttachTo->GetOwner()->GetTransform().InverseTransformPosition(HitLocation);
+		
+		Multicast_OnDamage(AttachTo, In.DamageGlobalType, In.DamageDataAsset, _MultipliedDamage, static_cast<float>(_MultipliedDamage) / static_cast<float>((MaxHealth>0) ? MaxHealth : _MultipliedDamage), In.HitLocation);
 		SpawnDamageFX(In.DamageDataAsset, HitLocation, AttachTo);
+		
+		if (Health <= 0)
+		{
+			Multicast_OnDie();
+			if (DieHandle == EDieHandle::JustDestroy)
+			{
+				AuthDie(In.DamageDataAsset, In.HitLocation);
+			}
+			
+			FVector OriginLocation = GetOwner()->GetActorLocation();
+			if (IsValid(GetOwner())) AttachTo = GetOwner()->GetRootComponent();
+			else if (IsValid(RootActor)) AttachTo = RootActor->GetRootComponent();
+			if (IsValid(AttachTo)) OriginLocation = AttachTo->GetOwner()->GetTransform().InverseTransformPosition(OriginLocation);
+			SpawnDieFX(In.DamageDataAsset, OriginLocation, AttachTo);
+		}
 	}
 }
 
@@ -144,7 +162,7 @@ float UHealthSystem::HealthRatio()
 	return static_cast<float>(Health) / static_cast<float>(MaxHealth);
 }
 
-void UHealthSystem::Die(UDataAsset* DamageDataAsset, FVector HitLocation)
+void UHealthSystem::AuthDie(UDataAsset* DamageDataAsset, FVector HitLocation)
 {
 	if (bDropItems)
 	{

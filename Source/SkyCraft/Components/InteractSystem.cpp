@@ -2,7 +2,7 @@
 
 
 #include "InteractSystem.h"
-#include "SkyCraft/PAI.h"
+#include "SkyCraft/PSS.h"
 #include "SkyCraft/Interfaces/Interact_CPP.h"
 #include "Net/UnrealNetwork.h"
 
@@ -39,12 +39,12 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 					InterruptIn.InterruptedBy = EInterruptedBy::Distance;
 					InterruptIn.InteractKey = CurrentP.InteractKey;
 					InterruptIn.Pawn = CurrentP.Pawn;
-					InterruptIn.PAI = CurrentP.PAI;
+					InterruptIn.PSS = CurrentP.PSS;
 					FInterruptOut InterruptOut;
 				
 					Interact_CPP->ServerInterrupt(InterruptIn, InterruptOut);
 				}
-				if (IsValid(CurrentP.PAI)) { CurrentP.PAI->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PAI); }
+				if (IsValid(CurrentP.PSS)) { CurrentP.PSS->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PSS); }
 				RemoveProlonged(CurrentP.Pawn);
 			}
 		}

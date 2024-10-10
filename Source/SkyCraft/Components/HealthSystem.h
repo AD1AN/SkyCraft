@@ -55,40 +55,27 @@ public:
 	UHealthSystem();
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnDamage, EDamageGlobalType, DamageGlobalType, UDataAsset*, DA_Item, float, DamageRatio, FVector, HitLocation);
-	UPROPERTY(BlueprintAssignable)
-	FOnDamage OnDamage;
+	UPROPERTY(BlueprintAssignable) FOnDamage OnDamage;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDamage(EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, float DamageRatio, FVector HitLocation);
+	void Multicast_OnDamage(USceneComponent* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, int32 Damage, float DamageRatio, FVector HitLocation);
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie);
-	UPROPERTY(BlueprintAssignable)
-	FOnDie OnDie;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie); UPROPERTY(BlueprintAssignable) FOnDie OnDie;
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDie();
+	UFUNCTION(NetMulticast, Reliable) void Multicast_OnDie();
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealth);
-	UPROPERTY(BlueprintAssignable)
-	FOnHealth OnHealth;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealth); UPROPERTY(BlueprintAssignable) FOnHealth OnHealth;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_Health)
-	int32 Health = 404;
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetHealth(int32 NewHealth);
+	UFUNCTION() void OnRep_Health() const { OnHealth.Broadcast(); }
 
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHealth(int32 NewHealth);
-	UFUNCTION() void OnRep_Health() const { OnHealth.Broadcast(); };
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_Health) int32 Health = 404;
 	// MaxHealth should never be 0 or less!
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, meta=(ClampMin="1", UIMin="1"))
-	int32 MaxHealth = 404;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
-	int32 Armor = 0;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, meta=(ClampMin="1", UIMin="1")) int32 MaxHealth = 404;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) int32 Armor = 0;
 	//If false = ExclusiveDamageDataAssets will be used
 	//If true = InclusiveDamageDataAssets will be used
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bInclusiveDamageOnly = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bInclusiveDamageOnly = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
 	TArray<UDataAsset*> InclusiveDamageDataAssets;
@@ -96,19 +83,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
 	FText DefaultTextForNonInclusive;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<UDataAsset*, FText> ImmuneToDamageDataAssets;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<EDamageGlobalType, float> MultiplyDamageType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) TMap<UDataAsset*, FText> ImmuneToDamageDataAssets;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) TMap<EDamageGlobalType, float> MultiplyDamageType;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DamageFXDefault;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDataAsset*, FFXArray> DamageFX;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DieFXDefault;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDataAsset*, FFXArray> DieFX;
-
+	
+	UPROPERTY(EditDefaultsOnly) TSubclassOf<class ADamageNumbers> DamageNumbersClass = nullptr;
+	
 	UPROPERTY(EditDefaultsOnly) USoundAttenuation* AttenuationSettings = nullptr;
+	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) EDieHandle DieHandle;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropItems = false;
@@ -128,22 +116,17 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="(bDropItems || bDropEssence) && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
 	FVector DropDirection = FVector::ZeroVector;
 	
-		
-	// ApplyDamage only on server side.
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void ApplyDamage(const FApplyDamageIn In);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthApplyDamage(const FApplyDamageIn In);
 
-	UPROPERTY(VisibleInstanceOnly)
-	class AGSS* GSS = nullptr;
+	UPROPERTY(VisibleInstanceOnly) class AGSS* GSS = nullptr;
 
 	void SpawnDamageFX(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector, USceneComponent* AttachTo = nullptr);
 	void SpawnDieFX(UDataAsset* DamageDataAsset = nullptr, FVector OriginLocation = FVector::ZeroVector, USceneComponent* AttachTo = nullptr);
 	
-	UFUNCTION(BlueprintCallable)
-	float HealthRatio();
+	UFUNCTION(BlueprintCallable) float HealthRatio();
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void Die(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector);
+	void AuthDie(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector);
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

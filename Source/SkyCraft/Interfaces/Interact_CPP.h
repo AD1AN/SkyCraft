@@ -6,7 +6,7 @@
 #include "UObject/Interface.h"
 #include "Interact_CPP.generated.h"
 
-class APAI;
+class APSS;
 enum class EInteractKey : uint8;
 enum class EInterruptedBy : uint8;
 
@@ -22,7 +22,7 @@ struct FInteractIn
 	APawn* Pawn;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	APAI* PAI;
+	APSS* PSS;
 };
 
 USTRUCT(BlueprintType)
@@ -49,7 +49,7 @@ struct FInterruptIn
 	APawn* Pawn;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	APAI* PAI;
+	APSS* PSS;
 };
 
 USTRUCT(BlueprintType)
