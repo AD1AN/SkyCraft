@@ -18,18 +18,18 @@ class SKYCRAFT_API APSS : public APlayerState
 public:	
 	APSS();
 	UPROPERTY(Replicated, BlueprintReadOnly) FString SteamID = "";
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetSteamID(FString NewSteamID);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetSteamID(FString NewSteamID);
 
 	UPROPERTY(Replicated, BlueprintReadOnly) ECasta Casta = ECasta::Archon;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetCasta(ECasta NewCasta);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetCasta(ECasta NewCasta);
 	
 	UPROPERTY(ReplicatedUsing=OnRep_IslandArchon, BlueprintReadOnly) AIslandArchon* IslandArchon = nullptr;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandArchon(AIslandArchon* NewIslandArchon);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetIslandArchon(AIslandArchon* NewIslandArchon);
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandArchon); UPROPERTY(BlueprintAssignable) FOnIslandArchon OnIslandArchon;
 	UFUNCTION() void OnRep_IslandArchon();
 	
 	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Island;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) EPlayerForm SetPlayerForm(EPlayerForm NewPlayerForm);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) EPlayerForm AuthSetPlayerForm(EPlayerForm NewPlayerForm);
 	
 	UPROPERTY(ReplicatedUsing=OnRep_AnalyzedEntities, BlueprintReadWrite)
 	TArray<UDA_AnalyzeEntity*> AnalyzedEntities;
@@ -50,14 +50,14 @@ public:
 	UFUNCTION(BlueprintCallable) void OnRep_AnalyzedItems() const;
 	UFUNCTION(BlueprintCallable) void OnRep_LearnedCraftItems() const;
 
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddAnalyzedEntities(UDA_AnalyzeEntity* AddEntity);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnalyzedEntities(TArray<UDA_AnalyzeEntity*> NewEntities);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddAnalyzedEntities(UDA_AnalyzeEntity* AddEntity);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetAnalyzedEntities(TArray<UDA_AnalyzeEntity*> NewEntities);
 
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddAnalyzedItems(UDA_Item* AddItem);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnalyzedItems(TArray<UDA_Item*> NewItems);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddAnalyzedItems(UDA_Item* AddItem);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetAnalyzedItems(TArray<UDA_Item*> NewItems);
 	
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddLearnedCraftItems(UDA_CraftItem* Adding);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetLearnedCraftItems(TArray<UDA_CraftItem*> New);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddLearnedCraftItems(UDA_CraftItem* Adding);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetLearnedCraftItems(TArray<UDA_CraftItem*> New);
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS);

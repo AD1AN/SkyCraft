@@ -10,14 +10,14 @@
 
 AGSS::AGSS(){}
 
-void AGSS::Multicast_SpawnFXAttached_Implementation(FFX FX, FVector LocalLocation, USceneComponent* AttachTo, USoundAttenuation* AttenuationSettings)
+void AGSS::Multicast_SpawnFXAttached_Implementation(FFX FX, FVector LocalLocation, AActor* AttachTo, USoundAttenuation* AttenuationSettings)
 {
 	if (!IsValid(AttachTo)) return;
-	if (FX.Sound) UGameplayStatics::SpawnSoundAttached(FX.Sound, AttachTo, NAME_None, LocalLocation, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, false, 1,1,0,AttenuationSettings);
+	if (FX.Sound) UGameplayStatics::SpawnSoundAttached(FX.Sound, AttachTo->GetRootComponent(), NAME_None, LocalLocation, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, false, 1,1,0,AttenuationSettings);
 	if (FX.Niagara)
 	{
 		UNiagaraComponent* SpawnedNiagara;
-		SpawnedNiagara = UNiagaraFunctionLibrary::SpawnSystemAttached(FX.Niagara, AttachTo, NAME_None, LocalLocation, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+		SpawnedNiagara = UNiagaraFunctionLibrary::SpawnSystemAttached(FX.Niagara, AttachTo->GetRootComponent(), NAME_None, LocalLocation, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
 		if (FX.bHaveNiagaraVars)
 		{
 			for (FNiagaraVar NiagaraVar : FX.NiagaraVars)

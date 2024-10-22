@@ -17,7 +17,7 @@ public:
 	AGSS();
 	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable)
-	void Multicast_SpawnFXAttached(FFX FX, FVector LocalLocation = FVector::ZeroVector, USceneComponent* AttachTo = nullptr, USoundAttenuation* AttenuationSettings = nullptr);
+	void Multicast_SpawnFXAttached(FFX FX, FVector LocalLocation = FVector::ZeroVector, AActor* AttachTo = nullptr, USoundAttenuation* AttenuationSettings = nullptr);
 
 	UPROPERTY(BlueprintReadOnly, Replicated) APSS* HostPlayer = nullptr;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHostPlayer(APSS* Host);

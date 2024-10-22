@@ -11,4 +11,14 @@ ADamageNumbers::ADamageNumbers()
 void ADamageNumbers::BeginPlay()
 {
 	Super::BeginPlay();
+	if (IsValid(InitialAttachTo))
+	{
+		AttachToActor(InitialAttachTo, FAttachmentTransformRules::KeepRelativeTransform);
+		InitialAttachTo = nullptr;
+	}
+	CustomBeginPlay();
+}
+
+void ADamageNumbers::CustomBeginPlay_Implementation()
+{
 }

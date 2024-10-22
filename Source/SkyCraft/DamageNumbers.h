@@ -14,7 +14,11 @@ class SKYCRAFT_API ADamageNumbers : public AActor
 public:	
 	ADamageNumbers();
 
-	UPROPERTY(BlueprintReadWrite) int32 Damage;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) AActor* InitialAttachTo = nullptr;
+	UPROPERTY(BlueprintReadWrite) int32 Damage = 0;
+	
+	UFUNCTION(BlueprintNativeEvent) void CustomBeginPlay();
 
+private:
 	virtual void BeginPlay() override;
 };

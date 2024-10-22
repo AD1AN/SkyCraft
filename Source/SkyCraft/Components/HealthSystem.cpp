@@ -38,21 +38,19 @@ void UHealthSystem::AuthSetHealth(int32 NewHealth)
 	OnHealth.Broadcast();
 }
 
-void UHealthSystem::Multicast_OnDamage_Implementation(USceneComponent* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, int32 Damage, float DamageRatio, FVector HitLocation)
+void UHealthSystem::Multicast_OnDamage_Implementation(AActor* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, int32 Damage, float DamageRatio, FVector HitLocation, bool bShowDamageNumbers)
 {
 	OnDamage.Broadcast(DamageGlobalType, DamageDataAsset, DamageRatio, HitLocation);
-	
+
+	if (!bShowDamageNumbers) return;
 	if (IsNetMode(NM_DedicatedServer)) return;
 	if (!DamageNumbersClass) return;
 	FTransform DamageTransform;
 	DamageTransform.SetLocation(HitLocation);
 	ADamageNumbers* SpawnedDamageNumbers = GetWorld()->SpawnActorDeferred<ADamageNumbers>(DamageNumbersClass, DamageTransform);
 	SpawnedDamageNumbers->Damage = Damage;
+	SpawnedDamageNumbers->InitialAttachTo = AttachTo;
 	SpawnedDamageNumbers->FinishSpawning(DamageTransform);
-	
-	SpawnedDamageNumbers->SetActorEnableCollision(false);
-	const FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
-	SpawnedDamageNumbers->AttachToComponent(AttachTo, AttachmentRules);
 }
 
 void UHealthSystem::Multicast_OnDie_Implementation()
@@ -91,13 +89,10 @@ void UHealthSystem::AuthApplyDamage(const FApplyDamageIn In)
 		AuthSetHealth(Health - _MultipliedDamage);
 		
 		FVector HitLocation = In.HitLocation;
-		USceneComponent* AttachTo = nullptr;
-		if (IsValid(GetOwner())) AttachTo = GetOwner()->GetRootComponent();
-		else if (IsValid(RootActor)) AttachTo = RootActor->GetRootComponent();
-		if (IsValid(AttachTo)) HitLocation = AttachTo->GetOwner()->GetTransform().InverseTransformPosition(HitLocation);
+		if (IsValid(RootActor)) HitLocation = RootActor->GetTransform().InverseTransformPosition(HitLocation);
 		
-		Multicast_OnDamage(AttachTo, In.DamageGlobalType, In.DamageDataAsset, _MultipliedDamage, static_cast<float>(_MultipliedDamage) / static_cast<float>((MaxHealth>0) ? MaxHealth : _MultipliedDamage), In.HitLocation);
-		SpawnDamageFX(In.DamageDataAsset, HitLocation, AttachTo);
+		Multicast_OnDamage(RootActor, In.DamageGlobalType, In.DamageDataAsset, _MultipliedDamage, static_cast<float>(_MultipliedDamage) / static_cast<float>((MaxHealth>0) ? MaxHealth : _MultipliedDamage), HitLocation, In.bShowDamageNumbers);
+		SpawnDamageFX(In.DamageDataAsset, HitLocation, RootActor);
 		
 		if (Health <= 0)
 		{
@@ -108,15 +103,13 @@ void UHealthSystem::AuthApplyDamage(const FApplyDamageIn In)
 			}
 			
 			FVector OriginLocation = GetOwner()->GetActorLocation();
-			if (IsValid(GetOwner())) AttachTo = GetOwner()->GetRootComponent();
-			else if (IsValid(RootActor)) AttachTo = RootActor->GetRootComponent();
-			if (IsValid(AttachTo)) OriginLocation = AttachTo->GetOwner()->GetTransform().InverseTransformPosition(OriginLocation);
-			SpawnDieFX(In.DamageDataAsset, OriginLocation, AttachTo);
+			if (IsValid(RootActor)) OriginLocation = RootActor->GetTransform().InverseTransformPosition(OriginLocation);
+			SpawnDieFX(In.DamageDataAsset, OriginLocation, RootActor);
 		}
 	}
 }
 
-void UHealthSystem::SpawnDamageFX(UDataAsset* DamageDataAsset, FVector HitLocation, USceneComponent* AttachTo)
+void UHealthSystem::SpawnDamageFX(UDataAsset* DamageDataAsset, FVector HitLocation, AActor* AttachTo)
 {
 	if (IsValid(DamageDataAsset))
 	{
@@ -124,6 +117,7 @@ void UHealthSystem::SpawnDamageFX(UDataAsset* DamageDataAsset, FVector HitLocati
 		{
 			for (FFX FX : FXArray->FXs)
 			{
+				// TODO: Multicast should be in this class not in GSS because multicast should not be global.
 				if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, HitLocation, AttachTo, AttenuationSettings);
 			}
 			return;
@@ -132,11 +126,12 @@ void UHealthSystem::SpawnDamageFX(UDataAsset* DamageDataAsset, FVector HitLocati
 
 	for (FFX FX : DamageFXDefault)
 	{
+		// todo this is dog shit
 		if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, HitLocation, AttachTo, AttenuationSettings);
 	}
 }
 
-void UHealthSystem::SpawnDieFX(UDataAsset* DamageDataAsset, FVector OriginLocation, USceneComponent* AttachTo)
+void UHealthSystem::SpawnDieFX(UDataAsset* DamageDataAsset, FVector OriginLocation, AActor* AttachTo)
 {
 	if (IsValid(DamageDataAsset))
 	{
@@ -144,6 +139,7 @@ void UHealthSystem::SpawnDieFX(UDataAsset* DamageDataAsset, FVector OriginLocati
 		{
 			for (FFX FX : FXArray->FXs)
 			{
+				// todo also dog shit
 				if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, OriginLocation, AttachTo, AttenuationSettings);
 			}
 			return;
@@ -152,6 +148,7 @@ void UHealthSystem::SpawnDieFX(UDataAsset* DamageDataAsset, FVector OriginLocati
 	
 	for (FFX FX : DieFXDefault)
 	{
+		// todo dog shit also
 		if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, OriginLocation, AttachTo, AttenuationSettings);
 	}
 }

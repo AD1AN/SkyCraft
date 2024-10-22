@@ -19,24 +19,15 @@ USTRUCT(BlueprintType)
 struct FApplyDamageIn
 {
 	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int32 BaseDamage = 0;
-	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	EDamageGlobalType DamageGlobalType = EDamageGlobalType::Pure;
-
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 BaseDamage = 0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) EDamageGlobalType DamageGlobalType = EDamageGlobalType::Pure;
 	// ALWAYS SHOULD BE VALID!
 	// Can be DA_Item/DA_DamageCauser or anything.
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	UDataAsset* DamageDataAsset = nullptr;
-
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDataAsset* DamageDataAsset = nullptr;
 	// Can be Player/NPC/Objects
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	UObject* EntityDealer = nullptr;
-	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	FVector HitLocation = FVector::ZeroVector;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UObject* EntityDealer = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector HitLocation = FVector::ZeroVector;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bShowDamageNumbers = true;
 };
 
 UENUM()
@@ -58,7 +49,7 @@ public:
 	UPROPERTY(BlueprintAssignable) FOnDamage OnDamage;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDamage(USceneComponent* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, int32 Damage, float DamageRatio, FVector HitLocation);
+	void Multicast_OnDamage(AActor* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, int32 Damage, float DamageRatio, FVector HitLocation, bool bShowDamageNumbers);
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie); UPROPERTY(BlueprintAssignable) FOnDie OnDie;
 
@@ -120,8 +111,8 @@ public:
 
 	UPROPERTY(VisibleInstanceOnly) class AGSS* GSS = nullptr;
 
-	void SpawnDamageFX(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector, USceneComponent* AttachTo = nullptr);
-	void SpawnDieFX(UDataAsset* DamageDataAsset = nullptr, FVector OriginLocation = FVector::ZeroVector, USceneComponent* AttachTo = nullptr);
+	void SpawnDamageFX(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector, AActor* AttachTo = nullptr);
+	void SpawnDieFX(UDataAsset* DamageDataAsset = nullptr, FVector OriginLocation = FVector::ZeroVector, AActor* AttachTo = nullptr);
 	
 	UFUNCTION(BlueprintCallable) float HealthRatio();
 

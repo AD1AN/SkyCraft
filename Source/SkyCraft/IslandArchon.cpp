@@ -9,7 +9,7 @@ AIslandArchon::AIslandArchon()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
-	SetReplicates(true);
+	bReplicates = true;
 }
 
 void AIslandArchon::AuthSetCrystal(bool newCrystal)

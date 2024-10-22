@@ -40,6 +40,9 @@ void UEntityGenerator::GenerateResources(FGenerateResourcesIn GenerateResourcesI
 
 	FEntities* FoundLOD = SpawnedLODs.Find(GenerateResourcesIn.LOD);
 	if (!FoundLOD) FoundLOD = &SpawnedLODs.Add(GenerateResourcesIn.LOD, FEntities{});
+
+	if (GenerateResourcesIn.ResourceSize.Min > GenerateResourcesIn.DA_Resource->Size.Num()-1) GenerateResourcesIn.ResourceSize.Min = GenerateResourcesIn.DA_Resource->Size.Num()-1;
+	if (GenerateResourcesIn.ResourceSize.Max > GenerateResourcesIn.DA_Resource->Size.Num()-1) GenerateResourcesIn.ResourceSize.Max = GenerateResourcesIn.DA_Resource->Size.Num()-1;
 	
 	for (uint16 _Row = 0; _Row < _GridSize-1; ++_Row)
 	{

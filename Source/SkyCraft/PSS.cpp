@@ -12,19 +12,19 @@ APSS::APSS()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 }
 
-void APSS::SetSteamID(FString NewSteamID)
+void APSS::AuthSetSteamID(FString NewSteamID)
 {
 	SteamID = NewSteamID;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, SteamID, this);
 }
 
-void APSS::SetCasta(ECasta NewCasta)
+void APSS::AuthSetCasta(ECasta NewCasta)
 {
 	Casta = NewCasta;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Casta, this);
 }
 
-void APSS::SetIslandArchon(AIslandArchon* NewIslandArchon)
+void APSS::AuthSetIslandArchon(AIslandArchon* NewIslandArchon)
 {
 	IslandArchon = NewIslandArchon;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, IslandArchon, this);
@@ -36,7 +36,7 @@ void APSS::OnRep_IslandArchon()
 	OnIslandArchon.Broadcast();
 }
 
-EPlayerForm APSS::SetPlayerForm(EPlayerForm NewPlayerForm)
+EPlayerForm APSS::AuthSetPlayerForm(EPlayerForm NewPlayerForm)
 {
 	PlayerForm = NewPlayerForm;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, PlayerForm, this);
@@ -95,42 +95,42 @@ void APSS::OnRep_LearnedCraftItems() const
 	OnLearnedCraftItems.Broadcast();
 }
 
-void APSS::AddAnalyzedEntities(UDA_AnalyzeEntity* AddEntity)
+void APSS::AuthAddAnalyzedEntities(UDA_AnalyzeEntity* AddEntity)
 {
 	AnalyzedEntities.Add(AddEntity);
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedEntities, this);
 	OnRep_AnalyzedEntities();
 }
 
-void APSS::SetAnalyzedEntities(TArray<UDA_AnalyzeEntity*> NewEntities)
+void APSS::AuthSetAnalyzedEntities(TArray<UDA_AnalyzeEntity*> NewEntities)
 {
 	AnalyzedEntities = NewEntities;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedEntities, this);
 	OnRep_AnalyzedEntities();
 }
 
-void APSS::AddAnalyzedItems(UDA_Item* AddItem)
+void APSS::AuthAddAnalyzedItems(UDA_Item* AddItem)
 {
 	AnalyzedItems.Add(AddItem);
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedItems, this);
 	OnRep_AnalyzedItems();
 }
 
-void APSS::SetAnalyzedItems(TArray<UDA_Item*> NewItems)
+void APSS::AuthSetAnalyzedItems(TArray<UDA_Item*> NewItems)
 {
 	AnalyzedItems = NewItems;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedItems, this);
 	OnRep_AnalyzedItems();
 }
 
-void APSS::AddLearnedCraftItems(UDA_CraftItem* Adding)
+void APSS::AuthAddLearnedCraftItems(UDA_CraftItem* Adding)
 {
 	LearnedCraftItems.Add(Adding);
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, LearnedCraftItems, this);
 	OnRep_LearnedCraftItems();
 }
 
-void APSS::SetLearnedCraftItems(TArray<UDA_CraftItem*> New)
+void APSS::AuthSetLearnedCraftItems(TArray<UDA_CraftItem*> New)
 {
 	LearnedCraftItems = New;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, LearnedCraftItems, this);
