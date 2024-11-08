@@ -7,6 +7,7 @@
 #include "SkyCraft/Structs/Slot.h"
 #include "Inventory.generated.h"
 
+class UDA_Craft;
 enum class EItemType : uint8;
 
 UENUM()
@@ -23,6 +24,8 @@ class SKYCRAFT_API UInventory : public UActorComponent
 
 public:
 	UInventory();
+
+	UPROPERTY(VisibleAnywhere) UDA_ItemProperty* CreatorProperty = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	TArray<FSlot> Slots;
@@ -60,8 +63,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void Swap(int32 SlotIndex, UInventory* OtherInventory, int32 OtherSlotIndex);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void Spend(FSlot SpendSlot);
 	UFUNCTION(BlueprintCallable, BlueprintPure) int32 CountItems(UDA_Item* DA_Item);
-	UFUNCTION(BlueprintCallable, BlueprintPure) bool FindEmptySlots(int32 NumEmptySlots = 1);
+	UFUNCTION(BlueprintCallable, BlueprintPure) bool Craftable(TArray<FSlot> RequiredSlots);
+	UFUNCTION(BlueprintCallable, BlueprintPure) bool HasEmptySlots(int32 NumEmptySlots = 1);
 	// GetEmptySlots() - maybe in the future, returns empty slots indexes.
+
+	UFUNCTION(Server, Reliable, BlueprintCallable) void Server_Craft(UDA_Craft* DA_Craft);
 
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_AddProperty(int32 SlotIndex, FItemProperty NewProperty);
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_ChangeProperty(int32 SlotIndex, int32 PropertyIndex, FItemProperty NewProperty);

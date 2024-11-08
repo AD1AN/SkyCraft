@@ -2,13 +2,20 @@
 
 #include "Inventory.h"
 #include "Net/UnrealNetwork.h"
+#include "SkyCraft/PCS.h"
+#include "SkyCraft/PSS.h"
+#include "SkyCraft/DataAssets/DA_Craft.h"
 #include "SkyCraft/DataAssets/DA_Item.h"
+#include "SkyCraft/DataAssets/DA_ItemProperty.h"
 
 UInventory::UInventory()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	SetIsReplicatedByDefault(true);
+	
+	static ConstructorHelpers::FObjectFinder<UDA_ItemProperty> DA_ItemPropertyAsset(TEXT("/Game/DataAssets/ItemProperty/Creator.Creator"));
+	if (DA_ItemPropertyAsset.Succeeded()) CreatorProperty = DA_ItemPropertyAsset.Object;
 }
 
 bool UInventory::InsertSlot(FSlot InsertingSlot)
@@ -212,7 +219,7 @@ void UInventory::Spend(FSlot SpendSlot)
 {
 	if (!IsValid(SpendSlot.DA_Item)) return;
 	
-	int16 SpendLeft = static_cast<int16>(SpendSlot.Quantity);
+	int16 SpendLeft = SpendSlot.Quantity;
 
 	int32 SlotIndex = 0;
 	for (FSlot Slot : Slots)
@@ -236,18 +243,28 @@ void UInventory::Spend(FSlot SpendSlot)
 
 int32 UInventory::CountItems(UDA_Item* SearchDA_Item)
 {
+	if (!SearchDA_Item) return 0;
+	
 	int32 HowManyFound = 0;
-	for (FSlot Slot : Slots)
+	for (const FSlot Slot : Slots)
 	{
-		if (Slot.DA_Item == SearchDA_Item)
-		{
-			HowManyFound += Slot.Quantity;
-		}
+		if (Slot.DA_Item == SearchDA_Item) HowManyFound += Slot.Quantity; 
 	}
 	return HowManyFound;
 }
 
-bool UInventory::FindEmptySlots(int32 NumEmptySlots)
+bool UInventory::Craftable(TArray<FSlot> RequiredSlots)
+{
+	if (RequiredSlots.IsEmpty()) return true;
+	
+	for (const FSlot RequireSlot : RequiredSlots)
+	{
+		if (CountItems(RequireSlot.DA_Item) < RequireSlot.Quantity) return false;
+	}
+	return true;
+}
+
+bool UInventory::HasEmptySlots(int32 NumEmptySlots)
 {
 	int32 FoundEmptySlots = 0;
 	for (FSlot Slot : Slots)
@@ -259,6 +276,34 @@ bool UInventory::FindEmptySlots(int32 NumEmptySlots)
 		}
 	}
 	return false;
+}
+
+void UInventory::Server_Craft_Implementation(UDA_Craft* DA_Craft)
+{
+	if (!DA_Craft) return;
+	if (!HasEmptySlots()) return;
+	if (!Craftable(DA_Craft->RequiredSlots)) return;
+	
+	for (const FSlot RequireSlot : DA_Craft->RequiredSlots)
+	{
+		Spend(RequireSlot);
+	}
+	
+	TArray<FItemProperty> CraftedProperties = DA_Craft->CraftSlot.DA_Item->InitialProperties;
+	FItemProperty Creator;
+	Creator.Property = CreatorProperty;
+	if (const APCS* PCS = Cast<APCS>(GetOwner()->GetOwner()))
+	{
+		if (const APSS* PSS = PCS->GetPlayerState<APSS>())
+		{
+			Creator.Strings.Add(PSS->SteamID);
+		}
+	}
+	CraftedProperties.Add(Creator);
+	
+	FSlot CraftedSlot = DA_Craft->CraftSlot;
+	CraftedSlot.Properties = CraftedProperties;
+	InsertSlot(CraftedSlot);
 }
 
 void UInventory::Multicast_AddProperty_Implementation(int32 SlotIndex, FItemProperty NewProperty)

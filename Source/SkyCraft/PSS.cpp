@@ -123,14 +123,14 @@ void APSS::AuthSetAnalyzedItems(TArray<UDA_Item*> NewItems)
 	OnRep_AnalyzedItems();
 }
 
-void APSS::AuthAddLearnedCraftItems(UDA_CraftItem* Adding)
+void APSS::AuthAddLearnedCraftItems(UDA_Craft* Adding)
 {
 	LearnedCraftItems.Add(Adding);
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, LearnedCraftItems, this);
 	OnRep_LearnedCraftItems();
 }
 
-void APSS::AuthSetLearnedCraftItems(TArray<UDA_CraftItem*> New)
+void APSS::AuthSetLearnedCraftItems(TArray<UDA_Craft*> New)
 {
 	LearnedCraftItems = New;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, LearnedCraftItems, this);

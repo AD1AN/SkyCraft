@@ -23,6 +23,7 @@ struct FApplyDamageIn
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) EDamageGlobalType DamageGlobalType = EDamageGlobalType::Pure;
 	// ALWAYS SHOULD BE VALID!
 	// Can be DA_Item/DA_DamageCauser or anything.
+	// For filtering.
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDataAsset* DamageDataAsset = nullptr;
 	// Can be Player/NPC/Objects
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) UObject* EntityDealer = nullptr;
@@ -49,7 +50,12 @@ public:
 	UPROPERTY(BlueprintAssignable) FOnDamage OnDamage;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDamage(AActor* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, int32 Damage, float DamageRatio, FVector HitLocation, bool bShowDamageNumbers);
+	void Multicast_OnDamage(int32 Damage, AActor* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, float DamageRatio, FVector HitLocation, bool bShowDamageNumbers);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnZeroDamage(AActor* AttachTo, FVector HitLocation);
+
+	void SpawnDamageNumbers(int32 Damage, AActor* AttachTo, FVector HitLocation);
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie); UPROPERTY(BlueprintAssignable) FOnDie OnDie;
 

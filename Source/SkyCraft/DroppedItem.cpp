@@ -119,14 +119,14 @@ void ADroppedItem::BeginPlay()
 		if (!IsNetMode(NM_Client)) Destroy();
 		return;
 	}
-	if (Slot.DA_Item->ItemStaticMesh.IsNull()) return;
-	if (Slot.DA_Item->ItemStaticMesh.IsValid())
+	if (Slot.DA_Item->StaticMesh.IsNull()) return;
+	if (Slot.DA_Item->StaticMesh.IsValid())
 	{
 		SetupStaticMesh();
 	} else
 	{
 		FStreamableManager& StreamableManager = UAssetManager::GetStreamableManager();
-		StreamableManager.RequestAsyncLoad(Slot.DA_Item->ItemStaticMesh.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ADroppedItem::OnMeshLoaded));
+		StreamableManager.RequestAsyncLoad(Slot.DA_Item->StaticMesh.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ADroppedItem::OnMeshLoaded));
 	}
 	SphereComponent->SetCollisionProfileName("ItemLoot"); // Prevents StartPickUp() trigger faster BeginPlay()
 }
@@ -227,10 +227,36 @@ void ADroppedItem::FailPickUp()
 void ADroppedItem::OnMeshLoaded()
 {
 	if (!IsValid(Slot.DA_Item)) return;
-	if (!Slot.DA_Item->ItemStaticMesh.IsValid()) return;
-	
+	if (!Slot.DA_Item->StaticMesh.IsValid()) return;
 	SetupStaticMesh();
 }
+
+void ADroppedItem::SetupStaticMesh()
+{
+	StaticMeshComponent->SetStaticMesh(Slot.DA_Item->StaticMesh.Get());
+	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
+	
+	if (Slot.DA_Item->OverrideMaterial.IsNull()) return;
+	if (Slot.DA_Item->OverrideMaterial.IsValid()) SetupOverrideMaterial();
+	else
+	{
+		FStreamableManager& StreamableManager = UAssetManager::GetStreamableManager();
+		StreamableManager.RequestAsyncLoad(Slot.DA_Item->OverrideMaterial.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ADroppedItem::OnMaterialLoaded));
+	}
+}
+
+void ADroppedItem::OnMaterialLoaded()
+{
+	if (!IsValid(Slot.DA_Item)) return;
+	if (!Slot.DA_Item->OverrideMaterial.IsValid()) return;
+	SetupOverrideMaterial();
+}
+
+void ADroppedItem::SetupOverrideMaterial()
+{
+	StaticMeshComponent->SetMaterial(0, Slot.DA_Item->OverrideMaterial.Get());
+}
+
 
 void ADroppedItem::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
@@ -244,12 +270,6 @@ void ADroppedItem::ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& Inte
 
 void ADroppedItem::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut)
 {
-}
-
-void ADroppedItem::SetupStaticMesh()
-{
-	StaticMeshComponent->SetStaticMesh(Cast<UStaticMesh>(Slot.DA_Item->ItemStaticMesh.Get()));
-	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
 }
 
 void ADroppedItem::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut)

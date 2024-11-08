@@ -66,4 +66,6 @@ public:
 private:
 	void OnMeshLoaded();
 	void SetupStaticMesh();
+	void OnMaterialLoaded();
+	void SetupOverrideMaterial();
 };

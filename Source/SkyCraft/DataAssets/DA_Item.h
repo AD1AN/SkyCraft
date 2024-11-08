@@ -25,7 +25,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) FText Name;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) FText Description;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) UTexture2D* Icon = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSoftObjectPtr<UStaticMesh> ItemStaticMesh = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSoftObjectPtr<UStaticMesh> StaticMesh = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSoftObjectPtr<UMaterialInterface> OverrideMaterial = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool bCanStack = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bCanStack", EditConditionHides)) uint8 MaxQuantity = 1;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite) TArray<FItemProperty> InitialProperties; // ReadWrite - because of error for SearchInProperties()

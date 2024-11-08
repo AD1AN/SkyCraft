@@ -42,7 +42,7 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedItems); UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnAnalyzedItems OnAnalyzedItems;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_LearnedCraftItems, BlueprintReadWrite)
-	TArray<UDA_CraftItem*> LearnedCraftItems;
+	TArray<UDA_Craft*> LearnedCraftItems;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLearnedCraftItems); UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnLearnedCraftItems OnLearnedCraftItems;
 	
@@ -56,8 +56,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddAnalyzedItems(UDA_Item* AddItem);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetAnalyzedItems(TArray<UDA_Item*> NewItems);
 	
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddLearnedCraftItems(UDA_CraftItem* Adding);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetLearnedCraftItems(TArray<UDA_CraftItem*> New);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddLearnedCraftItems(UDA_Craft* Adding);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetLearnedCraftItems(TArray<UDA_Craft*> New);
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS);
