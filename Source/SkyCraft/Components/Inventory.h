@@ -25,7 +25,7 @@ class SKYCRAFT_API UInventory : public UActorComponent
 public:
 	UInventory();
 
-	UPROPERTY(VisibleAnywhere) UDA_ItemProperty* CreatorProperty = nullptr;
+	UPROPERTY(VisibleAnywhere) UDA_ItemProperty* CreatorProperty = nullptr; // Todo: Move to GIS or GMS.
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	TArray<FSlot> Slots;

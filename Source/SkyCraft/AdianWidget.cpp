@@ -8,6 +8,13 @@ UAdianWidget::UAdianWidget(const FObjectInitializer& ObjectInitializer)
 	
 }
 
+void UAdianWidget::NativeOnInitialized()
+{
+	PreInitialized();
+	Super::NativeOnInitialized();
+	PostInitialized();
+}
+
 void UAdianWidget::NativeConstruct()
 {
 	if (!bConstructOnce)

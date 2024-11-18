@@ -125,6 +125,7 @@ void UInventory::DropIn(int32 SlotIndex, UInventory* DragInventory, int32 DragSl
 	if (!IsValidSlot(this, SlotIndex)) return;
 	if (DragInventory == this && DragSlotIndex == SlotIndex) return;
 	FSlot DragSlot = DragInventory->Slots[DragSlotIndex];
+	if (DragQuantity > DragSlot.Quantity) DragQuantity = DragSlot.Quantity;
 	uint8 DragLeftQuantity = DragSlot.Quantity - DragQuantity;
 	if (!IsValid(DragSlot.DA_Item)) return;
 	if (!CanDropIn(DragSlot)) return;
@@ -207,9 +208,9 @@ void UInventory::Swap(int32 SlotIndex, UInventory* OtherInventory, int32 OtherSl
 	if (!IsValidSlot(this, SlotIndex)) return;
 	if (OtherInventory == this && OtherSlotIndex == SlotIndex) return;
 	const FSlot OtherSlot = OtherInventory->Slots[OtherSlotIndex];
-	if (!OtherInventory->CanDropIn(OtherSlot)) return;
 	const FSlot Slot = Slots[SlotIndex];
-	if (!CanDropIn(Slot)) return;
+	if (!OtherInventory->CanDropIn(Slot)) return;
+	if (!CanDropIn(OtherSlot)) return;
 
 	Multicast_ChangeSlot(SlotIndex, OtherSlot);
 	OtherInventory->Multicast_ChangeSlot(OtherSlotIndex, Slot);

@@ -24,11 +24,20 @@ public:
 	UPROPERTY(BlueprintReadWrite) TArray<ABuilding*> Supports;
 	UPROPERTY(BlueprintReadWrite) TArray<ABuilding*> Depends;
 	UPROPERTY(BlueprintReadWrite) TArray<UMaterialInterface*> AllMaterials;
-	UPROPERTY(BlueprintReadWrite, Replicated) uint8 Grounded = 0;
+	UPROPERTY(BlueprintReadOnly, Replicated) uint8 Grounded = 0;
+	UFUNCTION(BlueprintAuthorityOnly, BlueprintCallable) void AuthSetGrounded(uint8 NewGrounded);
+	
 	UPROPERTY(BlueprintReadOnly) uint8 GroundedMax = 7;
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) FBuildingParameters SaveBuildingParameters();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) bool LoadBuildingParameters(FBuildingParameters BuildingParameters);
+	
+	UFUNCTION(Server, Reliable, BlueprintCallable) void Multicast_Build();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void Builded();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void BuildedEffects();
+	UFUNCTION(Server, Reliable, BlueprintCallable) void Multicast_Dismantle();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void Dismantled();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void DismantledEffects();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

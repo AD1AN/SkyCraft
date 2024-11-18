@@ -28,6 +28,7 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	{
 		for (const FCurrentProlonged CurrentP : CurrentProlonged)
 		{
+			if (!IsValid(CurrentP.Pawn)) RemoveProlonged(CurrentP.Pawn);
 			if (FVector::Distance(GetOwner()->GetActorLocation(), CurrentP.Pawn->GetActorLocation()) > 300)
 			{
 				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn);
