@@ -61,20 +61,20 @@ void AIsland::RemoveDroppedItem(ADroppedItem* DroppedItem)
 	DroppedItems.Remove(DroppedItem);
 }
 
-void AIsland::AddConstellation(FSS_Constellation NewConstellation)
+void AIsland::AddConstellation(FSS_Astralon NewConstellation)
 {
-	SS_Constellations.Add(NewConstellation);
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Constellations, this);
+	SS_Astralons.Add(NewConstellation);
+	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Astralons, this);
 }
 
-void AIsland::RemoveConstellation(FSS_Constellation RemoveConstellation)
+void AIsland::RemoveConstellation(FSS_Astralon RemoveConstellation)
 {
-	for (int32 i = 0; i < SS_Constellations.Num(); i++)
+	for (int32 i = 0; i < SS_Astralons.Num(); i++)
 	{
-		if (SS_Constellations[i].DA_Constellation == RemoveConstellation.DA_Constellation)
+		if (SS_Astralons[i].DA_Astralon == RemoveConstellation.DA_Astralon)
 		{
-			SS_Constellations.RemoveAt(i);
-			MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Constellations, this);
+			SS_Astralons.RemoveAt(i);
+			MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Astralons, this);
 			return;
 		}
 	}
@@ -88,7 +88,7 @@ void AIsland::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
-	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, SS_Constellations, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, SS_Astralons, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, IslandSize, Params);
 }
 

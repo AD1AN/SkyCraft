@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "VoxelWorld.h"
 #include "SkyCraft/Interfaces/IslandInterface.h"
-#include "Structs/SS_Constellation.h"
+#include "Structs/SS_Astralon.h"
 #include "Structs/SS_IslandStatic.h"
 #include "Island.generated.h"
 
@@ -30,7 +30,7 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnChangeLOD OnChangeLOD;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) int32 CurrentLOD = -1;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) TArray<ADroppedItem*> DroppedItems;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated) TArray<FSS_Constellation> SS_Constellations;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated) TArray<FSS_Astralon> SS_Astralons;
 
 	UFUNCTION(BlueprintCallable) TArray<FSS_DroppedItem> SaveDroppedItems();
 	UFUNCTION(BlueprintCallable) void LoadDroppedItems(TArray<FSS_DroppedItem> SS_DroppedItems);
@@ -38,8 +38,8 @@ public:
 	virtual void AddDroppedItem(ADroppedItem* DroppedItem) override;
 	virtual void RemoveDroppedItem(ADroppedItem* DroppedItem) override;
 
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddConstellation(FSS_Constellation NewConstellation);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveConstellation(FSS_Constellation RemoveConstellation);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddConstellation(FSS_Astralon NewConstellation);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveConstellation(FSS_Astralon RemoveConstellation);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
