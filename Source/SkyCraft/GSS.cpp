@@ -43,6 +43,12 @@ void AGSS::SetHostPlayer(APSS* Host)
 	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, HostPlayer, this);
 }
 
+void AGSS::AuthSetTraversalAltitude(FFloatMinMax newTraversalAltitude)
+{
+	TraversalAltitude = newTraversalAltitude;
+	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, TraversalAltitude, this);
+}
+
 void AGSS::AddConnectedPlayer(APSS* PlayerState)
 {
 	ConnectedPlayers.Add(PlayerState);
@@ -77,6 +83,7 @@ void AGSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, TraversalAltitude, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, HostPlayer, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, ConnectedPlayers, Params);
 }

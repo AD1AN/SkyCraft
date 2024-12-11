@@ -29,7 +29,7 @@ public:
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, BlueprintAuthorityOnly) void SetInteractable(bool isInteractable);
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) TArray<FInteractKeySettings> InteractKeys;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) TArray<FCurrentProlonged> CurrentProlonged;
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) TArray<FCurrentProlonged> CurrentProlonged;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector InteractLocation;
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

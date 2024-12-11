@@ -69,19 +69,25 @@ void ADroppedItem::BeginPlay()
 	{
 		SphereComponent->SetNotifyRigidBodyCollision(true);
 		SphereComponent->SetSimulatePhysics(true);
-		if (IsValid(AttachedToIsland))
+	}
+	
+	if (IsValid(AttachedToIsland))
+	{
+		USceneComponent* AttachScene = AttachedToIsland->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
+		if (IsValid(AttachScene))
 		{
-			USceneComponent* AttachScene = AttachedToIsland->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
-			if (IsValid(AttachScene))
-			{
-				Multicast_AttachTo(AttachScene);
-				if (IIslandInterface* IslandInterface = Cast<IIslandInterface>(AttachedToIsland))
-				{
-					IslandInterface->AddDroppedItem(this);
-				}
-			}
+			FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepRelativeTransform);
+			AttachmentTransformRules.bWeldSimulatedBodies = true;
+			AttachToComponent(AttachScene, AttachmentTransformRules);
 		}
-
+		else
+		{
+			AttachToActor(AttachedToIsland, FAttachmentTransformRules::KeepRelativeTransform);
+		}
+	}
+	
+	if (!IsNetMode(NM_Client))
+	{
 		if (DropDirectionType == EDropDirectionType::RandomDirection)
 		{
 			FVector2D MultipliedRandomMagnitude = RandomMagnitude * 100;
@@ -113,7 +119,7 @@ void ADroppedItem::BeginPlay()
 		}
 	}
 	
-	if (!IsValid(Slot.DA_Item))
+	if (!Slot.DA_Item)
 	{
 		GEngine->AddOnScreenDebugMessage(-1,555.0f,FColor::Red,TEXT("DroppedItem: Slot is empty! fix it!"));
 		if (!IsNetMode(NM_Client)) Destroy();
@@ -157,7 +163,7 @@ void ADroppedItem::Tick(float DeltaSeconds)
 }
 
 void ADroppedItem::Multicast_AttachTo_Implementation(USceneComponent* SceneComponent)
-{
+{ // Maybe this function is not needed.
 	FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepWorldTransform);
 	AttachmentTransformRules.bWeldSimulatedBodies = true;
 	AttachToComponent(SceneComponent, AttachmentTransformRules);
@@ -287,5 +293,10 @@ void ADroppedItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME_CONDITION(ADroppedItem, Slot, COND_None);
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
+	
+	DOREPLIFETIME_WITH_PARAMS_FAST(ADroppedItem, AttachedToIsland, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ADroppedItem, Slot, Params);
 }

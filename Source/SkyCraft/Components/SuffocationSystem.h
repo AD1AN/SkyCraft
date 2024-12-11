@@ -22,9 +22,9 @@ class SKYCRAFT_API USuffocationSystem : public UActorComponent
 
 public:	
 	USuffocationSystem();
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) float SuffocationAltitudeUnder = 50000.0f;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) float SuffocationAltitudeAbove = 150000.0f;
+	
+	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) ESuffocationType SuffocationType = ESuffocationType::TickDamagePercent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="SuffocationType==ESuffocationType::TickDamagePercent", EditConditionHides, ClampMin="1", ClampMax="100", UIMin="1", UIMax="100"))

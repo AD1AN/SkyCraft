@@ -1,8 +1,8 @@
 // ADIAN Copyrighted
 
-
 #include "SuffocationSystem.h"
 #include "HealthSystem.h"
+#include "SkyCraft/GSS.h"
 
 USuffocationSystem::USuffocationSystem()
 {
@@ -15,6 +15,8 @@ USuffocationSystem::USuffocationSystem()
 void USuffocationSystem::BeginPlay()
 {
 	Super::BeginPlay();
+	GSS = Cast<AGSS>(GetWorld()->GetGameState());
+	
 	if (!IsNetMode(NM_Client))
 	{
 		SetComponentTickEnabled(true);
@@ -27,7 +29,7 @@ void USuffocationSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	
 	if (!IsValid(GetOwner())) return;
 	
-	if (GetOwner()->GetActorLocation().Z <= SuffocationAltitudeUnder || GetOwner()->GetActorLocation().Z >= SuffocationAltitudeAbove)
+	if (GetOwner()->GetActorLocation().Z <= GSS->Suffocation.Min || GetOwner()->GetActorLocation().Z >= GSS->Suffocation.Max)
 	{
 		if (SuffocationType == ESuffocationType::InstantDestroy)
 		{

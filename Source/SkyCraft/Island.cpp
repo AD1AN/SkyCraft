@@ -39,14 +39,18 @@ TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
 
 void AIsland::LoadDroppedItems(TArray<FSS_DroppedItem> SS_DroppedItems)
 {
+	USceneComponent* AttachScene = FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
+	FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepRelativeTransform);
+	AttachmentTransformRules.bWeldSimulatedBodies = true;
+	
 	for (FSS_DroppedItem SS_DroppedItem : SS_DroppedItems)
 	{
 		FTransform SpawnTransform;
 		SpawnTransform.SetLocation(SS_DroppedItem.RelativeLocation);
 		ADroppedItem* SpawnedDroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
 		SpawnedDroppedItem->Slot = SS_DroppedItem.Slot;
+		SpawnedDroppedItem->AttachedToIsland = this;
 		SpawnedDroppedItem->FinishSpawning(SpawnTransform);
-		SpawnedDroppedItem->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		DroppedItems.Add(SpawnedDroppedItem);
 	}
 }

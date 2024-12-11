@@ -20,7 +20,7 @@ UInventory::UInventory()
 
 bool UInventory::InsertSlot(FSlot InsertingSlot)
 {
-	if (!IsValid(InsertingSlot.DA_Item)) return false;
+	if (!InsertingSlot.DA_Item) return false;
 
 	int32 SlotIndex = 0;
 	if (InsertingSlot.DA_Item->bCanStack)
@@ -30,7 +30,7 @@ bool UInventory::InsertSlot(FSlot InsertingSlot)
 		bool CanInsert = false;
 		for (FSlot Slot : Slots)
 		{
-			if (!IsValid(Slot.DA_Item))
+			if (!Slot.DA_Item)
 			{
 				Slot.DA_Item = InsertingSlot.DA_Item;
 				Slot.Quantity = static_cast<uint8>(InsertingLeft);
@@ -81,7 +81,7 @@ bool UInventory::InsertSlot(FSlot InsertingSlot)
 	{
 		for (FSlot Slot : Slots)
 		{
-			if (!IsValid(Slot.DA_Item))
+			if (!Slot.DA_Item)
 			{
 				Multicast_ChangeSlot(SlotIndex, InsertingSlot);
 				Multicast_OnInsertSlotBroadcast(InsertingSlot);
@@ -127,12 +127,12 @@ void UInventory::DropIn(int32 SlotIndex, UInventory* DragInventory, int32 DragSl
 	FSlot DragSlot = DragInventory->Slots[DragSlotIndex];
 	if (DragQuantity > DragSlot.Quantity) DragQuantity = DragSlot.Quantity;
 	uint8 DragLeftQuantity = DragSlot.Quantity - DragQuantity;
-	if (!IsValid(DragSlot.DA_Item)) return;
+	if (!DragSlot.DA_Item) return;
 	if (!CanDropIn(DragSlot)) return;
 
 	FSlot Slot = Slots[SlotIndex];
 
-	if (IsValid(Slot.DA_Item))
+	if (Slot.DA_Item)
 	{
 		if (Slot.DA_Item == DragSlot.DA_Item) // if items match
 		{
@@ -218,7 +218,7 @@ void UInventory::Swap(int32 SlotIndex, UInventory* OtherInventory, int32 OtherSl
 
 void UInventory::Spend(FSlot SpendSlot)
 {
-	if (!IsValid(SpendSlot.DA_Item)) return;
+	if (!SpendSlot.DA_Item) return;
 	
 	int16 SpendLeft = SpendSlot.Quantity;
 
@@ -279,7 +279,20 @@ bool UInventory::HasEmptySlots(int32 NumEmptySlots)
 	return false;
 }
 
-void UInventory::Server_Craft_Implementation(UDA_Craft* DA_Craft)
+bool UInventory::TransferInventory(UInventory* ToInventory)
+{
+	if (!IsValid(ToInventory)) return false;
+	
+	for (int32 SlotIndex = 0; SlotIndex < Slots.Num(); ++SlotIndex)
+	{
+		FSlot& Slot = Slots[SlotIndex];
+		if (!Slot.DA_Item) continue;
+		if (ToInventory->InsertSlot(Slot)) Multicast_EmptySlot(SlotIndex);
+	}
+	return true;
+}
+
+void UInventory::AuthCraft_Implementation(UDA_Craft* DA_Craft)
 {
 	if (!DA_Craft) return;
 	if (!HasEmptySlots()) return;

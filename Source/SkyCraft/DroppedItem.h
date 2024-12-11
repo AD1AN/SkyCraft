@@ -23,15 +23,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class USuffocationSystem* SuffocationSystem = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class UInteractSystem* InteractSystem = nullptr;
 
-	UPROPERTY(VisibleInstanceOnly)
-	AActor* PlayerPickedUp = nullptr;
+	UPROPERTY(VisibleInstanceOnly) AActor* PlayerPickedUp = nullptr;
 	float RelativeDistanceInterpolation = 0.0f;
 
-	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly, meta=(ExposeOnSpawn="true"))
-	AActor* AttachedToIsland = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true"), Replicated)
-	FSlot Slot;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn="true"), Replicated) AActor* AttachedToIsland = nullptr;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, meta=(ExposeOnSpawn="true"), Replicated) FSlot Slot;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true")) EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true")) FVector DropDirection = FVector::ZeroVector;
