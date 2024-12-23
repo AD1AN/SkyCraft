@@ -84,7 +84,7 @@ public:
 	static void ResolveStaticMeshCustomPrimitiveData(UStaticMeshComponent* StaticMeshComponent);
 
 	static bool RandomBoolWithWeight(float Weight);
-	static FVector RandomPointInRelativeBox(const AActor* Actor, const FRelativeBox RelativeBox);
+	static FVector RandomPointInRelativeBox(const FRelativeBox RelativeBox);
 
 	// Return most root actor, if there's no root actor then return self.
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")

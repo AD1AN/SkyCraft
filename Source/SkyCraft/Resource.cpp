@@ -1,8 +1,6 @@
 // ADIAN Copyrighted
 
-
 #include "Resource.h"
-
 #include "AdianFL.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"
 #include "SkyCraft/Components/HealthSystem.h"

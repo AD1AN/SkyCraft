@@ -39,10 +39,6 @@ TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
 
 void AIsland::LoadDroppedItems(TArray<FSS_DroppedItem> SS_DroppedItems)
 {
-	USceneComponent* AttachScene = FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
-	FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepRelativeTransform);
-	AttachmentTransformRules.bWeldSimulatedBodies = true;
-	
 	for (FSS_DroppedItem SS_DroppedItem : SS_DroppedItems)
 	{
 		FTransform SpawnTransform;

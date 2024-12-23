@@ -203,29 +203,33 @@ void UHealthSystem::AuthDie(UDataAsset* DamageDataAsset, FVector HitLocation)
 			for (uint8 i = 0; i < RepeatDrop; ++i)
 			{
 				if (DropItem.Probability < 1 && !UAdianFL::RandomBoolWithWeight(DropItem.Probability)) continue;
-			
+				
 				FTransform SpawnTransform;
+				ADroppedItem* DroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
+				
+				AActor* RootActor = UAdianFL::GetRootActor(GetOwner());
+				bool isIsland = (RootActor->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects") != nullptr);
+				if (isIsland) DroppedItem->AttachedToIsland = RootActor;
+				
 				if (DropLocationType == EDropLocationType::ActorOrigin)
 				{
-					SpawnTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0,10));
+					if (isIsland) SpawnTransform.SetLocation(RootActor->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()) + FVector(0,0,10));
+					else SpawnTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0,10));
 				}
 				else if (DropLocationType == EDropLocationType::HitLocation)
 				{
-					if (!HitLocation.IsZero()) SpawnTransform.SetLocation(HitLocation);
-					else SpawnTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0,10));
+					if (isIsland) SpawnTransform.SetLocation(RootActor->GetTransform().InverseTransformPosition(HitLocation) + FVector(0,0,10));
+					else SpawnTransform.SetLocation(HitLocation + FVector(0,0,10));
 				}
 				else if (DropLocationType == EDropLocationType::RandomPointInBox)
 				{
-					SpawnTransform.SetLocation(UAdianFL::RandomPointInRelativeBox(GetOwner(), DropInRelativeBox));
+					if (isIsland) SpawnTransform.SetLocation(UAdianFL::RandomPointInRelativeBox(DropInRelativeBox) + RootActor->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()));
+					else SpawnTransform.SetLocation(UAdianFL::RandomPointInRelativeBox(DropInRelativeBox) + RootActor->GetActorLocation());
 				}
-				ADroppedItem* DroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
 				FSlot DropInventorySlot;
 				DropInventorySlot.DA_Item = DropItem.Item;
 				DropInventorySlot.Quantity = FMath::RandRange(DropItem.Min, DropItem.Max);
 				DroppedItem->Slot = DropInventorySlot;
-				AActor* RootActor = UAdianFL::GetRootActor(GetOwner());
-				USceneComponent* FoundAPO = RootActor->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
-				if (IsValid(FoundAPO)) DroppedItem->AttachedToIsland = RootActor;
 				DroppedItem->DropDirectionType = DropDirectionType;
 				DroppedItem->DropDirection = DropDirection;
 				DroppedItem->FinishSpawning(SpawnTransform);

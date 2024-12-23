@@ -25,6 +25,11 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FServerInterrupted, EInterruptedBy, InterruptedBy, EInteractKey, InteractedKey, APawn*, InteractedPawn);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FServerInterrupted OnServerInterrupted;
 
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTextChange);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnTextChange OnTextChange;
+
+	UFUNCTION(BlueprintCallable) void TextChange(FText NewText, int32 IndexInteractKey);
+
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Replicated) bool bInteractable = true;
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, BlueprintAuthorityOnly) void SetInteractable(bool isInteractable);
 

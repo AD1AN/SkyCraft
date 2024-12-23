@@ -171,12 +171,21 @@ bool UAdianFL::RandomBoolWithWeight(float Weight)
 	return Weight >= FMath::FRandRange(0.0f, 1.0f);
 }
 
-FVector UAdianFL::RandomPointInRelativeBox(const AActor* Actor, const FRelativeBox RelativeBox)
+// FVector UAdianFL::RandomPointInRelativeBox(const AActor* Actor, const FRelativeBox RelativeBox)
+// {
+// 	if (!IsValid(Actor)) return FVector::Zero();
+// 	const FVector ALoc = Actor->GetActorLocation();
+// 	const FVector BoxMin = ALoc + RelativeBox.RelativeCenter - RelativeBox.Size;
+// 	const FVector BoxMax = ALoc + RelativeBox.RelativeCenter + RelativeBox.Size;
+// 	return FVector(	FMath::RandRange(BoxMin.X, BoxMax.X),
+// 					FMath::RandRange(BoxMin.Y, BoxMax.Y),
+// 					FMath::RandRange(BoxMin.Z, BoxMax.Z));
+// }
+
+FVector UAdianFL::RandomPointInRelativeBox(const FRelativeBox RelativeBox)
 {
-	if (!IsValid(Actor)) return FVector::Zero();
-	const FVector ALoc = Actor->GetActorLocation();
-	const FVector BoxMin = ALoc + RelativeBox.RelativeCenter - RelativeBox.Size;
-	const FVector BoxMax = ALoc + RelativeBox.RelativeCenter + RelativeBox.Size;
+	const FVector BoxMin = RelativeBox.RelativeCenter - RelativeBox.Size;
+	const FVector BoxMax = RelativeBox.RelativeCenter + RelativeBox.Size;
 	return FVector(	FMath::RandRange(BoxMin.X, BoxMax.X),
 					FMath::RandRange(BoxMin.Y, BoxMax.Y),
 					FMath::RandRange(BoxMin.Z, BoxMax.Z));

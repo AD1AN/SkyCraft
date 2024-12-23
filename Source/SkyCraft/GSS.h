@@ -25,6 +25,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax Suffocation = FFloatMinMax(50000, 150000);
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float IslandArchonSpawnXY = 75000.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax IslandArchonSpawnZ = FFloatMinMax(80000, 95000);
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) bool BuildingInfiniteHeight = false;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) uint8 GroundedMax = 7;
 
 	// -------------------------------------
 	
@@ -33,7 +36,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated) APSS* HostPlayer = nullptr;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHostPlayer(APSS* Host);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetTraversalAltitude(FFloatMinMax newTraversalAltitude);
-	
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedPlayers);
 	UPROPERTY(BlueprintAssignable) FOnConnectedPlayers OnConnectedPlayers;

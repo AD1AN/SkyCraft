@@ -16,6 +16,13 @@ UInteractSystem::UInteractSystem()
 void UInteractSystem::SetInteractable_Implementation(bool isInteractable)
 { bInteractable = isInteractable; }
 
+void UInteractSystem::TextChange(FText NewText, int32 IndexInteractKey)
+{
+	if (!InteractKeys.IsValidIndex(IndexInteractKey)) return;
+	InteractKeys[IndexInteractKey].Text = NewText;
+	OnTextChange.Broadcast();
+}
+
 void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 { // Ticks only on server
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
