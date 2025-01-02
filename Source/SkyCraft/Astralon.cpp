@@ -9,7 +9,7 @@ AAstralon::AAstralon()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	bNetUseOwnerRelevancy = true;
-	SetReplicates(true);
+	bReplicates = true;
 	
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraComponent"));
 	SetRootComponent(NiagaraComponent);

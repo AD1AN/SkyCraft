@@ -16,31 +16,33 @@ class SKYCRAFT_API UIC : public UActorComponent
 public:	
 	UIC();
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Replicated, meta=(ExposeOnSpawn="true")) bool Main = true;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, ReplicatedUsing=BeginPlayIC, meta=(ExposeOnSpawn="true")) bool isBeginPlayIC = false;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn="true")) class UInventory* Inventory = nullptr;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn="true")) int32 SlotIndex;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanLMB = true;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanRMB = true;
+	UPROPERTY(BlueprintReadWrite) bool HadBeginPlay = false;
 
-protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	UFUNCTION(BlueprintNativeEvent) void OnPostBeginPlay();
+	UFUNCTION(BlueprintImplementableEvent) void StartItemComponent();
+	UFUNCTION(BlueprintImplementableEvent) void EndItemComponent();
 
-public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void BeginPlayIC();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void Select();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void Deselect();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void LMB(bool Pressed);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void LMB_Tap();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void LMB_HoldStart();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void LMB_HoldStop();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void RMB(bool Pressed);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void RMB_Tap();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void RMB_HoldStart();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void RMB_HoldStop();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void MMB(bool Pressed);
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void WheelUp();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void WheelDown();
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void Alt(bool Pressed);
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void Select();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void Deselect();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB(bool Pressed);
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB_Tap();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB_HoldStart();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB_HoldStop();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void RMB(bool Pressed);
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void RMB_Tap();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void RMB_HoldStart();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void RMB_HoldStop();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void MMB(bool Pressed);
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void WheelUp();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void WheelDown();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void Alt(bool Pressed);
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

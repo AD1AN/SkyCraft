@@ -7,6 +7,8 @@
 #include "Components/PrimitiveComponent.h"
 #include "SkyCharacter.generated.h"
 
+class APSS;
+
 UCLASS()
 class SKYCRAFT_API ASkyCharacter : public ACharacter
 {
@@ -15,36 +17,25 @@ class SKYCRAFT_API ASkyCharacter : public ACharacter
 public:
 	ASkyCharacter(const FObjectInitializer& ObjectInitializer);
 
-protected:
+	/* Should not be used in blueprint */
 	virtual void BeginPlay() override;
+
+	/* Called once only from BeginPlay */
+	UFUNCTION(BlueprintImplementableEvent) void CharacterStart();
 	
-	UFUNCTION(BlueprintImplementableEvent) void EarlyBeginPlay();
+	bool bHadBeginPlay = false;
+	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadWrite, meta=(ExposeOnSpawn)) APSS* PSS;
+	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterStarted);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCharacterStarted OnCharacterStarted;
 
-public:	
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void PostInitializeComponents() override;
 	bool ForceSetBase = false;
-	virtual void SetBase(UPrimitiveComponent* NewBase, FName BoneName, bool bNotifyActor) override
-	{
-		if (!ForceSetBase)
-		{
-			if (NewBase)
-			{
-				AActor* BaseOwner = NewBase->GetOwner();
-				// LoadClass to not depend on the voxel module
-				static UClass* VoxelWorldClass = LoadClass<UObject>(nullptr, TEXT("/Script/Voxel.VoxelWorld"));
-				if (ensure(VoxelWorldClass) && BaseOwner && BaseOwner->IsA(VoxelWorldClass))
-				{
-					NewBase = Cast<UPrimitiveComponent>(BaseOwner->GetRootComponent());
-					ensure(NewBase);
-				}
-			}
-		}
-		Super::SetBase(NewBase, BoneName, bNotifyActor);
-		ForceSetBase = false;
-	}
+	virtual void SetBase(UPrimitiveComponent* NewBase, FName BoneName, bool bNotifyActor) override;
 	
 	virtual void Jump() override;
+	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -2,6 +2,7 @@
 
 #include "IC.h"
 #include "Net/UnrealNetwork.h"
+#include "SkyCraft/SkyCharacter.h"
 
 UIC::UIC()
 {
@@ -13,72 +14,35 @@ UIC::UIC()
 void UIC::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	if (ASkyCharacter* PF_Normal = Cast<ASkyCharacter>(GetOwner()))
+	{
+		if (PF_Normal->bCharacterStarted) OnPostBeginPlay();
+		else PF_Normal->OnCharacterStarted.AddDynamic(this, &UIC::OnPostBeginPlay);
+	}
+}
+
+void UIC::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	if (EndPlayReason == EEndPlayReason::Destroyed)
+	{
+		if (HadBeginPlay) EndItemComponent();
+	}
+}
+
+void UIC::OnPostBeginPlay_Implementation()
+{
+	HadBeginPlay = true;
+	StartItemComponent();
+	if (ASkyCharacter* PF_Normal = Cast<ASkyCharacter>(GetOwner()))
+	{
+		PF_Normal->OnCharacterStarted.RemoveDynamic(this, &UIC::OnPostBeginPlay);
+	}
 }
 
 void UIC::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-
-void UIC::BeginPlayIC_Implementation()
-{
-}
-
-void UIC::RMB_Tap_Implementation()
-{
-}
-
-void UIC::LMB_Tap_Implementation()
-{
-}
-
-void UIC::Select_Implementation()
-{
-}
-
-void UIC::Deselect_Implementation()
-{
-}
-
-void UIC::LMB_Implementation(bool Pressed)
-{
-}
-
-void UIC::LMB_HoldStart_Implementation()
-{
-}
-
-void UIC::LMB_HoldStop_Implementation()
-{
-}
-
-void UIC::RMB_Implementation(bool Pressed)
-{
-}
-
-void UIC::RMB_HoldStart_Implementation()
-{
-}
-
-void UIC::RMB_HoldStop_Implementation()
-{
-}
-
-void UIC::MMB_Implementation(bool Pressed)
-{
-}
-
-void UIC::WheelUp_Implementation()
-{
-}
-
-void UIC::WheelDown_Implementation()
-{
-}
-
-void UIC::Alt_Implementation(bool Pressed)
-{
 }
 
 void UIC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -89,7 +53,6 @@ void UIC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
-	DOREPLIFETIME_WITH_PARAMS_FAST(UIC, isBeginPlayIC, Params); // Don't use COND_InitialOnly, If RPC is called then COND_InitialOnly not sends.
 	DOREPLIFETIME_WITH_PARAMS_FAST(UIC, Main, Params); // Don't use COND_InitialOnly, If RPC is called then COND_InitialOnly not sends.
 }
 

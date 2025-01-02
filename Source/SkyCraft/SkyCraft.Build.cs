@@ -16,15 +16,7 @@ public class SkyCraft : ModuleRules
 			"InputCore",
 			"Niagara",
 			"NetCore",
-			"UMG"
-		});
-
-		PrivateDependencyModuleNames.AddRange(new string[] 
-		{ 
-			"EditorStyle",            // For editor style and utilities
-			"UnrealEd",               // Core editor functionality
-			"AssetTools",             // For asset management
-			"PropertyEditor",		  // For property customization and editor extensions
+			"UMG",
 			"AdvancedSessions"
 		});
 		
@@ -32,11 +24,10 @@ public class SkyCraft : ModuleRules
 		{
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
-				"UnrealEd",
+				"UnrealEd",				// Core editor functionality
 				"LevelEditor",
-				"EditorStyle",
-				"AssetTools",
-				"PropertyEditor"
+				"AssetTools",			// For asset management
+				"PropertyEditor"		// For property customization and editor extensions
 			});
 		}
 

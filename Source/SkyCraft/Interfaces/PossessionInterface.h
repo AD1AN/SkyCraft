@@ -17,5 +17,6 @@ class SKYCRAFT_API IPossessionInterface
 {
 	GENERATED_BODY()
 public:
+	UFUNCTION(BlueprintNativeEvent, Category="PossessionInterface") void ClientPossessed();
 	UFUNCTION(BlueprintNativeEvent, Category="PossessionInterface") void ClientUnpossessed();
 };

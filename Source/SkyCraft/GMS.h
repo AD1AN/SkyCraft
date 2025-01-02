@@ -14,7 +14,7 @@ class SKYCRAFT_API AGMS : public AGameModeBase
 public:
 	AGMS();
 	
-	UFUNCTION(BlueprintNativeEvent) void StartWorld();
+	UFUNCTION(BlueprintImplementableEvent) void StartWorld();
 	bool bWorldStarted = false;
 
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
