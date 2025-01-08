@@ -17,7 +17,8 @@ public class SkyCraft : ModuleRules
 			"Niagara",
 			"NetCore",
 			"UMG",
-			"AdvancedSessions"
+			"AdvancedSessions",
+			"ProceduralMeshComponent"
 		});
 		
 		if (Target.bBuildEditor)
