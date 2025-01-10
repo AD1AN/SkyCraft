@@ -16,6 +16,6 @@ class SKYCRAFT_API UDA_Craft : public UDataAsset
 
 public:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) ECraftType CraftType;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) TArray<FSlot> RequiredSlots;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) TArray<FSlot> RequiredSlots;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) FSlot CraftSlot;
 };

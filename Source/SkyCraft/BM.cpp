@@ -16,8 +16,8 @@ ABM::ABM()
 	
 	bReplicates = true;
 	bNetUseOwnerRelevancy = true;
-	NetUpdateFrequency = 1;
-	MinNetUpdateFrequency = 1;
+	SetNetUpdateFrequency(1);
+	SetMinNetUpdateFrequency(1);
 	NetPriority = 0.75;
 	
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));

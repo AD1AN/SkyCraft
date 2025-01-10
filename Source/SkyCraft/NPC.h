@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "VoxelCharacter.h"
+#include "GameFramework/Character.h"
 #include "NPC.generated.h"
 
 class UHealthSystem;
@@ -9,7 +9,7 @@ class AIsland;
 struct FSS_NPC;
 
 UCLASS()
-class SKYCRAFT_API ANPC : public AVoxelCharacter
+class SKYCRAFT_API ANPC : public ACharacter
 {
 	GENERATED_BODY()
 public:

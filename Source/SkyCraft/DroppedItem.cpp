@@ -19,7 +19,7 @@ ADroppedItem::ADroppedItem()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	bReplicates = true;
-	NetCullDistanceSquared = 37500000.0f;
+	SetNetCullDistanceSquared(37500000.0f);
 	
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	SetRootComponent(SphereComponent);
@@ -232,7 +232,7 @@ void ADroppedItem::FailPickUp()
 
 void ADroppedItem::OnMeshLoaded()
 {
-	if (!IsValid(Slot.DA_Item)) return;
+	if (!Slot.DA_Item) return;
 	if (!Slot.DA_Item->StaticMesh.IsValid()) return;
 	SetupStaticMesh();
 }
@@ -253,7 +253,7 @@ void ADroppedItem::SetupStaticMesh()
 
 void ADroppedItem::OnMaterialLoaded()
 {
-	if (!IsValid(Slot.DA_Item)) return;
+	if (!Slot.DA_Item) return;
 	if (!Slot.DA_Item->OverrideMaterial.IsValid()) return;
 	SetupOverrideMaterial();
 }
@@ -262,7 +262,6 @@ void ADroppedItem::SetupOverrideMaterial()
 {
 	StaticMeshComponent->SetMaterial(0, Slot.DA_Item->OverrideMaterial.Get());
 }
-
 
 void ADroppedItem::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {

@@ -3,21 +3,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "VoxelWorld.h"
+#include "GameFramework/Actor.h"
 #include "SkyCraft/Interfaces/IslandInterface.h"
 #include "Structs/SS_Astralon.h"
 #include "Structs/SS_IslandStatic.h"
 #include "Island.generated.h"
 
+class UProceduralMeshComponent;
 class ADroppedItem;
 
 UCLASS(Blueprintable)
-class SKYCRAFT_API AIsland : public AVoxelWorld, public IIslandInterface
+class SKYCRAFT_API AIsland : public AActor, public IIslandInterface
 {
 	GENERATED_BODY()
 
 public:
 	AIsland();
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGenerated);
+	UPROPERTY(BlueprintAssignable) FOnGenerated OnGenerated;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bGenerated = false;
+	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
 	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
 	
@@ -41,5 +46,37 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddConstellation(FSS_Astralon NewConstellation);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveConstellation(FSS_Astralon RemoveConstellation);
 
+	
+	UPROPERTY(EditAnywhere) bool DebugAllVertices = false;
+	UPROPERTY(EditAnywhere) int32 Resolution = 100;
+	UPROPERTY(EditAnywhere) float CellSize = 100.0f;
+	UPROPERTY(EditAnywhere) int32 ShapePoints = 20;
+	UPROPERTY(EditAnywhere) float InterpShapePointLength = 2000.0f;
+	UPROPERTY(EditAnywhere) float ShapeRadius = 1000.0f;
+	UPROPERTY(EditAnywhere) float ScalePerlinNoise1D = 0.25f;
+	UPROPERTY(EditAnywhere) float ScaleRandomShape = 0.5f;
+	UPROPERTY(EditAnywhere) bool DebugShapePoints = false;
+	UPROPERTY(EditAnywhere) bool DebugInterpolatedShapePoints = false;
+	
+	UPROPERTY(EditAnywhere) bool DebugEdgeVertices = false;
+
+	UPROPERTY(EditAnywhere) float NoiseScale = 1.0f;
+	UPROPERTY(EditAnywhere) float NoiseStrength = 200.0f;
+
+	UPROPERTY(EditAnywhere) UMaterialInterface* TopMaterial;
+	UPROPERTY(EditAnywhere) UMaterialInterface* BottomMaterial;
+	UPROPERTY(EditAnywhere) TArray<UStaticMesh*> SM_Cliffs;
+	
+	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> ISMComponents;
+	UPROPERTY(VisibleAnywhere) USceneComponent* SceneComponent = nullptr;
+	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* ProceduralMeshComponent = nullptr;
+
+	virtual void BeginPlay() override;
+	
+	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& AxisVertexMap, int32 EdgeThickness);
+	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
+	void GenerateIsland();
+
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

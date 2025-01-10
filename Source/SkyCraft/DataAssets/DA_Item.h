@@ -8,7 +8,6 @@
 #include "SkyCraft/Components/IC.h"
 #include "SkyCraft/Structs/ItemProperty.h"
 #include "SkyCraft/Structs/ItemComponentParameters.h"
-#include "Engine/DataAsset.h"
 #include "SkyCraft/Enums/ItemHandType.h"
 #include "DA_Item.generated.h"
 

@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.3",
+	"EngineAssociation": "5.5",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -10,7 +10,6 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"Voxel",
 				"NavigationSystem"
 			]
 		}
@@ -29,11 +28,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "VoxelPro",
-			"Enabled": true,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/b08e5581837e4bbca486b61cdf2751bb"
-		},
-		{
 			"Name": "BlueprintFileUtils",
 			"Enabled": true
 		},
@@ -47,94 +41,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "LogViewer",
-			"Enabled": false,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/4853cdc0a6a54d7b9c0712cbe72f6b68"
-		},
-		{
-			"Name": "DataValidation",
-			"Enabled": false
-		},
-		{
-			"Name": "EditorDebugTools",
-			"Enabled": false
-		},
-		{
-			"Name": "EnvironmentQueryEditor",
-			"Enabled": false
-		},
-		{
-			"Name": "MediaPlayerEditor",
-			"Enabled": false
-		},
-		{
-			"Name": "MobilePatchingUtils",
-			"Enabled": false
-		},
-		{
-			"Name": "WebMMoviePlayer",
-			"Enabled": false
-		},
-		{
-			"Name": "PerforceSourceControl",
-			"Enabled": false
-		},
-		{
-			"Name": "PixWinPlugin",
-			"Enabled": false,
-			"SupportedTargetPlatforms": [
-				"Win64"
-			]
-		},
-		{
-			"Name": "PlatformCrypto",
-			"Enabled": false
-		},
-		{
-			"Name": "RuntimePhysXCooking",
-			"Enabled": false
-		},
-		{
-			"Name": "SequencerAnimTools",
-			"Enabled": false
-		},
-		{
-			"Name": "SkeletalReduction",
-			"Enabled": false
-		},
-		{
-			"Name": "SoundFields",
-			"Enabled": false
-		},
-		{
-			"Name": "Synthesis",
-			"Enabled": false
-		},
-		{
-			"Name": "UObjectPlugin",
-			"Enabled": false
-		},
-		{
-			"Name": "VariantManagerContent",
-			"Enabled": false
-		},
-		{
-			"Name": "VisualStudioCodeSourceCodeAccess",
-			"Enabled": false
-		},
-		{
-			"Name": "VisualStudioSourceCodeAccess",
-			"Enabled": false
-		},
-		{
-			"Name": "WindowsDeviceProfileSelector",
-			"Enabled": false
-		},
-		{
-			"Name": "WorldPartitionHLODUtilities",
-			"Enabled": false
-		},
-		{
 			"Name": "RawInput",
 			"Enabled": true
 		},
@@ -143,36 +49,8 @@
 			"Enabled": true
 		},
 		{
-			"Name": "AlembicImporter",
-			"Enabled": false
-		},
-		{
-			"Name": "ACLPlugin",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosNiagara",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosEditor",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosSolverPlugin",
-			"Enabled": false
-		},
-		{
-			"Name": "ChaosUserDataPT",
-			"Enabled": false
-		},
-		{
 			"Name": "EditorScriptingUtilities",
 			"Enabled": true
-		},
-		{
-			"Name": "N10XSourceCodeAccess",
-			"Enabled": false
 		},
 		{
 			"Name": "OnlineSubsystemSteam",
@@ -181,7 +59,6 @@
 		{
 			"Name": "NiagaraUIRenderer",
 			"Enabled": true,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/fd24d23ca57b4c59a4e4b7368da250bd",
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Android"

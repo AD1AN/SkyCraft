@@ -187,7 +187,7 @@ void UInventory::DropIn(int32 SlotIndex, UInventory* DragInventory, int32 DragSl
 
 bool UInventory::CanDropIn(const FSlot& Slot)
 {
-	if (!IsValid(Slot.DA_Item)) return true;
+	if (!Slot.DA_Item) return true;
 	
 	if (DropInMode == EDropInMode::ExcludeItems)
 	{
@@ -258,9 +258,19 @@ bool UInventory::Craftable(TArray<FSlot> RequiredSlots)
 {
 	if (RequiredSlots.IsEmpty()) return true;
 	
-	for (const FSlot RequireSlot : RequiredSlots)
+	for (const FSlot RequiredSlot : RequiredSlots)
 	{
-		if (CountItems(RequireSlot.DA_Item) < RequireSlot.Quantity) return false;
+		// if (RequiredSlot.DA_Item.IsValid())
+		// {
+		// 	if (CountItems(RequiredSlot.DA_Item.Get()) < RequiredSlot.Quantity) return false;
+		// }
+		// else
+		// {
+		// 	UDA_Item* LoadedItem = RequiredSlot.DA_Item.LoadSynchronous();
+		// 	if (!LoadedItem) continue;
+		// 	if (CountItems(LoadedItem) < RequiredSlot.Quantity) return false;
+		// }
+		if (CountItems(RequiredSlot.DA_Item) < RequiredSlot.Quantity) return false;
 	}
 	return true;
 }
@@ -270,7 +280,7 @@ bool UInventory::HasEmptySlots(int32 NumEmptySlots)
 	int32 FoundEmptySlots = 0;
 	for (FSlot Slot : Slots)
 	{
-		if (!IsValid(Slot.DA_Item))
+		if (!Slot.DA_Item)
 		{
 			FoundEmptySlots++;
 			if (FoundEmptySlots >= NumEmptySlots) return true;
@@ -295,12 +305,13 @@ bool UInventory::TransferInventory(UInventory* ToInventory)
 void UInventory::AuthCraft_Implementation(UDA_Craft* DA_Craft)
 {
 	if (!DA_Craft) return;
+	if (!DA_Craft->CraftSlot.DA_Item) return;
 	if (!HasEmptySlots()) return;
 	if (!Craftable(DA_Craft->RequiredSlots)) return;
 	
-	for (const FSlot RequireSlot : DA_Craft->RequiredSlots)
+	for (const FSlot RequiredSlot : DA_Craft->RequiredSlots)
 	{
-		Spend(RequireSlot);
+		Spend(RequiredSlot);
 	}
 	
 	TArray<FItemProperty> CraftedProperties = DA_Craft->CraftSlot.DA_Item->InitialProperties;
@@ -315,7 +326,7 @@ void UInventory::AuthCraft_Implementation(UDA_Craft* DA_Craft)
 	}
 	CraftedProperties.Add(Creator);
 	
-	FSlot CraftedSlot = DA_Craft->CraftSlot;
+	FSlot CraftedSlot(DA_Craft->CraftSlot.DA_Item);
 	CraftedSlot.Properties = CraftedProperties;
 	InsertSlot(CraftedSlot);
 }

@@ -55,7 +55,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) EDropInMode DropInMode = EDropInMode::ExcludeItems;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<EItemType> DropInItemTypes;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<UDA_Item*> DropInItems;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<TObjectPtr<UDA_Item>> DropInItems;
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void DropIn(int32 SlotIndex, UInventory* DragInventory, int32 DragSlotIndex, uint8 DragQuantity);
 	UFUNCTION(BlueprintCallable) bool CanDropIn(const FSlot& Slot);
