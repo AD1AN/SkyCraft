@@ -2,6 +2,7 @@
 
 #include "IslandArchon.h"
 #include "PSS.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
 
@@ -59,6 +60,17 @@ void AIslandArchon::AuthEmptyDenizens()
 {
 	Denizens.Empty();
 	MARK_PROPERTY_DIRTY_FROM_NAME(AIslandArchon, Denizens, this);
+}
+
+void AIslandArchon::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	for (UHierarchicalInstancedStaticMeshComponent*& HISM : HISMComponents)
+	{
+		if (!HISM) continue;
+		HISM->UpdateBounds();
+		HISM->MarkRenderStateDirty();
+	}
 }
 
 

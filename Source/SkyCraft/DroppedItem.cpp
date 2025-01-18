@@ -18,7 +18,7 @@ ADroppedItem::ADroppedItem()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
-	bReplicates = true;
+	SetReplicates(true);
 	SetNetCullDistanceSquared(37500000.0f);
 	
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
@@ -28,6 +28,8 @@ ADroppedItem::ADroppedItem()
 	SphereComponent->SetUseCCD(true); // Stops falling through the ground at high velocity.
 	
 	// SphereComponent Physics
+	SphereComponent->SetSimulatePhysics(true);
+	SphereComponent->SetIsReplicated(true);
 	SphereComponent->SetLinearDamping(1.0f);
 	SphereComponent->SetAngularDamping(1.0f);
 	SphereComponent->BodyInstance.bOverrideMass = true;
@@ -65,29 +67,17 @@ void ADroppedItem::BeginPlay()
 	Super::BeginPlay();
 	SetReplicateMovement(true);
 	
+	if (IsValid(AttachedToIsland))
+	{
+		FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::KeepRelative, true);
+		AttachToComponent(AttachedToIsland->AttachSimulatedBodies, AttachmentTransformRules);
+	}
+	if (IsNetMode(NM_Client)) SphereComponent->SetSimulatePhysics(false);
+	
 	if (!IsNetMode(NM_Client))
 	{
 		SphereComponent->SetNotifyRigidBodyCollision(true);
-		SphereComponent->SetSimulatePhysics(true);
-	}
-	
-	if (IsValid(AttachedToIsland))
-	{
-		USceneComponent* AttachScene = AttachedToIsland->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
-		if (IsValid(AttachScene))
-		{
-			FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepRelativeTransform);
-			AttachmentTransformRules.bWeldSimulatedBodies = true;
-			AttachToComponent(AttachScene, AttachmentTransformRules);
-		}
-		else
-		{
-			AttachToActor(AttachedToIsland, FAttachmentTransformRules::KeepRelativeTransform);
-		}
-	}
-	
-	if (!IsNetMode(NM_Client))
-	{
+		
 		if (DropDirectionType == EDropDirectionType::RandomDirection)
 		{
 			FVector2D MultipliedRandomMagnitude = RandomMagnitude * 100;
@@ -162,13 +152,6 @@ void ADroppedItem::Tick(float DeltaSeconds)
 	}
 }
 
-void ADroppedItem::Multicast_AttachTo_Implementation(USceneComponent* SceneComponent)
-{ // Maybe this function is not needed.
-	FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepWorldTransform);
-	AttachmentTransformRules.bWeldSimulatedBodies = true;
-	AttachToComponent(SceneComponent, AttachmentTransformRules);
-}
-
 void ADroppedItem::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
@@ -178,23 +161,14 @@ void ADroppedItem::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimit
 	if (!IsValid(RootActor)) return;
 	if (AttachedToIsland != RootActor)
 	{
-		USceneComponent* APO = RootActor->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects");
-		if (!IsValid(APO)) return;
+		AIsland* NewIsland = Cast<AIsland>(RootActor);
+		if (!IsValid(NewIsland)) return;
 		FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepWorldTransform);
 		AttachmentTransformRules.bWeldSimulatedBodies = true;
-		AttachToComponent(APO, AttachmentTransformRules);
-		if (IsValid(AttachedToIsland))
-		{
-			if (IIslandInterface* IslandInterface = Cast<IIslandInterface>(AttachedToIsland))
-			{
-				IslandInterface->RemoveDroppedItem(this);
-			}
-		}
-		AttachedToIsland = RootActor;
-		if (IIslandInterface* IslandInterface = Cast<IIslandInterface>(AttachedToIsland))
-		{
-			IslandInterface->AddDroppedItem(this);
-		}
+		AttachToActor(NewIsland, AttachmentTransformRules);
+		if (IsValid(AttachedToIsland)) AttachedToIsland->RemoveDroppedItem(this);
+		AttachedToIsland = NewIsland;
+		AttachedToIsland->AddDroppedItem(this);
 	}
 	if (FMath::Acos(FVector::DotProduct(HitNormal, FVector::UpVector)) <= 45.0f)
 	{

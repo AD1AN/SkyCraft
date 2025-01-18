@@ -35,6 +35,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddDenizen(APSS* Denizen);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthRemoveDenizen(APSS* Denizen);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthEmptyDenizens();
+
+	virtual void Tick(float DeltaSeconds) override;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

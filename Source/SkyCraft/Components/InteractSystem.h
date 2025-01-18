@@ -41,7 +41,6 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure) FVector GetInteractLocation();
 	UFUNCTION(BlueprintCallable) void AddProlonged(FCurrentProlonged AddProlonged);
-	UFUNCTION(BlueprintCallable) void RemoveProlonged(APawn* InteractedPawn);
 	UFUNCTION(BlueprintCallable) void FindInteractKey(EInteractKey InteractKey, bool& FoundInteractKey, FInteractKeySettings& KeySettings);
 	UFUNCTION(BlueprintCallable) void CheckInteractPlayerForm(FInteractKeySettings KeySettings, EPlayerForm PlayerFrom, bool& Passed);
 

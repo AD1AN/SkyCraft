@@ -33,27 +33,38 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	}
 	else
 	{
-		for (const FCurrentProlonged CurrentP : CurrentProlonged)
+		for (int32 i = 0; i < CurrentProlonged.Num(); ++i)
 		{
-			if (!IsValid(CurrentP.Pawn)) RemoveProlonged(CurrentP.Pawn);
-			if (FVector::Distance(GetOwner()->GetActorLocation(), CurrentP.Pawn->GetActorLocation()) > 300)
+			if (!IsValid(CurrentProlonged[i].Pawn))
 			{
-				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn);
+				CurrentProlonged.RemoveAt(i); // Idk how good this is.
+				if (CurrentProlonged.IsEmpty())
+				{
+					SetComponentTickEnabled(false);
+				}
+			} 
+			if (FVector::Distance(GetOwner()->GetActorLocation(), CurrentProlonged[i].Pawn->GetActorLocation()) > 300)
+			{
+				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentProlonged[i].InteractKey, CurrentProlonged[i].Pawn);
 				
 				IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(GetOwner());
 				if (Interact_CPP)
 				{
 					FInterruptIn InterruptIn;
 					InterruptIn.InterruptedBy = EInterruptedBy::Distance;
-					InterruptIn.InteractKey = CurrentP.InteractKey;
-					InterruptIn.Pawn = CurrentP.Pawn;
-					InterruptIn.PSS = CurrentP.PSS;
+					InterruptIn.InteractKey = CurrentProlonged[i].InteractKey;
+					InterruptIn.Pawn = CurrentProlonged[i].Pawn;
+					InterruptIn.PSS = CurrentProlonged[i].PSS;
 					FInterruptOut InterruptOut;
 				
 					Interact_CPP->ServerInterrupt(InterruptIn, InterruptOut);
 				}
-				if (IsValid(CurrentP.PSS)) { CurrentP.PSS->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentP.InteractKey, CurrentP.Pawn, CurrentP.PSS); }
-				RemoveProlonged(CurrentP.Pawn);
+				if (IsValid(CurrentProlonged[i].PSS)) CurrentProlonged[i].PSS->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentProlonged[i].InteractKey, CurrentProlonged[i].Pawn, CurrentProlonged[i].PSS);
+				CurrentProlonged.RemoveAt(i); // Idk how good this is.
+				if (CurrentProlonged.IsEmpty())
+				{
+					SetComponentTickEnabled(false);
+				}
 			}
 		}
 	}
@@ -72,22 +83,6 @@ void UInteractSystem::AddProlonged(FCurrentProlonged AddProlonged)
 {
 	CurrentProlonged.Add(AddProlonged);
 	SetComponentTickEnabled(true);
-}
-
-void UInteractSystem::RemoveProlonged(APawn* InteractedPawn)
-{
-	for (auto Iterate = CurrentProlonged.CreateIterator(); Iterate; ++Iterate)
-	{
-		if (Iterate->Pawn == InteractedPawn)
-		{
-			Iterate.RemoveCurrent();
-			if (CurrentProlonged.IsEmpty())
-			{
-				SetComponentTickEnabled(false);
-			}
-			break;
-		}
-	}
 }
 
 void UInteractSystem::FindInteractKey(EInteractKey InteractKey, bool& FoundInteractKey, FInteractKeySettings& KeySettings)

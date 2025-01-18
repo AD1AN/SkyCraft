@@ -8,6 +8,7 @@
 #include "SkyCraft/DamageNumbers.h"
 #include "SkyCraft/GIS.h"
 #include "SkyCraft/GSS.h"
+#include "SkyCraft/Island.h"
 #include "SkyCraft/PCS.h"
 
 UHealthSystem::UHealthSystem()
@@ -89,7 +90,7 @@ void UHealthSystem::AuthApplyDamage(const FApplyDamageIn In)
 	FVector HitLocation = In.HitLocation;
 	if (IsValid(RootActor)) HitLocation = RootActor->GetTransform().InverseTransformPosition(HitLocation);
 	
-	if (!IsValid(In.DamageDataAsset)) // DamageDataAsset SHOULD BE VALID!
+	if (!In.DamageDataAsset) // DamageDataAsset SHOULD BE VALID!
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("AuthApplyDamage: DamageDataAsset Empty! THIS SHOULD NOT HAPPEN!"));
 		if (In.bShowDamageNumbers) Multicast_OnZeroDamage(RootActor, HitLocation);
@@ -196,34 +197,35 @@ void UHealthSystem::AuthDie(UDataAsset* DamageDataAsset, FVector HitLocation)
 {
 	if (bDropItems)
 	{
-		for (FDropItem DropItem : DropItems)
+		for (const FDropItem& DropItem : DropItems)
 		{
 			uint8 RepeatDrop = 1;
-			if (DropItem.RepeatDrop > 0) RepeatDrop = 1 + DropItem.RepeatDrop - FMath::RandRange(0, DropItem.RandomMinusRepeats);
+			if (DropItem.RepeatDrop > 0) RepeatDrop = DropItem.RepeatDrop;
+			if (DropItem.RandomMinusRepeats > 0) RepeatDrop -= FMath::RandRange(0, DropItem.RandomMinusRepeats);
 			for (uint8 i = 0; i < RepeatDrop; ++i)
 			{
-				if (DropItem.Probability < 1 && !UAdianFL::RandomBoolWithWeight(DropItem.Probability)) continue;
+				if (!UAdianFL::RandomBoolWithWeight(DropItem.Probability)) continue;
 				
 				FTransform SpawnTransform;
 				ADroppedItem* DroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
 				
 				AActor* RootActor = UAdianFL::GetRootActor(GetOwner());
-				bool isIsland = (RootActor->FindComponentByTag<USceneComponent>("AttachedPhysicsObjects") != nullptr);
-				if (isIsland) DroppedItem->AttachedToIsland = RootActor;
+				AIsland* Island = Cast<AIsland>(RootActor);
+				if (IsValid(Island)) DroppedItem->AttachedToIsland = Island;
 				
 				if (DropLocationType == EDropLocationType::ActorOrigin)
 				{
-					if (isIsland) SpawnTransform.SetLocation(RootActor->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()) + FVector(0,0,10));
+					if (IsValid(Island)) SpawnTransform.SetLocation(Island->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()) + FVector(0,0,10));
 					else SpawnTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0,10));
 				}
 				else if (DropLocationType == EDropLocationType::HitLocation)
 				{
-					if (isIsland) SpawnTransform.SetLocation(RootActor->GetTransform().InverseTransformPosition(HitLocation) + FVector(0,0,10));
+					if (IsValid(Island)) SpawnTransform.SetLocation(Island->GetTransform().InverseTransformPosition(HitLocation) + FVector(0,0,10));
 					else SpawnTransform.SetLocation(HitLocation + FVector(0,0,10));
 				}
 				else if (DropLocationType == EDropLocationType::RandomPointInBox)
 				{
-					if (isIsland) SpawnTransform.SetLocation(UAdianFL::RandomPointInRelativeBox(DropInRelativeBox) + RootActor->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()));
+					if (IsValid(Island)) SpawnTransform.SetLocation(UAdianFL::RandomPointInRelativeBox(DropInRelativeBox) + Island->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()));
 					else SpawnTransform.SetLocation(UAdianFL::RandomPointInRelativeBox(DropInRelativeBox) + RootActor->GetActorLocation());
 				}
 				FSlot DropInventorySlot;

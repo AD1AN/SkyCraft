@@ -1,6 +1,9 @@
 // ADIAN Copyrighted
 
 #include "SkyCharacter.h"
+
+#include "AdianFL.h"
+#include "Island.h"
 #include "Net/UnrealNetwork.h"
 #include "SkyCraft/Components/SkyCharacterMovementComponent.h"
 
@@ -20,6 +23,21 @@ void ASkyCharacter::BeginPlay()
 void ASkyCharacter::OnRep_PSS_Implementation()
 {
 	BeginPlay();
+}
+
+void ASkyCharacter::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor)
+{
+	if (NewBase)
+	{
+		const UClass* Island = AIsland::StaticClass();
+		const AActor* BaseOwner = UAdianFL::GetRootActor(NewBase->GetOwner());
+		if (BaseOwner && BaseOwner->IsA(Island))
+		{
+			NewBase = Cast<AIsland>(BaseOwner)->ProceduralMeshComponent;
+		}
+	}
+
+	Super::SetBase(NewBase, BoneName, bNotifyActor);
 }
 
 void ASkyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -32,5 +32,7 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterStarted);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCharacterStarted OnCharacterStarted;
 
+	virtual void SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor) override;
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -9,6 +9,8 @@
 #include "Structs/Slot.h"
 #include "DroppedItem.generated.h"
 
+class AIsland;
+
 UCLASS()
 class SKYCRAFT_API ADroppedItem : public AActor, public IInteract_CPP
 {
@@ -23,10 +25,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class USuffocationSystem* SuffocationSystem = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class UInteractSystem* InteractSystem = nullptr;
 
-	UPROPERTY(VisibleInstanceOnly) AActor* PlayerPickedUp = nullptr;
+	UPROPERTY(VisibleInstanceOnly) TObjectPtr<AActor> PlayerPickedUp = nullptr;
 	float RelativeDistanceInterpolation = 0.0f;
 
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn="true"), Replicated) AActor* AttachedToIsland = nullptr;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn="true"), Replicated)  TObjectPtr<AIsland> AttachedToIsland = nullptr;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, meta=(ExposeOnSpawn="true"), Replicated) FSlot Slot;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn="true")) EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
@@ -37,10 +39,7 @@ public:
 	UPROPERTY(BlueprintAssignable) FOnFailPickUp OnFailPickUp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ExposeOnSpawn))
-	TArray<AActor*> IgnorePlayers;
-	
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_AttachTo(USceneComponent* SceneComponent);
+	TArray<TObjectPtr<AActor>> IgnorePlayers;
 
 protected:
 	virtual void BeginPlay() override;

@@ -165,9 +165,10 @@ void UAdianFL::ResolveStaticMeshCustomPrimitiveData(UStaticMeshComponent* Static
 	}
 }
 
-bool UAdianFL::RandomBoolWithWeight(float Weight)
+bool UAdianFL::RandomBoolWithWeight(const float Weight)
 {
 	if (Weight <= 0.0f) return false;
+	if (Weight >= 1.0f) return true;
 	return Weight >= FMath::FRandRange(0.0f, 1.0f);
 }
 

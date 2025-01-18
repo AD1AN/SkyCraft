@@ -46,7 +46,18 @@ EPlayerForm APSS::AuthSetPlayerForm(EPlayerForm NewPlayerForm)
 void APSS::Server_InterruptActor_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS)
 {
 	UInteractSystem* InteractSystem = InterruptActor->FindComponentByClass<UInteractSystem>();
-	InteractSystem->RemoveProlonged(Pawn);
+	for (int32 i = 0; i < InteractSystem->CurrentProlonged.Num(); ++i) // bruh, there was RemoveProlonged function in InteractSystem
+	{
+		if (InteractSystem->CurrentProlonged[i].Pawn == Pawn)
+		{
+			InteractSystem->CurrentProlonged.RemoveAt(i);
+			if (InteractSystem->CurrentProlonged.IsEmpty())
+			{
+				InteractSystem->SetComponentTickEnabled(false);
+			}
+			break;
+		}
+	}
 	InteractSystem->OnServerInterrupted.Broadcast(InterruptedBy, InteractKey, Pawn);
 
 	IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(InterruptActor);
