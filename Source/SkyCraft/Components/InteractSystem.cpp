@@ -33,11 +33,11 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	}
 	else
 	{
-		for (int32 i = 0; i < CurrentProlonged.Num(); ++i)
+		for (int32 i = CurrentProlonged.Num()-1; i >= 0; --i)
 		{
 			if (!IsValid(CurrentProlonged[i].Pawn))
 			{
-				CurrentProlonged.RemoveAt(i); // Idk how good this is.
+				CurrentProlonged.RemoveAt(i);
 				if (CurrentProlonged.IsEmpty())
 				{
 					SetComponentTickEnabled(false);
@@ -60,7 +60,7 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 					Interact_CPP->ServerInterrupt(InterruptIn, InterruptOut);
 				}
 				if (IsValid(CurrentProlonged[i].PSS)) CurrentProlonged[i].PSS->Client_InterruptActor(GetOwner(), EInterruptedBy::Distance, CurrentProlonged[i].InteractKey, CurrentProlonged[i].Pawn, CurrentProlonged[i].PSS);
-				CurrentProlonged.RemoveAt(i); // Idk how good this is.
+				CurrentProlonged.RemoveAt(i);
 				if (CurrentProlonged.IsEmpty())
 				{
 					SetComponentTickEnabled(false);

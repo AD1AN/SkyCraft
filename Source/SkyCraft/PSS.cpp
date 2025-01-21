@@ -46,7 +46,7 @@ EPlayerForm APSS::AuthSetPlayerForm(EPlayerForm NewPlayerForm)
 void APSS::Server_InterruptActor_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS)
 {
 	UInteractSystem* InteractSystem = InterruptActor->FindComponentByClass<UInteractSystem>();
-	for (int32 i = 0; i < InteractSystem->CurrentProlonged.Num(); ++i) // bruh, there was RemoveProlonged function in InteractSystem
+	for (int32 i = InteractSystem->CurrentProlonged.Num()-1; i >= 0; --i) // bruh, there was RemoveProlonged function in InteractSystem
 	{
 		if (InteractSystem->CurrentProlonged[i].Pawn == Pawn)
 		{

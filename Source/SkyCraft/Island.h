@@ -8,6 +8,7 @@
 #include "Structs/SS_Astralon.h"
 #include "Structs/SS_IslandStatic.h"
 #include "ProceduralMeshComponent.h"
+#include "Structs/FloatMinMax.h"
 #include "Island.generated.h"
 
 class UProceduralMeshComponent;
@@ -19,6 +20,21 @@ struct FCliffData
 	TArray<FTransform> Instances;
 };
 
+USTRUCT(BlueprintType)
+struct FFoliageAsset
+{
+	GENERATED_BODY()
+	UPROPERTY(EditDefaultsOnly) TObjectPtr<UStaticMesh> StaticMesh = nullptr;
+	UPROPERTY(EditDefaultsOnly) float Spacing = 50.0f;
+	UPROPERTY(EditDefaultsOnly) bool bRandomScale = false;
+	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="bRandomScale", EditConditionHides))
+	FFloatMinMax ScaleZ = FFloatMinMax(1,1);
+	
+	TArray<FTransform> Instances;
+	TMap<int32, FVector> InstancesGridMap; // Spatial grid for quick distance checks
+	UPROPERTY() UHierarchicalInstancedStaticMeshComponent* HISM = nullptr;
+};
+
 struct FIslandData
 {
 	TArray<FVector2D> KeyShapePoints;
@@ -27,11 +43,12 @@ struct FIslandData
 
 	TMap<int32, FCliffData> GeneratedCliffs;
 
-	TArray<FVector> TopVertices;
-	TArray<FVector2D> TopVerticesAxis;
-	TMap<int32, int32> TopVerticesMap; // Key: Combined Axis = (X * Resolution + Y)
-	TArray<FVector2D> EdgeTopVertices;
-	TMap<int32, int32> EdgeTopVerticesMap; // Key: Combined Axis = (X * Resolution + Y)
+	TArray<FVector2D> TopVerticesRawAxisOff; // Raw Axis offset to origin center = (X,Y);
+	TArray<FVector2D> TopVerticesRawAxis; // Raw Axis = (X,Y);
+	TMap<int32, int32> TopVerticesMap; // Key: Combined Axis = (X * Resolution + Y);
+	TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset);
+	TArray<FVector2D> EdgeTopVertices; // 2D Locations
+	TMap<int32, int32> EdgeTopVerticesMap; // Key: Combined Axis = (X * Resolution + Y);
 	TArray<int32> TopTriangles;
 	TArray<FVector2D> TopUVs;
 	TArray<FVector> TopNormals;
@@ -106,12 +123,11 @@ public:
 	UPROPERTY(EditAnywhere) float BottomUVScale = 0.0005f;
 	UPROPERTY(EditAnywhere) float BottomRandomHorizontal = 0.025f;
 	UPROPERTY(EditAnywhere) float BottomRandomVertical = 0.05f;
-	UPROPERTY(EditAnywhere) float GrassDensity = 0.0001f;
 
 	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> TopMaterial;
 	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> BottomMaterial;
 	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UStaticMesh>> SM_Cliffs;
-	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UStaticMesh>> SM_Foliage;
+	UPROPERTY(EditAnywhere) TArray<FFoliageAsset> FoliageAssets;
 	
 	FThreadSafeBool bIsGenerating;
 	FIslandData ID;
@@ -125,8 +141,12 @@ public:
 	void OnGenerateComplete(const FIslandData& _ID);
 	void CalculateNormalsAndTangents(const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector2D>& UVs, TArray<FVector>& OutNormals, TArray<FProcMeshTangent>& OutTangents);
 	float SeededNoise2D(float X, float Y, int32 InSeed);
-	float TriangleArea(const FVector& V0, const FVector& V1, const FVector& V2);
 	FVector TriangleNormal(const FVector& V0, const FVector& V1, const FVector& V2);
+	float TriangleArea(const FVector& V0, const FVector& V1, const FVector& V2); // Maybe for future needs
+	
+	UFUNCTION(BlueprintCallable) void FoliageRemoveSphere(FVector Location, float Radius);
+	UFUNCTION(BlueprintCallable) void FoliageRemoveBox(FVector Location, FVector BoxExtent);
+
 	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2);
 
 #if WITH_EDITORONLY_DATA
