@@ -509,13 +509,14 @@ void AIsland::GenerateFoliage(const FIslandData& _ID)
         	}
 
             // Accept candidate
-            Foliage.InstancesGridMap.Add(GridKey, Candidate);
         	FTransform FoliageTransform(Candidate);
         	FQuat GrassRotation(FRotator::ZeroRotator);
         	if (Foliage.bRotationAlignGround) GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal);
         	const FQuat GrassYaw = FQuat(FVector::UpVector, FMath::DegreesToRadians(Seed.FRandRange(0.0f, 360.0f)));
         	FoliageTransform.SetRotation(GrassRotation * GrassYaw);
         	if (Foliage.bRandomScale) FoliageTransform.SetScale3D(FVector(1, 1, Seed.FRandRange(Foliage.ScaleZ.Min, Foliage.ScaleZ.Max)));
+        	Candidate.Z = 0;
+        	Foliage.InstancesGridMap.Add(GridKey, Candidate);
         	Foliage.Instances.Add(FoliageTransform);
             Attempts = 0;
         }
@@ -692,10 +693,15 @@ void AIsland::FoliageRemoveSphere(FVector Location, float Radius)
 {
 	for (FFoliageAsset& Foliage : FoliageAssets)
 	{
+		const float FoliageCellSize = Foliage.Spacing / FMath::Sqrt(2.0f);
 		for (int32 i = Foliage.Instances.Num()-1; i >= 0; --i)
 		{
 			if (FVector::Dist(Foliage.Instances[i].GetLocation(), Location) <= Radius)
 			{
+				const int32 GridX = FMath::FloorToInt(Foliage.Instances[i].GetLocation().X / FoliageCellSize);
+				const int32 GridY = FMath::FloorToInt(Foliage.Instances[i].GetLocation().Y / FoliageCellSize);
+				const int32 GridKey = GridX * 73856093 ^ GridY * 19349663;
+				Foliage.InstancesGridMap.Remove(GridKey);
 				Foliage.HISM->RemoveInstance(i);
 				Foliage.Instances.Swap(i, Foliage.Instances.Num()-1); // equal to HISM behavior.
 				Foliage.Instances.RemoveAt(Foliage.Instances.Num()-1);
@@ -708,17 +714,161 @@ void AIsland::FoliageRemoveBox(FVector Location, FVector BoxExtent)
 {
 	for (FFoliageAsset& Foliage : FoliageAssets)
 	{
+		const float FoliageCellSize = Foliage.Spacing / FMath::Sqrt(2.0f);
 		for (int32 i = Foliage.Instances.Num()-1; i >= 0; --i)
 		{
 			FVector InstLoc = Foliage.Instances[i].GetLocation();
 			if (FMath::Abs(InstLoc.X - Location.X) <= BoxExtent.X && FMath::Abs(InstLoc.Y - Location.Y) <= BoxExtent.Y && FMath::Abs(InstLoc.Z - Location.Z) <= BoxExtent.Z)
 			{
+				const int32 GridX = FMath::FloorToInt(InstLoc.X / FoliageCellSize);
+				const int32 GridY = FMath::FloorToInt(InstLoc.Y / FoliageCellSize);
+				const int32 GridKey = GridX * 73856093 ^ GridY * 19349663;
+				Foliage.InstancesGridMap.Remove(GridKey);
 				Foliage.HISM->RemoveInstance(i);
 				Foliage.Instances.Swap(i, Foliage.Instances.Num()-1); // equal to HISM behavior.
 				Foliage.Instances.RemoveAt(Foliage.Instances.Num()-1);
 			}
 		}
 	}
+}
+
+void AIsland::FoliageAddSphere(UStaticMesh* FoliageAsset, FVector Location, float Radius)
+{
+    // Find the relevant foliage asset
+    FFoliageAsset* FoundFoliage = nullptr;
+    for (FFoliageAsset& Foliage : FoliageAssets)
+    {
+        if (Foliage.StaticMesh == FoliageAsset)
+        {
+            FoundFoliage = &Foliage;
+            break;
+        }
+    }
+    if (!FoundFoliage || !FoundFoliage->StaticMesh) return;
+
+    const float SpacingSqr = FMath::Square(FoundFoliage->Spacing);
+    const float FoliageCellSize = FoundFoliage->Spacing / FMath::Sqrt(2.0f);
+
+    // Generate points within the radius using attempts
+    int32 Attempts = 0;
+    while (Attempts < MaxFoliageAttempts/2)
+    {
+        // Generate random candidate point within the radius
+        FVector Candidate(
+            FMath::RandRange(Location.X - Radius, Location.X + Radius),
+            FMath::RandRange(Location.Y - Radius, Location.Y + Radius),
+            0
+        );
+
+        // Check if the candidate is within the circle
+        if (FVector2D::DistSquared(FVector2D(Location.X, Location.Y), FVector2D(Candidate.X, Candidate.Y)) > FMath::Square(Radius))
+        {
+            ++Attempts;
+            continue;
+        }
+
+        // Map the candidate point to the grid
+        const int32 GridX = FMath::FloorToInt(Candidate.X / FoliageCellSize);
+        const int32 GridY = FMath::FloorToInt(Candidate.Y / FoliageCellSize);
+        const int32 GridKey = GridX * 73856093 ^ GridY * 19349663;
+
+        // Check neighboring grid cells for spacing
+        bool bTooClose = false;
+        for (int32 NeighborX = -1; NeighborX <= 1; ++NeighborX)
+        {
+            for (int32 NeighborY = -1; NeighborY <= 1; ++NeighborY)
+            {
+                const int32 NeighborKey = (GridX + NeighborX) * 73856093 ^ (GridY + NeighborY) * 19349663;
+                if (FoundFoliage->InstancesGridMap.Contains(NeighborKey) && FVector::DistSquared(FoundFoliage->InstancesGridMap[NeighborKey], Candidate) < SpacingSqr)
+                {
+                    bTooClose = true;
+                    break;
+                }
+            }
+            if (bTooClose) break;
+        }
+        if (bTooClose)
+        {
+            ++Attempts;
+            continue;
+        }
+
+        // Find three closest vertices in ID.TopVerticesMap
+        TArray<TPair<int32, float>> ClosestVertices; // Pair of VertexIndex and DistanceSquared
+        for (const TPair<int32, int32>& VertexEntry : ID.TopVerticesMap)
+        {
+            FVector VertexPosition = ID.TopVertices[VertexEntry.Value];
+            float DistanceSquared = FVector2D::DistSquared(
+                FVector2D(VertexPosition.X, VertexPosition.Y),
+                FVector2D(Candidate.X, Candidate.Y)
+            );
+
+            // Maintain a sorted list of three closest vertices
+            ClosestVertices.Add(TPair<int32, float>(VertexEntry.Value, DistanceSquared));
+            ClosestVertices.Sort([](const TPair<int32, float>& A, const TPair<int32, float>& B)
+            {
+                return A.Value < B.Value;
+            });
+            if (ClosestVertices.Num() > 3)
+            {
+                ClosestVertices.Pop(); // Remove the farthest vertex if more than 3
+            }
+        }
+
+        // Ensure we have exactly three vertices
+        if (ClosestVertices.Num() < 3)
+        {
+            ++Attempts;
+            continue;
+        }
+
+        // Retrieve the positions of the three closest vertices
+        FVector V0 = ID.TopVertices[ClosestVertices[0].Key];
+        FVector V1 = ID.TopVertices[ClosestVertices[1].Key];
+        FVector V2 = ID.TopVertices[ClosestVertices[2].Key];
+
+        // Calculate Z height of the candidate based on the triangle
+    	FVector BarycentricCoords = FMath::ComputeBaryCentric2D(
+			FVector(Candidate.X, Candidate.Y, 0),
+				FVector(V0.X, V0.Y, 0),               
+				FVector(V1.X, V1.Y, 0),               
+				FVector(V2.X, V2.Y, 0)              
+		);
+        Candidate.Z = BarycentricCoords.X * V0.Z + BarycentricCoords.Y * V1.Z + BarycentricCoords.Z * V2.Z;
+
+        // Calculate the triangle normal and check slope limits
+        FVector TriangleNormal = FVector::CrossProduct(V2 - V0, V1 - V0).GetSafeNormal();
+        if (FoundFoliage->bMaxSlope)
+        {
+            float SlopeAngle = FMath::Acos(FVector::DotProduct(TriangleNormal, FVector::UpVector)) * (180.0f / PI);
+            if (SlopeAngle > FoundFoliage->MaxSlope)
+            {
+                ++Attempts;
+                continue;
+            }
+        }
+
+        // Accept the candidate point
+        FTransform FoliageTransform(Candidate);
+        FQuat GrassRotation(FRotator::ZeroRotator);
+        if (FoundFoliage->bRotationAlignGround)
+        {
+            GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal);
+        }
+        const FQuat GrassYaw = FQuat(FVector::UpVector, FMath::DegreesToRadians(Seed.FRandRange(0.0f, 360.0f)));
+        FoliageTransform.SetRotation(GrassRotation * GrassYaw);
+        if (FoundFoliage->bRandomScale)
+        {
+            FoliageTransform.SetScale3D(FVector(1, 1, Seed.FRandRange(FoundFoliage->ScaleZ.Min, FoundFoliage->ScaleZ.Max)));
+        }
+
+        // Add the foliage instance
+    	Candidate.Z = 0;
+        FoundFoliage->InstancesGridMap.Add(GridKey, Candidate);
+        FoundFoliage->Instances.Add(FoliageTransform);
+        FoundFoliage->HISM->AddInstance(FoliageTransform);
+        Attempts = 0;
+    }
 }
 
 // TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius)

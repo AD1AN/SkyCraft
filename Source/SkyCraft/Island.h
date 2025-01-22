@@ -81,10 +81,10 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
 	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
 
-	UPROPERTY(BlueprintReadWrite, meta=(ExposeOnSpawn))
+	UPROPERTY(Replicated, BlueprintReadWrite, meta=(ExposeOnSpawn))
 	FRandomStream Seed = 0;
 	
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, ReplicatedUsing=OnRep_IslandSize, meta=(ExposeOnSpawn))
+	UPROPERTY(ReplicatedUsing=OnRep_IslandSize, BlueprintReadOnly, EditAnywhere, meta=(ExposeOnSpawn))
 	float IslandSize = 0.5f; // 0 = is small. 1 = is biggest.
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(float NewSize);
@@ -154,7 +154,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable) void FoliageRemoveSphere(FVector Location, float Radius);
 	UFUNCTION(BlueprintCallable) void FoliageRemoveBox(FVector Location, FVector BoxExtent);
-	UFUNCTION(BlueprintCallable) void FoliageAddSphere(FVector Location, float Radius);
+	UFUNCTION(BlueprintCallable) void FoliageAddSphere(UStaticMesh* FoliageAsset, FVector Location, float Radius);
 
 	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2);
 

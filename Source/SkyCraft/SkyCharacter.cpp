@@ -22,7 +22,9 @@ void ASkyCharacter::BeginPlay()
 
 void ASkyCharacter::OnRep_PSS_Implementation()
 {
-	BeginPlay();
+	if (bHadBeginPlay) return;
+	bHadBeginPlay = true;
+	CharacterStart();
 }
 
 void ASkyCharacter::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor)
