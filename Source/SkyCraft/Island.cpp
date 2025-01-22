@@ -443,52 +443,73 @@ void AIsland::OnGenerateComplete(const FIslandData& _ID)
 void AIsland::GenerateFoliage(const FIslandData& _ID)
 {
 	const float VertexOffset = (Resolution * CellSize) / 2;
-	for (FFoliageAsset& Foliage : FoliageAssets)
-	{
-	    if (!Foliage.StaticMesh) continue;
-		const float SpacingSqr = FMath::Square(Foliage.Spacing);
-	    for (int32 t = 0; t < _ID.TopTriangles.Num(); t += 3)
-	    {
-	        // Get vertices of the triangle
-	        const FVector& V0 = _ID.TopVertices[_ID.TopTriangles[t]];
-	        const FVector& V1 = _ID.TopVertices[_ID.TopTriangles[t + 1]];
-	        const FVector& V2 = _ID.TopVertices[_ID.TopTriangles[t + 2]];
 
-	        FVector FoliageLocation = RandomPointInTriangle(V0, V1, V2);
-	    	
-	    	// Check if on EdgeTopVerticesMap
-	    	const int32 ClosestX = FMath::RoundToInt((FoliageLocation.X + VertexOffset) / CellSize);
-	    	const int32 ClosestY = FMath::RoundToInt((FoliageLocation.Y + VertexOffset) / CellSize);
-	    	if (_ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) continue;
+    for (FFoliageAsset& Foliage : FoliageAssets)
+    {
+        if (!Foliage.StaticMesh) continue;
 
-            // Check Spacing
-            bool bTooClose = false;
-            for (const auto& Pair : Foliage.InstancesGridMap)
+    	const float SpacingSqr = FMath::Square(Foliage.Spacing);
+        const float FoliageCellSize = Foliage.Spacing / FMath::Sqrt(2.0f);
+        int32 Attempts = 0;
+        while (Attempts < MaxFoliageAttempts)
+        {
+            // Pick a random triangle
+            const int32 TriangleIndex = Seed.RandRange(0, _ID.TopTriangles.Num() / 3 - 1) * 3;
+            const FVector& V0 = _ID.TopVertices[_ID.TopTriangles[TriangleIndex]];
+            const FVector& V1 = _ID.TopVertices[_ID.TopTriangles[TriangleIndex + 1]];
+            const FVector& V2 = _ID.TopVertices[_ID.TopTriangles[TriangleIndex + 2]];
+
+            // Generate a random point in the triangle
+            FVector Candidate = RandomPointInTriangle(V0, V1, V2);
+
+            // Check if the point is on an edge
+            const int32 ClosestX = FMath::RoundToInt((Candidate.X + VertexOffset) / CellSize);
+            const int32 ClosestY = FMath::RoundToInt((Candidate.Y + VertexOffset) / CellSize);
+            if (_ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
             {
-                if (FVector::DistSquared(Pair.Value, FoliageLocation) < SpacingSqr)
-                {
-                    bTooClose = true;
-                    break;
-                }
+                ++Attempts;
+                continue;
             }
-            if (bTooClose) continue;
-	    	
-	    	// Convert RandomPoint to spatial grid key
-	    	const int32 GridX = FMath::FloorToInt(FoliageLocation.X / Foliage.Spacing);
-	    	const int32 GridY = FMath::FloorToInt(FoliageLocation.Y / Foliage.Spacing);
-	    	const int32 GridZ = FMath::FloorToInt(FoliageLocation.Z / Foliage.Spacing);
-	    	const int32 GridKey = GridX * 73856093 ^ GridY * 19349663 ^ GridZ * 83492791; // Hash function
-            Foliage.InstancesGridMap.Add(GridKey, FoliageLocation);
 
-            FTransform FoliageTransform(FoliageLocation);
-            const FQuat GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal(V0, V1, V2));
-            const FQuat GrassYaw = FQuat(FVector::UpVector, FMath::DegreesToRadians(Seed.FRandRange(0.0f, 360.0f)));
-            FoliageTransform.SetRotation(GrassRotation * GrassYaw);
-	    	if (Foliage.bRandomScale) FoliageTransform.SetScale3D(FVector(1, 1, Seed.FRandRange(Foliage.ScaleZ.Min, Foliage.ScaleZ.Max)));
-            Foliage.Instances.Add(FoliageTransform);
-	    }
-	}
-	bFoliageGenerated = true;
+            // Convert the point to a spatial grid key
+            const int32 GridX = FMath::FloorToInt(Candidate.X / FoliageCellSize);
+            const int32 GridY = FMath::FloorToInt(Candidate.Y / FoliageCellSize);
+            const int32 GridKey = GridX * 73856093 ^ GridY * 19349663;
+
+            // Check neighboring grid cells for spacing
+            bool bTooClose = false;
+            for (int32 NeighborX = -1; NeighborX <= 1; ++NeighborX)
+            {
+                for (int32 NeighborY = -1; NeighborY <= 1; ++NeighborY)
+                {
+                    const int32 NeighborKey = (GridX + NeighborX) * 73856093 ^ (GridY + NeighborY) * 19349663;
+                    if (Foliage.InstancesGridMap.Contains(NeighborKey) && FVector::DistSquared(Foliage.InstancesGridMap[NeighborKey], Candidate) < SpacingSqr)
+                    {
+                        bTooClose = true;
+                        break;
+                    }
+                }
+                if (bTooClose) break;
+            }
+            if (bTooClose)
+            {
+                ++Attempts;
+                continue;
+            }
+
+            // Accept candidate
+            Foliage.InstancesGridMap.Add(GridKey, Candidate);
+        	
+        	FTransform FoliageTransform(Candidate);
+        	const FQuat GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal(V0, V1, V2));
+        	const FQuat GrassYaw = FQuat(FVector::UpVector, FMath::DegreesToRadians(Seed.FRandRange(0.0f, 360.0f)));
+        	FoliageTransform.SetRotation(GrassRotation * GrassYaw);
+        	if (Foliage.bRandomScale) FoliageTransform.SetScale3D(FVector(1, 1, Seed.FRandRange(Foliage.ScaleZ.Min, Foliage.ScaleZ.Max)));
+        	Foliage.Instances.Add(FoliageTransform);
+            Attempts = 0;
+        }
+    }
+    bFoliageGenerated = true;
 }
 
 void AIsland::RenderFoliage()

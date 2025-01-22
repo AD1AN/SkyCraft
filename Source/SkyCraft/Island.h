@@ -124,6 +124,7 @@ public:
 	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> BottomMaterial;
 	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UStaticMesh>> SM_Cliffs;
 	UPROPERTY(EditAnywhere) TArray<FFoliageAsset> FoliageAssets;
+	UPROPERTY(EditAnywhere) int32 MaxFoliageAttempts = 15;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandGenerated, AIsland*, Island);
 	UPROPERTY(BlueprintAssignable) FOnIslandGenerated OnIslandGenerated;
