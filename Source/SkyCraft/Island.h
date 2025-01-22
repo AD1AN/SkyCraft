@@ -65,7 +65,6 @@ UCLASS(Blueprintable)
 class SKYCRAFT_API AIsland : public AActor, public IIslandInterface
 {
 	GENERATED_BODY()
-
 public:
 	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene = nullptr;
 	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* ProceduralMeshComponent = nullptr;
@@ -74,10 +73,6 @@ public:
 	UPROPERTY(VisibleAnywhere) TArray<UHierarchicalInstancedStaticMeshComponent*> HISMComponents;
 
 	AIsland();
-	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGenerated, AIsland*, Island);
-	UPROPERTY(BlueprintAssignable) FOnGenerated OnGenerated;
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bGenerated = false;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
 	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
@@ -91,9 +86,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(float NewSize);
 	UFUNCTION() void OnRep_IslandSize();
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangeLOD);
-	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnChangeLOD OnChangeLOD;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) int32 CurrentLOD = -1;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCurrentLOD);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCurrentLOD OnCurrentLOD;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 CurrentLOD = -1;
+	UFUNCTION(BlueprintCallable) void NewLOD(int32 NewLOD);
 	
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) TArray<ADroppedItem*> DroppedItems;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated) TArray<FSS_Astralon> SS_Astralons;
@@ -129,16 +125,24 @@ public:
 	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UStaticMesh>> SM_Cliffs;
 	UPROPERTY(EditAnywhere) TArray<FFoliageAsset> FoliageAssets;
 	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandGenerated, AIsland*, Island);
+	UPROPERTY(BlueprintAssignable) FOnIslandGenerated OnIslandGenerated;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bIslandGenerated = false;
 	FThreadSafeBool bIsGenerating;
+	bool bFoliageGenerated = false;
 	FIslandData ID;
 	
 	virtual void BeginPlay() override;
 	void SpawnComponents();
-	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& AxisVertexMap, int32 EdgeThickness) const;
-	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
-	void GenerationAsync();
+	void StartGeneration();
 	FIslandData Generate_IslandGeometry();
 	void OnGenerateComplete(const FIslandData& _ID);
+	
+	void GenerateFoliage(const FIslandData& _ID);
+	void RenderFoliage();
+
+	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& AxisVertexMap, int32 EdgeThickness) const;
+	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
 	void CalculateNormalsAndTangents(const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector2D>& UVs, TArray<FVector>& OutNormals, TArray<FProcMeshTangent>& OutTangents);
 	float SeededNoise2D(float X, float Y, int32 InSeed);
 	FVector TriangleNormal(const FVector& V0, const FVector& V1, const FVector& V2);

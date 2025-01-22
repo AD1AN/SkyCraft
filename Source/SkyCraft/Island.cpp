@@ -110,7 +110,7 @@ void AIsland::OnConstruction(const FTransform& Transform)
 	ID.TopVerticesRawAxis.Empty();
 	if (!bOnConstruction) return;
 	SpawnComponents();
-	GenerationAsync();
+	StartGeneration();
 }
 #endif
 
@@ -118,7 +118,7 @@ void AIsland::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnComponents();
-	GenerationAsync();
+	StartGeneration();
 }
 
 void AIsland::SpawnComponents()
@@ -150,41 +150,7 @@ void AIsland::SpawnComponents()
 	}
 }
 
-bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& AxisVertexMap, int32 EdgeThickness) const
-{
-	const float VertexOffset = (Resolution * CellSize) / 2;
-	const int32 X = (Vertex.X + VertexOffset) / CellSize;
-	const int32 Y = (Vertex.Y + VertexOffset) / CellSize;
-
-	for (int32 OffsetX = -EdgeThickness; OffsetX <= EdgeThickness; ++OffsetX)
-	{
-		const int32 RowOffset = (X + OffsetX) * Resolution;
-		for (int32 OffsetY = -EdgeThickness; OffsetY <= EdgeThickness; ++OffsetY)
-		{
-			if (!AxisVertexMap.Contains(RowOffset + (Y + OffsetY))) return true;
-		}
-	}
-	return false;
-}
-
-bool AIsland::IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints)
-{
-	int32 Crossings = 0;
-
-	for (int32 i = 0; i < GeneratedShapePoints.Num(); ++i)
-	{
-		const FVector2D& A = GeneratedShapePoints[i];
-		const FVector2D& B = GeneratedShapePoints[(i + 1) % GeneratedShapePoints.Num()];
-
-		if (((A.Y > Point.Y) != (B.Y > Point.Y)) && (Point.X < (B.X - A.X) * (Point.Y - A.Y) / (B.Y - A.Y) + A.X))
-		{
-			Crossings++;
-		}
-	}
-	return Crossings % 2 == 1; // Odd number of crossings means inside
-}
-
-void AIsland::GenerationAsync()
+void AIsland::StartGeneration()
 {
 	if (bIsGenerating) return;
 	bIsGenerating = true;
@@ -440,38 +406,60 @@ FIslandData AIsland::Generate_IslandGeometry()
 	CalculateNormalsAndTangents(_ID.TopVertices, _ID.TopTriangles, _ID.TopUVs, _ID.TopNormals, _ID.TopTangents);
 	CalculateNormalsAndTangents(_ID.BottomVertices, _ID.BottomTriangles, _ID.BottomUVs, _ID.BottomNormals, _ID.BottomTangents);
 
+	if (CurrentLOD == 0)
+	{
+		GenerateFoliage(_ID);
+	}
+	
 	return _ID;
 }
 
 void AIsland::OnGenerateComplete(const FIslandData& _ID)
 {
 	ID = _ID;
-	const float VertexOffset = (Resolution * CellSize) / 2;
+	
 	for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
 	{
 		ISMComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
 	}
 
-	// ================ START Foliage Generation ==================
+	RenderFoliage();
 	
+	ProceduralMeshComponent->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
+	ProceduralMeshComponent->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
+
+	if (TopMaterial) ProceduralMeshComponent->SetMaterial(0, TopMaterial);
+	if (BottomMaterial) ProceduralMeshComponent->SetMaterial(1, BottomMaterial);
+
+#if WITH_EDITOR
+	IslandDebugs();
+#endif
+	
+	bIslandGenerated = true;
+	bIsGenerating = false;
+	OnIslandGenerated.Broadcast(this);
+}
+
+void AIsland::GenerateFoliage(const FIslandData& _ID)
+{
+	const float VertexOffset = (Resolution * CellSize) / 2;
 	for (FFoliageAsset& Foliage : FoliageAssets)
 	{
-		const float SpacingSqr = FMath::Square(Foliage.Spacing);
 	    if (!Foliage.StaticMesh) continue;
-
-	    for (int32 t = 0; t < ID.TopTriangles.Num(); t += 3)
+		const float SpacingSqr = FMath::Square(Foliage.Spacing);
+	    for (int32 t = 0; t < _ID.TopTriangles.Num(); t += 3)
 	    {
 	        // Get vertices of the triangle
-	        const FVector& V0 = ID.TopVertices[ID.TopTriangles[t]];
-	        const FVector& V1 = ID.TopVertices[ID.TopTriangles[t + 1]];
-	        const FVector& V2 = ID.TopVertices[ID.TopTriangles[t + 2]];
+	        const FVector& V0 = _ID.TopVertices[_ID.TopTriangles[t]];
+	        const FVector& V1 = _ID.TopVertices[_ID.TopTriangles[t + 1]];
+	        const FVector& V2 = _ID.TopVertices[_ID.TopTriangles[t + 2]];
 
 	        FVector FoliageLocation = RandomPointInTriangle(V0, V1, V2);
 	    	
 	    	// Check if on EdgeTopVerticesMap
 	    	const int32 ClosestX = FMath::RoundToInt((FoliageLocation.X + VertexOffset) / CellSize);
 	    	const int32 ClosestY = FMath::RoundToInt((FoliageLocation.Y + VertexOffset) / CellSize);
-	    	if (ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) continue;
+	    	if (_ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) continue;
 
             // Check Spacing
             bool bTooClose = false;
@@ -499,24 +487,52 @@ void AIsland::OnGenerateComplete(const FIslandData& _ID)
 	    	if (Foliage.bRandomScale) FoliageTransform.SetScale3D(FVector(1, 1, Seed.FRandRange(Foliage.ScaleZ.Min, Foliage.ScaleZ.Max)));
             Foliage.Instances.Add(FoliageTransform);
 	    }
-        Foliage.HISM->AddInstances(Foliage.Instances, false, false, false);
 	}
+	bFoliageGenerated = true;
+}
 
-	// ================ END Grass Generation ==================
+void AIsland::RenderFoliage()
+{
+	if (!bFoliageGenerated) return;
 	
-	ProceduralMeshComponent->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
-	ProceduralMeshComponent->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
+	for (FFoliageAsset& Foliage : FoliageAssets)
+	{
+		Foliage.HISM->AddInstances(Foliage.Instances, false, false, false);
+	}
+}
 
-	if (TopMaterial) ProceduralMeshComponent->SetMaterial(0, TopMaterial);
-	if (BottomMaterial) ProceduralMeshComponent->SetMaterial(1, BottomMaterial);
+bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& AxisVertexMap, int32 EdgeThickness) const
+{
+	const float VertexOffset = (Resolution * CellSize) / 2;
+	const int32 X = (Vertex.X + VertexOffset) / CellSize;
+	const int32 Y = (Vertex.Y + VertexOffset) / CellSize;
 
-#if WITH_EDITOR
-	IslandDebugs();
-#endif
-	
-	bGenerated = true;
-	bIsGenerating = false;
-	OnGenerated.Broadcast(this);
+	for (int32 OffsetX = -EdgeThickness; OffsetX <= EdgeThickness; ++OffsetX)
+	{
+		const int32 RowOffset = (X + OffsetX) * Resolution;
+		for (int32 OffsetY = -EdgeThickness; OffsetY <= EdgeThickness; ++OffsetY)
+		{
+			if (!AxisVertexMap.Contains(RowOffset + (Y + OffsetY))) return true;
+		}
+	}
+	return false;
+}
+
+bool AIsland::IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints)
+{
+	int32 Crossings = 0;
+
+	for (int32 i = 0; i < GeneratedShapePoints.Num(); ++i)
+	{
+		const FVector2D& A = GeneratedShapePoints[i];
+		const FVector2D& B = GeneratedShapePoints[(i + 1) % GeneratedShapePoints.Num()];
+
+		if (((A.Y > Point.Y) != (B.Y > Point.Y)) && (Point.X < (B.X - A.X) * (Point.Y - A.Y) / (B.Y - A.Y) + A.X))
+		{
+			Crossings++;
+		}
+	}
+	return Crossings % 2 == 1; // Odd number of crossings means inside
 }
 
 void AIsland::CalculateNormalsAndTangents(const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector2D>& UVs, TArray<FVector>& OutNormals, TArray<FProcMeshTangent>& OutTangents)
@@ -622,6 +638,18 @@ float AIsland::SeededNoise2D(float X, float Y, int32 InSeed)
 	return FMath::Lerp(NX0, NX1, FracY);
 }
 
+FVector AIsland::RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2)
+{
+	float u = Seed.FRand();
+	float v = Seed.FRand();
+	if (u + v > 1.0f) {
+		u = 1.0f - u;
+		v = 1.0f - v;
+	}
+	float w = 1.0f - u - v;
+	return (V0 * u) + (V1 * v) + (V2 * w);
+}
+
 FVector AIsland::TriangleNormal(const FVector& V0, const FVector& V1, const FVector& V2)
 {
 	FVector AB = V2 - V0;
@@ -668,18 +696,6 @@ void AIsland::FoliageRemoveBox(FVector Location, FVector BoxExtent)
 	}
 }
 
-FVector AIsland::RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2)
-{
-	float u = Seed.FRand();
-	float v = Seed.FRand();
-	if (u + v > 1.0f) {
-		u = 1.0f - u;
-		v = 1.0f - v;
-	}
-	float w = 1.0f - u - v;
-	return (V0 * u) + (V1 * v) + (V2 * w);
-}
-
 // TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius)
 // {
 // 	TArray<int32> FoundVertices;
@@ -716,6 +732,20 @@ FVector AIsland::RandomPointInTriangle(const FVector& V0, const FVector& V1, con
 //
 // 	return FoundVertices;
 // }
+
+void AIsland::NewLOD(int32 NewLOD)
+{
+	if (bIslandGenerated && !bIsGenerating)
+	{
+		if (NewLOD == 0 && !bFoliageGenerated)
+		{
+			GenerateFoliage(ID);
+			RenderFoliage();
+		}
+	}
+	CurrentLOD = NewLOD;
+	OnCurrentLOD.Broadcast();
+}
 
 #if WITH_EDITOR
 void AIsland::IslandDebugs()

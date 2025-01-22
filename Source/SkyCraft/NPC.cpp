@@ -24,7 +24,7 @@ void ANPC::BeginPlay()
 	
 	UpdateSettings();
 
-	Island->OnChangeLOD.AddDynamic(this, &ANPC::ChangedLOD);
+	Island->OnCurrentLOD.AddDynamic(this, &ANPC::ChangedLOD);
 }
 
 void ANPC::ChangedLOD()
