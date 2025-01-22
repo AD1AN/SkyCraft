@@ -496,12 +496,23 @@ void AIsland::GenerateFoliage(const FIslandData& _ID)
                 ++Attempts;
                 continue;
             }
+        	
+        	const FVector TriangleNormal = FVector::CrossProduct(V2 - V0, V1 - V0).GetSafeNormal();
+        	if (Foliage.bMaxSlope)
+        	{
+        		const float SlopeAngle = FMath::Acos(FVector::DotProduct(TriangleNormal, FVector::UpVector)) * (180.0f / PI);
+        		if (SlopeAngle > Foliage.MaxSlope)
+        		{
+        			++Attempts;
+        			continue;
+        		}
+        	}
 
             // Accept candidate
             Foliage.InstancesGridMap.Add(GridKey, Candidate);
-        	
         	FTransform FoliageTransform(Candidate);
-        	const FQuat GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal(V0, V1, V2));
+        	FQuat GrassRotation(FRotator::ZeroRotator);
+        	if (Foliage.bRotationAlignGround) GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal);
         	const FQuat GrassYaw = FQuat(FVector::UpVector, FMath::DegreesToRadians(Seed.FRandRange(0.0f, 360.0f)));
         	FoliageTransform.SetRotation(GrassRotation * GrassYaw);
         	if (Foliage.bRandomScale) FoliageTransform.SetScale3D(FVector(1, 1, Seed.FRandRange(Foliage.ScaleZ.Min, Foliage.ScaleZ.Max)));
@@ -669,13 +680,6 @@ FVector AIsland::RandomPointInTriangle(const FVector& V0, const FVector& V1, con
 	}
 	float w = 1.0f - u - v;
 	return (V0 * u) + (V1 * v) + (V2 * w);
-}
-
-FVector AIsland::TriangleNormal(const FVector& V0, const FVector& V1, const FVector& V2)
-{
-	FVector AB = V2 - V0;
-	FVector AC = V1 - V0;
-	return FVector::CrossProduct(AB, AC).GetSafeNormal();
 }
 
 float AIsland::TriangleArea(const FVector& V0, const FVector& V1, const FVector& V2) {

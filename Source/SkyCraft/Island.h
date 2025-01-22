@@ -26,6 +26,10 @@ struct FFoliageAsset
 	GENERATED_BODY()
 	UPROPERTY(EditDefaultsOnly) TObjectPtr<UStaticMesh> StaticMesh = nullptr;
 	UPROPERTY(EditDefaultsOnly) float Spacing = 50.0f;
+	UPROPERTY(EditDefaultsOnly) bool bRotationAlignGround = true;
+	UPROPERTY(EditDefaultsOnly) bool bMaxSlope = false;
+	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="bMaxSlope", EditConditionHides))
+	float MaxSlope = 45.0f;
 	UPROPERTY(EditDefaultsOnly) bool bRandomScale = false;
 	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="bRandomScale", EditConditionHides))
 	FFloatMinMax ScaleZ = FFloatMinMax(1,1);
@@ -146,11 +150,11 @@ public:
 	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
 	void CalculateNormalsAndTangents(const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector2D>& UVs, TArray<FVector>& OutNormals, TArray<FProcMeshTangent>& OutTangents);
 	float SeededNoise2D(float X, float Y, int32 InSeed);
-	FVector TriangleNormal(const FVector& V0, const FVector& V1, const FVector& V2);
 	float TriangleArea(const FVector& V0, const FVector& V1, const FVector& V2); // Maybe for future needs
 	
 	UFUNCTION(BlueprintCallable) void FoliageRemoveSphere(FVector Location, float Radius);
 	UFUNCTION(BlueprintCallable) void FoliageRemoveBox(FVector Location, FVector BoxExtent);
+	UFUNCTION(BlueprintCallable) void FoliageAddSphere(FVector Location, float Radius);
 
 	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2);
 

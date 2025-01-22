@@ -10,6 +10,7 @@ AIslandArchon::AIslandArchon()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+	MaxFoliageAttempts = 25;
 	CurrentLOD = 0;
 }
 
