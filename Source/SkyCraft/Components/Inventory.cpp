@@ -357,5 +357,5 @@ void UInventory::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME_CONDITION(UInventory, Slots, COND_None);
+	DOREPLIFETIME(UInventory, Slots);
 }

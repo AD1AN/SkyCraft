@@ -5,6 +5,8 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "DroppedItem.h"
+#include "DataAssets/DA_Foliage.h"
+#include "SkyCraft/Components/FoliageHISM.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
 
@@ -100,82 +102,87 @@ void AIsland::RemoveConstellation(FSS_Astralon RemoveConstellation)
 void AIsland::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
+	
+	if (!bOnConstruction) return;
+	
 	if (Resolution % 2 != 0) Resolution += 1;
-	for (UInstancedStaticMeshComponent* ISM : ISMComponents) if (IsValid(ISM)) ISM->DestroyComponent();
-	ISMComponents.Empty();
-	for (UHierarchicalInstancedStaticMeshComponent* HISM : HISMComponents) if (IsValid(HISM)) HISM->DestroyComponent();
-	HISMComponents.Empty();
+	for (UInstancedStaticMeshComponent* ISM : ISM_Components) if (IsValid(ISM)) ISM->DestroyComponent();
+	ISM_Components.Empty();
 	ProceduralMeshComponent->ClearAllMeshSections();
 	ID.TopVertices.Empty();
 	ID.TopVerticesRawAxis.Empty();
-	if (!bOnConstruction) return;
-	SpawnComponents();
-	StartGeneration();
+	SpawnISM_Components();
+	StartIsland();
 }
 #endif
 
 void AIsland::BeginPlay()
 {
 	Super::BeginPlay();
-	SpawnComponents();
-	StartGeneration();
+	Seed.Reset();
+	SpawnISM_Components();
+	StartIsland();
 }
 
-void AIsland::SpawnComponents()
+void AIsland::SpawnISM_Components()
 {
 	// Spawn Cliffs ISM Components
 	for(TObjectPtr<UStaticMesh>& SM : SM_Cliffs)
 	{
 		if (!SM) continue;
+		
 		UInstancedStaticMeshComponent* ISM = NewObject<UInstancedStaticMeshComponent>(this);
 		ISM->SetStaticMesh(SM);
 		ISM->SetupAttachment(RootComponent);
 		ISM->LDMaxDrawDistance = 1000000;
 		ISM->RegisterComponent();
-		ISMComponents.Add(ISM);
-	}
-
-	// Spawn Foliage HISM Components
-	for(FFoliageAsset& Foliage : FoliageAssets)
-	{
-		if (!Foliage.StaticMesh) continue;
-		UHierarchicalInstancedStaticMeshComponent* HISM = NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
-		HISM->SetupAttachment(ProceduralMeshComponent);
-		HISM->SetStaticMesh(Foliage.StaticMesh);
-		HISM->SetCastShadow(false);
-		HISM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		HISM->RegisterComponent();
-		Foliage.HISM = HISM;
-		HISMComponents.Add(HISM);
+		ISM_Components.Add(ISM);
 	}
 }
 
-void AIsland::StartGeneration()
+void AIsland::Auth_SpawnFoliageComponents()
+{
+	if (IsNetMode(NM_Client)) return;
+	
+	for(TObjectPtr<UDA_Foliage>& Foliage : DataAssetsFoliage)
+	{
+		if (!Foliage->StaticMesh) continue;
+	
+		UFoliageHISM* FHISM = NewObject<UFoliageHISM>(this);
+		FHISM->SetupAttachment(ProceduralMeshComponent);
+		FHISM->SetStaticMesh(Foliage->StaticMesh);
+		FHISM->DA_Foliage = Foliage;
+		FHISM->RegisterComponent();
+	}
+	bFoliageComponentsSpawned = true;
+}
+
+void AIsland::StartIsland()
 {
 	if (bIsGenerating) return;
 	bIsGenerating = true;
-	if (CurrentLOD > 0)
+	if (ServerLOD > 0)
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 		{
-			FIslandData ID = Generate_IslandGeometry();
+			FIslandData ID = Island_GenerateGeometry();
 			AsyncTask(ENamedThreads::GameThread, [this, ID]
 			{
 				if (this && this->IsValidLowLevel())
 				{
-					OnGenerateComplete(ID);
+					Island_GenerateComplete(ID);
 				}
 			});
 		});
 	}
 	else
 	{
-		const FIslandData _ID = Generate_IslandGeometry();
-		OnGenerateComplete(_ID);
+		const FIslandData _ID = Island_GenerateGeometry();
+		Island_GenerateComplete(_ID);
 	}
 }
 
-FIslandData AIsland::Generate_IslandGeometry()
+FIslandData AIsland::Island_GenerateGeometry()
 {
 	FIslandData _ID;
 	FVector2D FromZeroToOne = FVector2D(0, 1);
@@ -249,9 +256,9 @@ FIslandData AIsland::Generate_IslandGeometry()
 		FRandomStream InstanceSeed = Seed.GetInitialSeed() + (i * 100);
 		FVector InstanceScale(1, 1, InstanceSeed.FRandRange(0.8f, 1.5f));
 		
-		if (!ISMComponents.IsEmpty())
+		if (!ISM_Components.IsEmpty())
 		{
-			_ID.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, ISMComponents.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
+			_ID.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, ISM_Components.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
 		}
 	}
 	
@@ -406,24 +413,22 @@ FIslandData AIsland::Generate_IslandGeometry()
 	CalculateNormalsAndTangents(_ID.TopVertices, _ID.TopTriangles, _ID.TopUVs, _ID.TopNormals, _ID.TopTangents);
 	CalculateNormalsAndTangents(_ID.BottomVertices, _ID.BottomTriangles, _ID.BottomUVs, _ID.BottomNormals, _ID.BottomTangents);
 
-	if (CurrentLOD == 0)
-	{
-		GenerateFoliage(_ID);
-	}
-	
 	return _ID;
 }
 
-void AIsland::OnGenerateComplete(const FIslandData& _ID)
+void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 {
 	ID = _ID;
 	
 	for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
 	{
-		ISMComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
+		ISM_Components[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
 	}
 
-	RenderFoliage();
+	if (HasAuthority() && ServerLOD == 0)
+	{
+		Auth_SpawnFoliageComponents();
+	}
 	
 	ProceduralMeshComponent->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
 	ProceduralMeshComponent->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
@@ -438,100 +443,6 @@ void AIsland::OnGenerateComplete(const FIslandData& _ID)
 	bIslandGenerated = true;
 	bIsGenerating = false;
 	OnIslandGenerated.Broadcast(this);
-}
-
-void AIsland::GenerateFoliage(const FIslandData& _ID)
-{
-	const float VertexOffset = (Resolution * CellSize) / 2;
-
-    for (FFoliageAsset& Foliage : FoliageAssets)
-    {
-        if (!Foliage.StaticMesh) continue;
-
-    	const float SpacingSqr = FMath::Square(Foliage.Spacing);
-        const float FoliageCellSize = Foliage.Spacing / FMath::Sqrt(2.0f);
-        int32 Attempts = 0;
-        while (Attempts < MaxFoliageAttempts)
-        {
-            // Pick a random triangle
-            const int32 TriangleIndex = Seed.RandRange(0, _ID.TopTriangles.Num() / 3 - 1) * 3;
-            const FVector& V0 = _ID.TopVertices[_ID.TopTriangles[TriangleIndex]];
-            const FVector& V1 = _ID.TopVertices[_ID.TopTriangles[TriangleIndex + 1]];
-            const FVector& V2 = _ID.TopVertices[_ID.TopTriangles[TriangleIndex + 2]];
-
-            // Generate a random point in the triangle
-            FVector Candidate = RandomPointInTriangle(V0, V1, V2);
-
-            // Check if the point is on an edge
-            const int32 ClosestX = FMath::RoundToInt((Candidate.X + VertexOffset) / CellSize);
-            const int32 ClosestY = FMath::RoundToInt((Candidate.Y + VertexOffset) / CellSize);
-            if (_ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
-            {
-                ++Attempts;
-                continue;
-            }
-
-            // Convert the point to a spatial grid key
-            const int32 GridX = FMath::FloorToInt(Candidate.X / FoliageCellSize);
-            const int32 GridY = FMath::FloorToInt(Candidate.Y / FoliageCellSize);
-            const int32 GridKey = GridX * 73856093 ^ GridY * 19349663;
-
-            // Check neighboring grid cells for spacing
-            bool bTooClose = false;
-            for (int32 NeighborX = -1; NeighborX <= 1; ++NeighborX)
-            {
-                for (int32 NeighborY = -1; NeighborY <= 1; ++NeighborY)
-                {
-                    const int32 NeighborKey = (GridX + NeighborX) * 73856093 ^ (GridY + NeighborY) * 19349663;
-                    if (Foliage.InstancesGridMap.Contains(NeighborKey) && FVector::DistSquared(Foliage.InstancesGridMap[NeighborKey], Candidate) < SpacingSqr)
-                    {
-                        bTooClose = true;
-                        break;
-                    }
-                }
-                if (bTooClose) break;
-            }
-            if (bTooClose)
-            {
-                ++Attempts;
-                continue;
-            }
-        	
-        	const FVector TriangleNormal = FVector::CrossProduct(V2 - V0, V1 - V0).GetSafeNormal();
-        	if (Foliage.bMaxSlope)
-        	{
-        		const float SlopeAngle = FMath::Acos(FVector::DotProduct(TriangleNormal, FVector::UpVector)) * (180.0f / PI);
-        		if (SlopeAngle > Foliage.MaxSlope)
-        		{
-        			++Attempts;
-        			continue;
-        		}
-        	}
-
-            // Accept candidate
-        	FTransform FoliageTransform(Candidate);
-        	FQuat GrassRotation(FRotator::ZeroRotator);
-        	if (Foliage.bRotationAlignGround) GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal);
-        	const FQuat GrassYaw = FQuat(FVector::UpVector, FMath::DegreesToRadians(Seed.FRandRange(0.0f, 360.0f)));
-        	FoliageTransform.SetRotation(GrassRotation * GrassYaw);
-        	if (Foliage.bRandomScale) FoliageTransform.SetScale3D(FVector(1, 1, Seed.FRandRange(Foliage.ScaleZ.Min, Foliage.ScaleZ.Max)));
-        	Candidate.Z = 0;
-        	Foliage.InstancesGridMap.Add(GridKey, Candidate);
-        	Foliage.Instances.Add(FoliageTransform);
-            Attempts = 0;
-        }
-    }
-    bFoliageGenerated = true;
-}
-
-void AIsland::RenderFoliage()
-{
-	if (!bFoliageGenerated) return;
-	
-	for (FFoliageAsset& Foliage : FoliageAssets)
-	{
-		Foliage.HISM->AddInstances(Foliage.Instances, false, false, false);
-	}
 }
 
 bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& AxisVertexMap, int32 EdgeThickness) const
@@ -689,237 +600,79 @@ float AIsland::TriangleArea(const FVector& V0, const FVector& V1, const FVector&
 	return FVector::CrossProduct(AB, AC).Size() * 0.5f;
 }
 
-void AIsland::FoliageRemoveSphere(FVector Location, float Radius)
+void AIsland::FoliageRemoveSphere(FVector_NetQuantize Location, float Radius)
 {
-	for (FFoliageAsset& Foliage : FoliageAssets)
+	for (UFoliageHISM*& FoliageComp : FoliageComponents)
 	{
-		const float FoliageCellSize = Foliage.Spacing / FMath::Sqrt(2.0f);
-		for (int32 i = Foliage.Instances.Num()-1; i >= 0; --i)
+		FoliageComp->RemoveInSphere(Location, Radius);
+	}
+}
+
+void AIsland::FoliageAddSphere(UDA_Foliage* DA_Foliage, FVector_NetQuantize Location, float Radius)
+{
+	for (UFoliageHISM*& FoliageComp : FoliageComponents)
+	{
+		if (FoliageComp->DA_Foliage == DA_Foliage)
 		{
-			if (FVector::Dist(Foliage.Instances[i].GetLocation(), Location) <= Radius)
-			{
-				const int32 GridX = FMath::FloorToInt(Foliage.Instances[i].GetLocation().X / FoliageCellSize);
-				const int32 GridY = FMath::FloorToInt(Foliage.Instances[i].GetLocation().Y / FoliageCellSize);
-				const int32 GridKey = GridX * 73856093 ^ GridY * 19349663;
-				Foliage.InstancesGridMap.Remove(GridKey);
-				Foliage.HISM->RemoveInstance(i);
-				Foliage.Instances.Swap(i, Foliage.Instances.Num()-1); // equal to HISM behavior.
-				Foliage.Instances.RemoveAt(Foliage.Instances.Num()-1);
-			}
+			FoliageComp->AddInSphere(Location, Radius);
 		}
 	}
 }
 
-void AIsland::FoliageRemoveBox(FVector Location, FVector BoxExtent)
+TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius)
 {
-	for (FFoliageAsset& Foliage : FoliageAssets)
+	TArray<int32> FoundVertices;
+
+	// Calculate the bounds for the search
+	const float VertexOffset = (Resolution * CellSize) / 2;
+	int32 MinX = FMath::Clamp(FMath::FloorToInt((Location.X - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+	int32 MaxX = FMath::Clamp(FMath::CeilToInt((Location.X + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+	int32 MinY = FMath::Clamp(FMath::FloorToInt((Location.Y - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+	int32 MaxY = FMath::Clamp(FMath::CeilToInt((Location.Y + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+
+	float RadiusSquared = Radius * Radius;
+
+	// Iterate through the possible grid points
+	for (int32 X = MinX; X <= MaxX; ++X)
 	{
-		const float FoliageCellSize = Foliage.Spacing / FMath::Sqrt(2.0f);
-		for (int32 i = Foliage.Instances.Num()-1; i >= 0; --i)
+		for (int32 Y = MinY; Y <= MaxY; ++Y)
 		{
-			FVector InstLoc = Foliage.Instances[i].GetLocation();
-			if (FMath::Abs(InstLoc.X - Location.X) <= BoxExtent.X && FMath::Abs(InstLoc.Y - Location.Y) <= BoxExtent.Y && FMath::Abs(InstLoc.Z - Location.Z) <= BoxExtent.Z)
+			int32 CombinedIndex = X * Resolution + Y;
+			if (const int32 VertexIndex = *ID.TopVerticesMap.Find(CombinedIndex))
 			{
-				const int32 GridX = FMath::FloorToInt(InstLoc.X / FoliageCellSize);
-				const int32 GridY = FMath::FloorToInt(InstLoc.Y / FoliageCellSize);
-				const int32 GridKey = GridX * 73856093 ^ GridY * 19349663;
-				Foliage.InstancesGridMap.Remove(GridKey);
-				Foliage.HISM->RemoveInstance(i);
-				Foliage.Instances.Swap(i, Foliage.Instances.Num()-1); // equal to HISM behavior.
-				Foliage.Instances.RemoveAt(Foliage.Instances.Num()-1);
+				FVector VertexLocation = ID.TopVertices[VertexIndex];
+				
+				// Check if the vertex is within the radius
+				if (FVector::DistSquared(VertexLocation, Location) <= RadiusSquared)
+				{
+					FoundVertices.Add(VertexIndex);
+					DrawDebugPoint(GetWorld(), GetActorLocation()+VertexLocation, 16.0f, FColor::Blue, false, 15.0f);
+				}
+				DrawDebugPoint(GetWorld(), GetActorLocation()+VertexLocation, 13.0f, FColor::Red, false, 15.0f);
 			}
 		}
 	}
+
+	return FoundVertices;
 }
 
-void AIsland::FoliageAddSphere(UStaticMesh* FoliageAsset, FVector Location, float Radius)
-{
-    // Find the relevant foliage asset
-    FFoliageAsset* FoundFoliage = nullptr;
-    for (FFoliageAsset& Foliage : FoliageAssets)
-    {
-        if (Foliage.StaticMesh == FoliageAsset)
-        {
-            FoundFoliage = &Foliage;
-            break;
-        }
-    }
-    if (!FoundFoliage || !FoundFoliage->StaticMesh) return;
-
-    const float SpacingSqr = FMath::Square(FoundFoliage->Spacing);
-    const float FoliageCellSize = FoundFoliage->Spacing / FMath::Sqrt(2.0f);
-
-    // Generate points within the radius using attempts
-    int32 Attempts = 0;
-    while (Attempts < MaxFoliageAttempts/2)
-    {
-        // Generate random candidate point within the radius
-        FVector Candidate(
-            FMath::RandRange(Location.X - Radius, Location.X + Radius),
-            FMath::RandRange(Location.Y - Radius, Location.Y + Radius),
-            0
-        );
-
-        // Check if the candidate is within the circle
-        if (FVector2D::DistSquared(FVector2D(Location.X, Location.Y), FVector2D(Candidate.X, Candidate.Y)) > FMath::Square(Radius))
-        {
-            ++Attempts;
-            continue;
-        }
-
-        // Map the candidate point to the grid
-        const int32 GridX = FMath::FloorToInt(Candidate.X / FoliageCellSize);
-        const int32 GridY = FMath::FloorToInt(Candidate.Y / FoliageCellSize);
-        const int32 GridKey = GridX * 73856093 ^ GridY * 19349663;
-
-        // Check neighboring grid cells for spacing
-        bool bTooClose = false;
-        for (int32 NeighborX = -1; NeighborX <= 1; ++NeighborX)
-        {
-            for (int32 NeighborY = -1; NeighborY <= 1; ++NeighborY)
-            {
-                const int32 NeighborKey = (GridX + NeighborX) * 73856093 ^ (GridY + NeighborY) * 19349663;
-                if (FoundFoliage->InstancesGridMap.Contains(NeighborKey) && FVector::DistSquared(FoundFoliage->InstancesGridMap[NeighborKey], Candidate) < SpacingSqr)
-                {
-                    bTooClose = true;
-                    break;
-                }
-            }
-            if (bTooClose) break;
-        }
-        if (bTooClose)
-        {
-            ++Attempts;
-            continue;
-        }
-
-        // Find three closest vertices in ID.TopVerticesMap
-        TArray<TPair<int32, float>> ClosestVertices; // Pair of VertexIndex and DistanceSquared
-        for (const TPair<int32, int32>& VertexEntry : ID.TopVerticesMap)
-        {
-            FVector VertexPosition = ID.TopVertices[VertexEntry.Value];
-            float DistanceSquared = FVector2D::DistSquared(
-                FVector2D(VertexPosition.X, VertexPosition.Y),
-                FVector2D(Candidate.X, Candidate.Y)
-            );
-
-            // Maintain a sorted list of three closest vertices
-            ClosestVertices.Add(TPair<int32, float>(VertexEntry.Value, DistanceSquared));
-            ClosestVertices.Sort([](const TPair<int32, float>& A, const TPair<int32, float>& B)
-            {
-                return A.Value < B.Value;
-            });
-            if (ClosestVertices.Num() > 3)
-            {
-                ClosestVertices.Pop(); // Remove the farthest vertex if more than 3
-            }
-        }
-
-        // Ensure we have exactly three vertices
-        if (ClosestVertices.Num() < 3)
-        {
-            ++Attempts;
-            continue;
-        }
-
-        // Retrieve the positions of the three closest vertices
-        FVector V0 = ID.TopVertices[ClosestVertices[0].Key];
-        FVector V1 = ID.TopVertices[ClosestVertices[1].Key];
-        FVector V2 = ID.TopVertices[ClosestVertices[2].Key];
-
-        // Calculate Z height of the candidate based on the triangle
-    	FVector BarycentricCoords = FMath::ComputeBaryCentric2D(
-			FVector(Candidate.X, Candidate.Y, 0),
-				FVector(V0.X, V0.Y, 0),               
-				FVector(V1.X, V1.Y, 0),               
-				FVector(V2.X, V2.Y, 0)              
-		);
-        Candidate.Z = BarycentricCoords.X * V0.Z + BarycentricCoords.Y * V1.Z + BarycentricCoords.Z * V2.Z;
-
-        // Calculate the triangle normal and check slope limits
-        FVector TriangleNormal = FVector::CrossProduct(V2 - V0, V1 - V0).GetSafeNormal();
-        if (FoundFoliage->bMaxSlope)
-        {
-            float SlopeAngle = FMath::Acos(FVector::DotProduct(TriangleNormal, FVector::UpVector)) * (180.0f / PI);
-            if (SlopeAngle > FoundFoliage->MaxSlope)
-            {
-                ++Attempts;
-                continue;
-            }
-        }
-
-        // Accept the candidate point
-        FTransform FoliageTransform(Candidate);
-        FQuat GrassRotation(FRotator::ZeroRotator);
-        if (FoundFoliage->bRotationAlignGround)
-        {
-            GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal);
-        }
-        const FQuat GrassYaw = FQuat(FVector::UpVector, FMath::DegreesToRadians(Seed.FRandRange(0.0f, 360.0f)));
-        FoliageTransform.SetRotation(GrassRotation * GrassYaw);
-        if (FoundFoliage->bRandomScale)
-        {
-            FoliageTransform.SetScale3D(FVector(1, 1, Seed.FRandRange(FoundFoliage->ScaleZ.Min, FoundFoliage->ScaleZ.Max)));
-        }
-
-        // Add the foliage instance
-    	Candidate.Z = 0;
-        FoundFoliage->InstancesGridMap.Add(GridKey, Candidate);
-        FoundFoliage->Instances.Add(FoliageTransform);
-        FoundFoliage->HISM->AddInstance(FoliageTransform);
-        Attempts = 0;
-    }
-}
-
-// TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius)
-// {
-// 	TArray<int32> FoundVertices;
-//
-// 	// Calculate the bounds for the search
-// 	const float VertexOffset = (Resolution * CellSize) / 2;
-// 	int32 MinX = FMath::Clamp(FMath::FloorToInt((Location.X - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-// 	int32 MaxX = FMath::Clamp(FMath::CeilToInt((Location.X + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-// 	int32 MinY = FMath::Clamp(FMath::FloorToInt((Location.Y - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-// 	int32 MaxY = FMath::Clamp(FMath::CeilToInt((Location.Y + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-//
-// 	float RadiusSquared = Radius * Radius;
-//
-// 	// Iterate through the possible grid points
-// 	for (int32 X = MinX; X <= MaxX; ++X)
-// 	{
-// 		for (int32 Y = MinY; Y <= MaxY; ++Y)
-// 		{
-// 			int32 CombinedIndex = X * Resolution + Y;
-// 			if (const int32 VertexIndex = *ID.TopVerticesMap.Find(CombinedIndex))
-// 			{
-// 				FVector VertexLocation = ID.TopVertices[VertexIndex];
-// 				
-// 				// Check if the vertex is within the radius
-// 				if (FVector::DistSquared(VertexLocation, Location) <= RadiusSquared)
-// 				{
-// 					FoundVertices.Add(VertexIndex);
-// 					DrawDebugPoint(GetWorld(), GetActorLocation()+VertexLocation, 16.0f, FColor::Blue, false, 15.0f);
-// 				}
-// 				DrawDebugPoint(GetWorld(), GetActorLocation()+VertexLocation, 13.0f, FColor::Red, false, 15.0f);
-// 			}
-// 		}
-// 	}
-//
-// 	return FoundVertices;
-// }
-
-void AIsland::NewLOD(int32 NewLOD)
+void AIsland::SetServerLOD(int32 NewLOD)
 {
 	if (bIslandGenerated && !bIsGenerating)
 	{
-		if (NewLOD == 0 && !bFoliageGenerated)
+		if (NewLOD == 0 && !bFoliageComponentsSpawned)
 		{
-			GenerateFoliage(ID);
-			RenderFoliage();
+			SpawnISM_Components();
 		}
 	}
-	CurrentLOD = NewLOD;
-	OnCurrentLOD.Broadcast();
+	ServerLOD = NewLOD;
+	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, ServerLOD, this);
+	OnServerLOD.Broadcast();
+}
+
+void AIsland::OnRep_ServerLOD()
+{
+	OnServerLOD.Broadcast();
 }
 
 #if WITH_EDITOR
@@ -993,6 +746,8 @@ void AIsland::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
+	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, ServerLOD, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, Seed, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, SS_Astralons, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, IslandSize, Params);
 }

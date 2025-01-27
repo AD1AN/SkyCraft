@@ -2,6 +2,7 @@
 
 #include "IslandArchon.h"
 #include "PSS.h"
+#include "Components/FoliageHISM.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
@@ -10,8 +11,7 @@ AIslandArchon::AIslandArchon()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
-	MaxFoliageAttempts = 25;
-	CurrentLOD = 0;
+	ServerLOD = 0;
 }
 
 void AIslandArchon::AuthSetCrystal(bool newCrystal)
@@ -67,11 +67,12 @@ void AIslandArchon::AuthEmptyDenizens()
 void AIslandArchon::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	for (UHierarchicalInstancedStaticMeshComponent*& HISM : HISMComponents)
+	
+	for (UFoliageHISM*& FoliageComp : FoliageComponents)
 	{
-		if (!HISM) continue;
-		HISM->UpdateBounds();
-		HISM->MarkRenderStateDirty();
+		if (!IsValid(FoliageComp)) continue;
+		FoliageComp->UpdateBounds();
+		FoliageComp->MarkRenderStateDirty();
 	}
 }
 

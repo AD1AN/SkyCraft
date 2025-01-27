@@ -24,7 +24,7 @@ void ANPC::BeginPlay()
 	
 	UpdateSettings();
 
-	Island->OnCurrentLOD.AddDynamic(this, &ANPC::ChangedLOD);
+	Island->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
 }
 
 void ANPC::ChangedLOD()
@@ -36,7 +36,7 @@ void ANPC::UpdateSettings()
 {
 	if (!IsValid(Island)) return;
 	
-	if (Island->CurrentLOD > 0)
+	if (Island->ServerLOD > 0)
 	{
 		SetActorTickEnabled(false);
 	}

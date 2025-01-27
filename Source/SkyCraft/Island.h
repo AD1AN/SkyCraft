@@ -11,6 +11,8 @@
 #include "Structs/FloatMinMax.h"
 #include "Island.generated.h"
 
+class UDA_Foliage;
+class UFoliageHISM;
 class UProceduralMeshComponent;
 class UHierarchicalInstancedStaticMeshComponent;
 class ADroppedItem;
@@ -33,10 +35,6 @@ struct FFoliageAsset
 	UPROPERTY(EditDefaultsOnly) bool bRandomScale = false;
 	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="bRandomScale", EditConditionHides))
 	FFloatMinMax ScaleZ = FFloatMinMax(1,1);
-	
-	TArray<FTransform> Instances;
-	TMap<int32, FVector> InstancesGridMap; // Spatial grid for quick distance checks
-	UPROPERTY() UHierarchicalInstancedStaticMeshComponent* HISM = nullptr;
 };
 
 struct FIslandData
@@ -47,12 +45,12 @@ struct FIslandData
 
 	TMap<int32, FCliffData> GeneratedCliffs;
 
-	TArray<FVector2D> TopVerticesRawAxisOff; // Raw Axis offset to origin center = (X,Y);
-	TArray<FVector2D> TopVerticesRawAxis; // Raw Axis = (X,Y);
-	TMap<int32, int32> TopVerticesMap; // Key: Combined Axis = (X * Resolution + Y);
-	TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset);
+	TArray<FVector2D> TopVerticesRawAxisOff; // Raw Axis offset to origin center = (X,Y)
+	TArray<FVector2D> TopVerticesRawAxis; // Raw Axis = (X,Y)
+	TMap<int32, int32> TopVerticesMap; // Key: Combined Axis = (X * Resolution + Y)
+	TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
 	TArray<FVector2D> EdgeTopVertices; // 2D Locations
-	TMap<int32, int32> EdgeTopVerticesMap; // Key: Combined Axis = (X * Resolution + Y);
+	TMap<int32, int32> EdgeTopVerticesMap; // Key: Combined Axis = (X * Resolution + Y)
 	TArray<int32> TopTriangles;
 	TArray<FVector2D> TopUVs;
 	TArray<FVector> TopNormals;
@@ -73,9 +71,10 @@ public:
 	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene = nullptr;
 	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* ProceduralMeshComponent = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
-	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> ISMComponents;
-	UPROPERTY(VisibleAnywhere) TArray<UHierarchicalInstancedStaticMeshComponent*> HISMComponents;
-
+	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> ISM_Components;
+	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
+	bool bFoliageComponentsSpawned = false;
+	
 	AIsland();
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
@@ -91,9 +90,12 @@ public:
 	UFUNCTION() void OnRep_IslandSize();
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCurrentLOD);
-	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCurrentLOD OnCurrentLOD;
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 CurrentLOD = -1;
-	UFUNCTION(BlueprintCallable) void NewLOD(int32 NewLOD);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCurrentLOD OnServerLOD;
+	UPROPERTY(ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 ServerLOD = -1;
+	UPROPERTY(BlueprintReadOnly) int32 ClientLOD = -1; // TODO: Implement Client LOD system.
+	UFUNCTION(BlueprintCallable) void SetServerLOD(int32 NewLOD);
+
+	UFUNCTION() void OnRep_ServerLOD();
 	
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) TArray<ADroppedItem*> DroppedItems;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated) TArray<FSS_Astralon> SS_Astralons;
@@ -128,23 +130,22 @@ public:
 	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> BottomMaterial;
 	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UStaticMesh>> SM_Cliffs;
 	UPROPERTY(EditAnywhere) TArray<FFoliageAsset> FoliageAssets;
-	UPROPERTY(EditAnywhere) int32 MaxFoliageAttempts = 15;
-	
+	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UDA_Foliage>> DataAssetsFoliage;
+
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandGenerated, AIsland*, Island);
 	UPROPERTY(BlueprintAssignable) FOnIslandGenerated OnIslandGenerated;
+	
+	FThreadSafeBool bIsGenerating = false;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bIslandGenerated = false;
-	FThreadSafeBool bIsGenerating;
-	bool bFoliageGenerated = false;
+	
 	FIslandData ID;
 	
 	virtual void BeginPlay() override;
-	void SpawnComponents();
-	void StartGeneration();
-	FIslandData Generate_IslandGeometry();
-	void OnGenerateComplete(const FIslandData& _ID);
-	
-	void GenerateFoliage(const FIslandData& _ID);
-	void RenderFoliage();
+	void SpawnISM_Components();
+	void StartIsland();
+	FIslandData Island_GenerateGeometry();
+	void Island_GenerateComplete(const FIslandData& _ID);
+	void Auth_SpawnFoliageComponents();
 
 	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& AxisVertexMap, int32 EdgeThickness) const;
 	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
@@ -152,11 +153,11 @@ public:
 	float SeededNoise2D(float X, float Y, int32 InSeed);
 	float TriangleArea(const FVector& V0, const FVector& V1, const FVector& V2); // Maybe for future needs
 	
-	UFUNCTION(BlueprintCallable) void FoliageRemoveSphere(FVector Location, float Radius);
-	UFUNCTION(BlueprintCallable) void FoliageRemoveBox(FVector Location, FVector BoxExtent);
-	UFUNCTION(BlueprintCallable) void FoliageAddSphere(UStaticMesh* FoliageAsset, FVector Location, float Radius);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void FoliageRemoveSphere(FVector_NetQuantize Location, float Radius);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void FoliageAddSphere(UDA_Foliage* DA_Foliage, FVector_NetQuantize Location, float Radius);
 
 	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2);
+	TArray<int32> FindVerticesInRadius(const FVector Location, float Radius); // Maybe for future needs
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere) bool DebugAllVertices = false;
