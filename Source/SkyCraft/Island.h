@@ -129,7 +129,6 @@ public:
 	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> TopMaterial;
 	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> BottomMaterial;
 	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UStaticMesh>> SM_Cliffs;
-	UPROPERTY(EditAnywhere) TArray<FFoliageAsset> FoliageAssets;
 	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UDA_Foliage>> DataAssetsFoliage;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandGenerated, AIsland*, Island);

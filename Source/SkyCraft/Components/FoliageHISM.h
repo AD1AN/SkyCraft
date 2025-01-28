@@ -19,7 +19,7 @@ struct FDynamicInstance
 	UPROPERTY() FVector_NetQuantize10 Scale = FVector_NetQuantize10(1,1,1);
 
 	// Equality operator
-	FORCEINLINE bool operator==(const FDynamicInstance& Other) const
+	bool operator==(const FDynamicInstance& Other) const
 	{
 		return Location == Other.Location;
 	}
@@ -72,13 +72,14 @@ public:
 	UFUNCTION() void OnRep_InitialInstancesRemoved();
 	
 	UPROPERTY(ReplicatedUsing=OnRep_DynamicInstancesAdded) TArray<FDynamicInstance> DynamicInstancesAdded;
-	TArray<FDynamicInstance> Previous_DynamicInstancesAdded;
+	TArray<FDynamicInstance> Previous_DynamicInstancesAdded; // Already Added (Instanced)
 	UFUNCTION() void OnRep_DynamicInstancesAdded();
 
 	UPROPERTY(BlueprintReadOnly) TObjectPtr<AIsland> Island = nullptr;
 	
 	void Generate_InitialInstances(const FIslandData& _ID);
 
+	
 	void RemoveInSphere(FVector_NetQuantize Location, float Radius);
 	void AddInSphere(FVector_NetQuantize Location, float Radius);
 

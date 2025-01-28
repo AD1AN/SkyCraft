@@ -15,11 +15,7 @@ UFoliageHISM::UFoliageHISM()
 
 void UFoliageHISM::BeginPlay()
 {
-	SetCastShadow(false);
-	SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
 	Super::BeginPlay();
-	
 	if (IsNetMode(NM_Client)) return; // Only server
 	StartComponent();
 }
@@ -31,6 +27,12 @@ void UFoliageHISM::OnRep_DA_Foliage() // Only clients
 
 void UFoliageHISM::StartComponent(AIsland* _Island)
 {
+	SetCastShadow(false);
+	SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	LDMaxDrawDistance = DA_Foliage->DrawDistance;
+	InstanceStartCullDistance = DA_Foliage->CullingDistance;
+	InstanceEndCullDistance = DA_Foliage->CullingDistance;
+	
 	if (IsValid(_Island)) Island = _Island;
 	else Island = Cast<AIsland>(GetOwner());
 	Island->OnIslandGenerated.RemoveDynamic(this, &UFoliageHISM::StartComponent);
@@ -52,7 +54,7 @@ void UFoliageHISM::Generate_InitialInstances(const FIslandData& _ID)
     const float SpacingSqr = FMath::Square(DA_Foliage->Spacing);
     int32 InstanceIndex = 0;
     int32 Attempts = 0;
-    while (Attempts < 0) // 30
+    while (Attempts < DA_Foliage->MaxAttempts)
     {
         // Pick a random triangle
         const int32 TriangleIndex = Island->Seed.RandRange(0, _ID.TopTriangles.Num() / 3 - 1) * 3;
@@ -73,8 +75,8 @@ void UFoliageHISM::Generate_InitialInstances(const FIslandData& _ID)
         }
 
         // Convert the point to a spatial grid key
-        const int32 GridX = FMath::FloorToInt(Candidate.X / DA_Foliage->Spacing);
-        const int32 GridY = FMath::FloorToInt(Candidate.Y / DA_Foliage->Spacing);
+        const int32 GridX = FMath::RoundToInt(Candidate.X / DA_Foliage->Spacing);
+        const int32 GridY = FMath::RoundToInt(Candidate.Y / DA_Foliage->Spacing);
         const int32 GridKey = GridX * 31 ^ GridY * 17;
     	if (GridMap.Contains(GridKey))
     	{
@@ -188,33 +190,43 @@ void UFoliageHISM::OnRep_DynamicInstancesAdded()
 		return;
 	}
 	
-	// Use sets for efficient lookups
 	const TSet CurrentDynamicInstancesSet(DynamicInstancesAdded);
-	const TSet PreviousDynamicInstancesSet(Previous_DynamicInstancesAdded);
 
-	// Find and Remove Instances
+	// Find REMOVED instances
 	for (int32 i = Previous_DynamicInstancesAdded.Num() - 1; i >= 0; --i)
 	{
 		if (!CurrentDynamicInstancesSet.Contains(Previous_DynamicInstancesAdded[i]))
 		{
 			const int32 DynamicIndex = InitialInstances.Num() + i;
 			RemoveInstance(DynamicIndex);
+			Previous_DynamicInstancesAdded.RemoveAtSwap(i);
 		}
 	}
+	
+	const TSet PreviousDynamicInstancesSet(Previous_DynamicInstancesAdded);
 
-	// Add NEW Dynamic Instances
+	// Find ADDED instances
 	TArray<FTransform> NewDynamicInstances;
 	for (int32 i = 0; i < DynamicInstancesAdded.Num(); ++i)
 	{
-		FDynamicInstance& DynamicInstance = DynamicInstancesAdded[i];
-		if (!PreviousDynamicInstancesSet.Contains(DynamicInstance))
+		FDynamicInstance& NewDynamicInstance = DynamicInstancesAdded[i];
+		if (!PreviousDynamicInstancesSet.Contains(NewDynamicInstance))
 		{
-			NewDynamicInstances.Add(DynamicInstance.ToTransform());
+			NewDynamicInstances.Add(NewDynamicInstance.ToTransform());
+			Previous_DynamicInstancesAdded.Add(NewDynamicInstance);
 		}
 	}
 	if (!NewDynamicInstances.IsEmpty())
 	{
-		AddInstances(NewDynamicInstances, false);
+		AddInstances(NewDynamicInstances, false, false,false);
+	}
+
+	for (int32 i = 0; i < DynamicInstancesAdded.Num(); ++i)
+	{
+		if (DynamicInstancesAdded[i].Location != Previous_DynamicInstancesAdded[i].Location)
+		{
+			UpdateInstanceTransform(InitialInstances.Num()+i, DynamicInstancesAdded[i].ToTransform(), false, true, true);
+		}
 	}
 	
 	Previous_DynamicInstancesAdded = DynamicInstancesAdded;
@@ -226,10 +238,10 @@ void UFoliageHISM::RemoveInSphere(FVector_NetQuantize Location, float Radius)
     const float FoliageCellSize = DA_Foliage->Spacing;
 
     // Calculate grid bounds based on the radius
-    const int32 MinGridX = FMath::FloorToInt((Location.X - Radius) / FoliageCellSize);
-    const int32 MaxGridX = FMath::CeilToInt((Location.X + Radius) / FoliageCellSize);
-    const int32 MinGridY = FMath::FloorToInt((Location.Y - Radius) / FoliageCellSize);
-    const int32 MaxGridY = FMath::CeilToInt((Location.Y + Radius) / FoliageCellSize);
+    const int32 MinGridX = FMath::RoundToInt((Location.X - Radius) / FoliageCellSize);
+    const int32 MaxGridX = FMath::RoundToInt((Location.X + Radius) / FoliageCellSize);
+    const int32 MinGridY = FMath::RoundToInt((Location.Y - Radius) / FoliageCellSize);
+    const int32 MaxGridY = FMath::RoundToInt((Location.Y + Radius) / FoliageCellSize);
 
     // Iterate through grid cells within the radius
     for (int32 GridX = MinGridX; GridX <= MaxGridX; ++GridX)
@@ -259,8 +271,9 @@ void UFoliageHISM::RemoveInSphere(FVector_NetQuantize Location, float Radius)
             		else
             		{
             			FTransform HideTransform(InitialInstances[InstanceIndex]);
+            			HideTransform.SetLocation(HideTransform.GetLocation() - FVector(0,0,20));
             			HideTransform.SetScale3D(FVector(0, 0, 0));
-            			UpdateInstanceTransform(InstanceIndex, HideTransform, false);
+            			UpdateInstanceTransform(InstanceIndex, HideTransform, false, false, true);
             			InitialInstancesRemoved.Add(InstanceIndex);
             			MARK_PROPERTY_DIRTY_FROM_NAME(UFoliageHISM, InitialInstancesRemoved, this);
             		}
@@ -282,7 +295,7 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
 		const FVector_NetQuantize InitialInstanceLoc = InitialInstances[InstanceIndex].GetLocation();
 		if (FVector_NetQuantize::DistSquared(InitialInstanceLoc, Location) <= SpacingSqr)
 		{
-			UpdateInstanceTransform(InstanceIndex, InitialInstances[InstanceIndex], false);
+			UpdateInstanceTransform(InstanceIndex, InitialInstances[InstanceIndex], false, false, true);
 			InitialInstancesRemoved.RemoveAt(RemovedIndex);
 			MARK_PROPERTY_DIRTY_FROM_NAME(UFoliageHISM, InitialInstancesRemoved, this);
 		}
@@ -291,7 +304,7 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
 	// ========== Add DynamicInstances ===============
 
     int32 Attempts = 0;
-    while (Attempts < 15)
+    while (Attempts < 100)
     {
         // Generate random DynamicInstance point within the radius
         FVector_NetQuantize RandomDynamicInstanceLocation(
@@ -300,8 +313,8 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
             0);
   
         // Map the candidate point to the grid
-        const int32 GridX = FMath::FloorToInt(RandomDynamicInstanceLocation.X / DA_Foliage->Spacing);
-        const int32 GridY = FMath::FloorToInt(RandomDynamicInstanceLocation.Y / DA_Foliage->Spacing);
+        const int32 GridX = FMath::RoundToInt(RandomDynamicInstanceLocation.X / DA_Foliage->Spacing);
+        const int32 GridY = FMath::RoundToInt(RandomDynamicInstanceLocation.Y / DA_Foliage->Spacing);
     	const int32 GridKey = GridX * 31 ^ GridY * 17;
 
     	if (GridMap.Contains(GridKey))
@@ -398,8 +411,7 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
         DynamicInstance.Rotation = FVector_NetQuantize(GrassRotator.Pitch, GrassRotator.Yaw, GrassRotator.Roll);
         if (DA_Foliage->bRandomScale)
         {
-        	DynamicInstance.Scale = FVector_NetQuantize10(0.1f, 0.1f, 5);
-            // DynamicInstance.Scale.Z = FMath::FRandRange(DA_Foliage->ScaleZ.Min, DA_Foliage->ScaleZ.Max);
+            DynamicInstance.Scale.Z = FMath::FRandRange(DA_Foliage->ScaleZ.Min, DA_Foliage->ScaleZ.Max);
         }
         GridMap.Add(GridKey, FGridValue(0, RandomDynamicInstanceLocation, true));
     	AddInstance(DynamicInstance.ToTransform());

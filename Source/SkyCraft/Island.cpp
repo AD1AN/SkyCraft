@@ -662,7 +662,7 @@ void AIsland::SetServerLOD(int32 NewLOD)
 	{
 		if (NewLOD == 0 && !bFoliageComponentsSpawned)
 		{
-			SpawnISM_Components();
+			Auth_SpawnFoliageComponents();
 		}
 	}
 	ServerLOD = NewLOD;
