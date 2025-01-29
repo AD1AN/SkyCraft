@@ -49,6 +49,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void Dismantled();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void DismantledEffects();
 
+	static TArray<int32> ConvertToIDs(TArray<ABM*>& Buildings);
+
 private:
 	void PlayEffects(bool Builded);
 

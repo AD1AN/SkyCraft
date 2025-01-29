@@ -1,10 +1,14 @@
 // ADIAN Copyrighted
 
 #include "Island.h"
+
+#include "BM.h"
 #include "ProceduralMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
-#include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "DroppedItem.h"
+#include "GMS.h"
+#include "GSS.h"
+#include "Components/HealthSystem.h"
 #include "DataAssets/DA_Foliage.h"
 #include "SkyCraft/Components/FoliageHISM.h"
 #include "Net/UnrealNetwork.h"
@@ -119,6 +123,7 @@ void AIsland::OnConstruction(const FTransform& Transform)
 void AIsland::BeginPlay()
 {
 	Super::BeginPlay();
+	GSS = Cast<AGSS>(GetWorld()->GetGameState());
 	Seed.Reset();
 	SpawnISM_Components();
 	StartIsland();
@@ -144,14 +149,14 @@ void AIsland::Auth_SpawnFoliageComponents()
 {
 	if (IsNetMode(NM_Client)) return;
 	
-	for(TObjectPtr<UDA_Foliage>& Foliage : DataAssetsFoliage)
+	for(const TObjectPtr<UDA_Foliage>& DA_Foliage : DataAssetsFoliage)
 	{
-		if (!Foliage->StaticMesh) continue;
+		if (!DA_Foliage->StaticMesh) continue;
 	
 		UFoliageHISM* FHISM = NewObject<UFoliageHISM>(this);
 		FHISM->SetupAttachment(ProceduralMeshComponent);
-		FHISM->SetStaticMesh(Foliage->StaticMesh);
-		FHISM->DA_Foliage = Foliage;
+		FHISM->SetStaticMesh(DA_Foliage->StaticMesh);
+		FHISM->DA_Foliage = DA_Foliage;
 		FHISM->RegisterComponent();
 	}
 	bFoliageComponentsSpawned = true;
@@ -619,6 +624,16 @@ void AIsland::FoliageAddSphere(UDA_Foliage* DA_Foliage, FVector_NetQuantize Loca
 	}
 }
 
+void AIsland::TerrainAdd(FVector Location, float Radius)
+{
+	
+}
+
+void AIsland::TerrainSubtract(FVector Location, float Radius)
+{
+	
+}
+
 TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius)
 {
 	TArray<int32> FoundVertices;
@@ -673,6 +688,65 @@ void AIsland::SetServerLOD(int32 NewLOD)
 void AIsland::OnRep_ServerLOD()
 {
 	OnServerLOD.Broadcast();
+}
+
+void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	if (!HasAuthority()) return;
+	SaveIsland();
+	for (int32 i = Buildings.Num() - 1; i >= 0; --i)
+	{
+		if (IsValid(Buildings[i])) Buildings[i]->Destroy();
+	}
+}
+
+void AIsland::SaveIsland()
+{
+	if (!bIslandCanSave) return;
+	// TODO: SaveLODs
+	TArray<FSS_Building> SS_Buildings;
+	SaveBuildings(SS_Buildings);
+	TArray<FSS_DroppedItem> SS_DroppedItems = SaveDroppedItems();
+	SS_Island.Buildings = SS_Buildings;
+	SS_Island.DroppedItems = SS_DroppedItems;
+	TArray<FSS_Foliage> SS_Foliage;
+	SaveFoliage(SS_Foliage);
+	SS_Island.Foliage = SS_Foliage;
+	if (!IsValid(GSS) && !IsValid(GSS->GMS)) return;
+	GSS->GMS->SavedIslands.Add(HashCombine(GetTypeHash(Coords.X),GetTypeHash(Coords.Y)), SS_Island);
+}
+
+void AIsland::SaveBuildings(TArray<FSS_Building>& SS_Buildings)
+{
+	for (ABM*& Building : Buildings)
+	{
+		if (!IsValid(Building)) return;
+		if (Building->GetOwner() != nullptr) return; // Check if this building not in Preview
+		FSS_Building SS_Building;
+		SS_Building.ID = Building->ID;
+		SS_Building.BM_Class = Building->GetClass();
+		SS_Building.Location = Building->GetRootComponent()->GetRelativeLocation();
+		SS_Building.Rotation = Building->GetRootComponent()->GetRelativeRotation();
+		SS_Building.Health = Building->HealthSystem->Health;
+		SS_Building.Grounded = Building->Grounded;
+		SS_Building.Supports = Building->ConvertToIDs(Building->Supports);
+		SS_Building.Depends = Building->ConvertToIDs(Building->Depends);
+		SS_Building.Parameters = Building->SaveBuildingParameters();
+		SS_Buildings.Add(SS_Building);
+	}
+}
+
+void AIsland::SaveFoliage(TArray<FSS_Foliage>& SS_Foliage)
+{
+	for (UFoliageHISM*& FoliageComponent : FoliageComponents)
+	{
+		FSS_Foliage SaveFoliage;
+		SaveFoliage.DA_Foliage = FoliageComponent->DA_Foliage;
+		SaveFoliage.InitialInstancesRemoved = FoliageComponent->InitialInstancesRemoved;
+		SaveFoliage.DynamicInstancesAdded = FoliageComponent->DynamicInstancesAdded;
+		SS_Foliage.Add(SaveFoliage);
+	}
 }
 
 #if WITH_EDITOR

@@ -5,7 +5,7 @@
 #include "HealthSystem.h"
 #include "SkyCraft/AdianFL.h"
 #include "SkyCraft/Island.h"
-#include "SkyCraft/Structs/SS_IslandStatic.h"
+#include "SkyCraft/Structs/SS_Island.h"
 #include "SkyCraft/Resource.h"
 #include "SkyCraft/NPC.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"

@@ -6,16 +6,20 @@
 #include "GameFramework/Actor.h"
 #include "SkyCraft/Interfaces/IslandInterface.h"
 #include "Structs/SS_Astralon.h"
-#include "Structs/SS_IslandStatic.h"
+#include "Structs/SS_Island.h"
 #include "ProceduralMeshComponent.h"
+#include "Structs/Coords.h"
 #include "Structs/FloatMinMax.h"
 #include "Island.generated.h"
 
+class AGSS;
 class UDA_Foliage;
 class UFoliageHISM;
 class UProceduralMeshComponent;
 class UHierarchicalInstancedStaticMeshComponent;
 class ADroppedItem;
+class ABM;
+struct FSS_Building;
 
 struct FCliffData
 {
@@ -76,6 +80,9 @@ public:
 	bool bFoliageComponentsSpawned = false;
 	
 	AIsland();
+
+	UPROPERTY() AGSS* GSS = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FCoords Coords;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
 	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
@@ -88,6 +95,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(float NewSize);
 	UFUNCTION() void OnRep_IslandSize();
+
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) bool bIslandFromSave = false;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FSS_Island SS_Island;
+	UPROPERTY(BlueprintReadWrite) bool bIslandCanSave = false;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCurrentLOD);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCurrentLOD OnServerLOD;
@@ -140,6 +151,11 @@ public:
 	FIslandData ID;
 	
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	UFUNCTION(BlueprintCallable) void SaveIsland();
+	UPROPERTY(BlueprintReadWrite) TArray<ABM*> Buildings;
+	void SaveBuildings(TArray<FSS_Building>& SS_Buildings);
+	void SaveFoliage(TArray<FSS_Foliage>& SS_Foliage);
 	void SpawnISM_Components();
 	void StartIsland();
 	FIslandData Island_GenerateGeometry();
@@ -155,6 +171,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void FoliageRemoveSphere(FVector_NetQuantize Location, float Radius);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void FoliageAddSphere(UDA_Foliage* DA_Foliage, FVector_NetQuantize Location, float Radius);
 
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void TerrainAdd(FVector Location, float Radius);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void TerrainSubtract(FVector Location, float Radius);
+	
 	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2);
 	TArray<int32> FindVerticesInRadius(const FVector Location, float Radius); // Maybe for future needs
 

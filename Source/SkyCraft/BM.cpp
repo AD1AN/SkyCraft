@@ -72,6 +72,17 @@ void ABM::DismantledEffects_Implementation()
 }
 
 
+TArray<int32> ABM::ConvertToIDs(TArray<ABM*>& Buildings)
+{
+	TArray<int32> IDs;
+	for (ABM*& Building : Buildings)
+	{
+		if (!IsValid(Building)) continue;
+		IDs.Add(Building->ID);
+	}
+	return IDs;
+}
+
 void ABM::PlayEffects(bool Builded)
 {
 	if (!DA_Building)

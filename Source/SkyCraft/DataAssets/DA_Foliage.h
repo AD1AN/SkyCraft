@@ -25,4 +25,5 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly) float DrawDistance = 50000;
 	UPROPERTY(EditDefaultsOnly) float CullingDistance = 20000;
+	UPROPERTY(EditDefaultsOnly) int32 WPO_DisableDistance = 5000;
 };

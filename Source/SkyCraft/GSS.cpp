@@ -1,6 +1,8 @@
 // ADIAN Copyrighted
 
 #include "GSS.h"
+
+#include "GMS.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -35,6 +37,13 @@ void AGSS::Multicast_SpawnFXAttached_Implementation(FFX FX, FVector LocalLocatio
 			}
 		}
 	}
+}
+
+void AGSS::BeginPlay()
+{
+	Super::BeginPlay();
+	if (!HasAuthority()) return;
+	GMS = Cast<AGMS>(GetWorld()->GetAuthGameMode());
 }
 
 void AGSS::SetHostPlayer(APSS* Host)

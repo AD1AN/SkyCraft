@@ -3,7 +3,7 @@
 #include "NPC.h"
 #include "Island.h"
 #include "SkyCraft/Components/HealthSystem.h"
-#include "SkyCraft/Structs/SS_IslandStatic.h"
+#include "SkyCraft/Structs/SS_Island.h"
 
 
 ANPC::ANPC()

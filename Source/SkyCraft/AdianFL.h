@@ -5,12 +5,14 @@
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SkyCraft/Structs/Essence.h"
+#include "SkyCraft/Structs/Coords.h"
 #include "AdianFL.generated.h"
 
 struct FRelativeBox;
 class UDA_SkyTag;
 class IInterface_AssetUserData;
 class UAssetUserData;
+struct FCoords;
 
 USTRUCT(BlueprintType)
 struct FUniformSubtractOut
@@ -96,4 +98,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static FVector ToLocalSpace(FVector WorldLocation, AActor* ToActor);
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static int32 HashCoords(FCoords Coords);
+
 };

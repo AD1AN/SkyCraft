@@ -7,6 +7,7 @@
 #include "Structs/FloatMinMax.h"
 #include "GSS.generated.h"
 
+class AGMS;
 class APSS;
 
 UCLASS()
@@ -16,6 +17,8 @@ class SKYCRAFT_API AGSS : public AGameStateBase
 	
 public:	
 	AGSS();
+
+	UPROPERTY() AGMS* GMS = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float ChunkSize = 150000;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) int32 ChunkRenderRange = 5;
@@ -30,6 +33,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) uint8 GroundedMax = 7;
 
 	// -------------------------------------
+
+	virtual void BeginPlay() override;
 	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_SpawnFXAttached(FFX FX, FVector LocalLocation = FVector::ZeroVector, AActor* AttachTo = nullptr, USoundAttenuation* AttenuationSettings = nullptr);
 
