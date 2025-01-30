@@ -152,7 +152,7 @@ public:
 	
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	UFUNCTION(BlueprintCallable) void SaveIsland();
+	UFUNCTION(BlueprintCallable) void SaveIsland(bool IsArchon = false);
 	UPROPERTY(BlueprintReadWrite) TArray<ABM*> Buildings;
 	void SaveBuildings(TArray<FSS_Building>& SS_Buildings);
 	void SaveFoliage(TArray<FSS_Foliage>& SS_Foliage);

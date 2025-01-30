@@ -101,5 +101,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static int32 HashCoords(FCoords Coords);
-
+	
+	UFUNCTION(BlueprintCallable, Category="AdianFL")
+	static void ForceDestroyComponent(UActorComponent* ActorComponent)
+	{
+		if (IsValid(ActorComponent)) ActorComponent->DestroyComponent();
+	}
 };

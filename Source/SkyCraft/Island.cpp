@@ -701,7 +701,7 @@ void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-void AIsland::SaveIsland()
+void AIsland::SaveIsland(bool IsArchon)
 {
 	if (!bIslandCanSave) return;
 	// TODO: SaveLODs
@@ -713,6 +713,7 @@ void AIsland::SaveIsland()
 	TArray<FSS_Foliage> SS_Foliage;
 	SaveFoliage(SS_Foliage);
 	SS_Island.Foliage = SS_Foliage;
+	if (!IsArchon) return;
 	if (!IsValid(GSS) && !IsValid(GSS->GMS)) return;
 	GSS->GMS->SavedIslands.Add(HashCombine(GetTypeHash(Coords.X),GetTypeHash(Coords.Y)), SS_Island);
 }

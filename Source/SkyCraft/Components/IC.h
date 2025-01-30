@@ -7,6 +7,7 @@
 #include "IC.generated.h"
 
 class APAI;
+class ASkyCharacter;
 
 UCLASS( Blueprintable, BlueprintType, meta=(BlueprintSpawnableComponent) )
 class SKYCRAFT_API UIC : public UActorComponent
@@ -15,12 +16,14 @@ class SKYCRAFT_API UIC : public UActorComponent
 
 public:	
 	UIC();
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Replicated, meta=(ExposeOnSpawn="true")) bool Main = true;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, ReplicatedUsing=OnRep_Main, meta=(ExposeOnSpawn="true")) bool Main = true;
+	UFUNCTION() void OnRep_Main();
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn="true")) class UInventory* Inventory = nullptr;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn="true")) int32 SlotIndex;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanLMB = true;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanRMB = true;
 	UPROPERTY(BlueprintReadWrite) bool HadBeginPlay = false;
+	UPROPERTY() ASkyCharacter* OwnerPF_Normal = nullptr;
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

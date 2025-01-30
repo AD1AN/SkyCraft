@@ -11,13 +11,19 @@ UIC::UIC()
 	SetIsReplicatedByDefault(true);
 }
 
+void UIC::OnRep_Main()
+{
+	
+}
+
 void UIC::BeginPlay()
 {
 	Super::BeginPlay();
-	if (ASkyCharacter* PF_Normal = Cast<ASkyCharacter>(GetOwner()))
+	OwnerPF_Normal = Cast<ASkyCharacter>(GetOwner());
+	if (IsValid(OwnerPF_Normal))
 	{
-		if (PF_Normal->bCharacterStarted) OnPostBeginPlay();
-		else PF_Normal->OnCharacterStarted.AddDynamic(this, &UIC::OnPostBeginPlay);
+		if (OwnerPF_Normal->bCharacterStarted) OnPostBeginPlay();
+		else OwnerPF_Normal->OnCharacterStarted.AddDynamic(this, &UIC::OnPostBeginPlay);
 	}
 }
 
@@ -34,10 +40,7 @@ void UIC::OnPostBeginPlay_Implementation()
 {
 	HadBeginPlay = true;
 	StartItemComponent();
-	if (ASkyCharacter* PF_Normal = Cast<ASkyCharacter>(GetOwner()))
-	{
-		PF_Normal->OnCharacterStarted.RemoveDynamic(this, &UIC::OnPostBeginPlay);
-	}
+	OwnerPF_Normal->OnCharacterStarted.RemoveDynamic(this, &UIC::OnPostBeginPlay);
 }
 
 void UIC::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
