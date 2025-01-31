@@ -2,32 +2,26 @@
 
 #include "IC.h"
 #include "Net/UnrealNetwork.h"
-#include "SkyCraft/SkyCharacter.h"
+#include "SkyCraft/PlayerNormal.h"
 
-UIC::UIC()
+AIC::AIC()
 {
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = false;
-	SetIsReplicatedByDefault(true);
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.TickGroup = TG_DuringPhysics;
+	bReplicates = true;
+	SetNetUpdateFrequency(1);
+	bAlwaysRelevant = true;
 }
 
-void UIC::OnRep_Main()
-{
-	
-}
-
-void UIC::BeginPlay()
+void AIC::BeginPlay()
 {
 	Super::BeginPlay();
-	OwnerPF_Normal = Cast<ASkyCharacter>(GetOwner());
-	if (IsValid(OwnerPF_Normal))
-	{
-		if (OwnerPF_Normal->bCharacterStarted) OnPostBeginPlay();
-		else OwnerPF_Normal->OnCharacterStarted.AddDynamic(this, &UIC::OnPostBeginPlay);
-	}
+	if (PlayerNormal->bCharacterStarted) OnPostBeginPlay();
+	else PlayerNormal->OnCharacterStarted.AddDynamic(this, &AIC::OnPostBeginPlay);
 }
 
-void UIC::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AIC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	if (EndPlayReason == EEndPlayReason::Destroyed)
@@ -36,26 +30,18 @@ void UIC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-void UIC::OnPostBeginPlay_Implementation()
+void AIC::OnPostBeginPlay_Implementation()
 {
-	HadBeginPlay = true;
 	StartItemComponent();
-	OwnerPF_Normal->OnCharacterStarted.RemoveDynamic(this, &UIC::OnPostBeginPlay);
+	PlayerNormal->OnCharacterStarted.RemoveDynamic(this, &AIC::OnPostBeginPlay);
+	HadBeginPlay = true;
 }
 
-void UIC::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-
-void UIC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AIC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	FDoRepLifetimeParams Params;
-	Params.bIsPushBased = true;
-	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
-	DOREPLIFETIME_WITH_PARAMS_FAST(UIC, Main, Params); // Don't use COND_InitialOnly, If RPC is called then COND_InitialOnly not sends.
+	DOREPLIFETIME_CONDITION(AIC, PlayerNormal, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AIC, Main, COND_InitialOnly);
 }
 

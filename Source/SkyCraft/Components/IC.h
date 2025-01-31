@@ -3,27 +3,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "GameFramework/Actor.h"
 #include "IC.generated.h"
 
 class APAI;
-class ASkyCharacter;
+class APlayerNormal;
 
-UCLASS( Blueprintable, BlueprintType, meta=(BlueprintSpawnableComponent) )
-class SKYCRAFT_API UIC : public UActorComponent
+UCLASS( Blueprintable)
+class SKYCRAFT_API AIC : public AActor
 {
 	GENERATED_BODY()
 
-public:	
-	UIC();
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, ReplicatedUsing=OnRep_Main, meta=(ExposeOnSpawn="true")) bool Main = true;
-	UFUNCTION() void OnRep_Main();
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn="true")) class UInventory* Inventory = nullptr;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn="true")) int32 SlotIndex;
+public:
+	AIC();
+	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) APlayerNormal* PlayerNormal = nullptr;
+	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) bool Main = true;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn)) class UInventory* Inventory = nullptr;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn)) int32 SlotIndex;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanLMB = true;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanRMB = true;
 	UPROPERTY(BlueprintReadWrite) bool HadBeginPlay = false;
-	UPROPERTY() ASkyCharacter* OwnerPF_Normal = nullptr;
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -31,7 +30,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent) void StartItemComponent();
 	UFUNCTION(BlueprintImplementableEvent) void EndItemComponent();
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void Select();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void Deselect();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB(bool Pressed);

@@ -36,7 +36,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) EItemHandType ItemHandType = EItemHandType::OnlyMain;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) EItemType ItemType = EItemType::Item;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType!=EItemType::Item", EditConditionHides)) TSubclassOf<UIC> ItemComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType!=EItemType::Item", EditConditionHides)) TSubclassOf<AIC> ItemComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType!=EItemType::Item", EditConditionHides)) FItemComponentParameters ItemComponentParameters;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides)) EEquipmentType EquipmentType;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides)) UDA_EquipmentStats* EquipmentStats;

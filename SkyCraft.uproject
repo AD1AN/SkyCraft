@@ -357,10 +357,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "PropertyAccessNode",
-			"Enabled": false
-		},
-		{
 			"Name": "PortableObjectFileDataSource",
 			"Enabled": false
 		},
