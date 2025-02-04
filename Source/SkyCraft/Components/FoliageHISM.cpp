@@ -25,7 +25,7 @@ void UFoliageHISM::OnRep_DA_Foliage() // Only clients
 	StartComponent();
 }
 
-void UFoliageHISM::StartComponent(AIsland* _Island)
+void UFoliageHISM::StartComponent()
 {
 	SetCastShadow(false);
 	SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -34,12 +34,11 @@ void UFoliageHISM::StartComponent(AIsland* _Island)
 	InstanceEndCullDistance = DA_Foliage->CullingDistance;
 	WorldPositionOffsetDisableDistance = DA_Foliage->WPO_DisableDistance;
 	
-	if (IsValid(_Island)) Island = _Island;
-	else Island = Cast<AIsland>(GetOwner());
-	Island->OnIslandGenerated.RemoveDynamic(this, &UFoliageHISM::StartComponent);
-	if (!Island->bIslandGenerated)
+	Island = Cast<AIsland>(GetOwner());
+	Island->OnIDGenerated.RemoveDynamic(this, &UFoliageHISM::StartComponent);
+	if (!Island->bIDGenerated)
 	{
-		Island->OnIslandGenerated.AddDynamic(this, &UFoliageHISM::StartComponent);
+		Island->OnIDGenerated.AddDynamic(this, &UFoliageHISM::StartComponent);
 		return;
 	}
 	Island->FoliageComponents.AddUnique(this);
@@ -344,15 +343,15 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
 
         // Find 3 closest Vertices
         TArray<TPair<int32, float>> ClosestVertices; // Pair of VertexIndex and DistanceSquared
-        for (const TPair<int32, int32>& VertexEntry : Island->ID.TopVerticesMap)
+        for (const TPair<int32, FVertexData>& VertexEntry : Island->ID.TopVerticesMap)
         {
-            FVector VertexPosition = Island->ID.TopVertices[VertexEntry.Value];
+            FVector VertexPosition = Island->ID.TopVertices[VertexEntry.Value.VertexIndex];
             float DistanceSquared = FVector2D::DistSquared(
                 FVector2D(VertexPosition.X, VertexPosition.Y),
                 FVector2D(RandomDynamicInstanceLocation.X, RandomDynamicInstanceLocation.Y));
   
             // Maintain a sorted list of three closest vertices
-            ClosestVertices.Add(TPair<int32, float>(VertexEntry.Value, DistanceSquared));
+            ClosestVertices.Add(TPair<int32, float>(VertexEntry.Value.VertexIndex, DistanceSquared));
             ClosestVertices.Sort([](const TPair<int32, float>& A, const TPair<int32, float>& B)
             {
                 return A.Value < B.Value;

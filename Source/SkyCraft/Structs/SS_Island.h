@@ -61,11 +61,19 @@ struct FSS_Foliage
 	UPROPERTY() TArray<FDynamicInstance> DynamicInstancesAdded;
 };
 
+USTRUCT()
+struct FSS_GroundChunk
+{
+	GENERATED_BODY()
+	UPROPERTY() TArray<FEditedVertex> EditedVertices;
+};
+
 USTRUCT(BlueprintType)
 struct FSS_Island
 {
 	GENERATED_BODY()
 	UPROPERTY() TArray<FEditedVertex> EditedVertices;
+	UPROPERTY() TArray<FSS_GroundChunk> GroundChunks;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Foliage> Foliage;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_IslandLOD> IslandLODs;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Building> Buildings;

@@ -59,7 +59,7 @@ public:
 
 	bool bComponentStarted = false;
 
-	UFUNCTION() void StartComponent(AIsland* _Island = nullptr);
+	UFUNCTION() void StartComponent();
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnComponentStarted);
 	UPROPERTY() FOnComponentStarted OnComponentStarted;
 

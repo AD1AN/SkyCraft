@@ -8,7 +8,7 @@
 #include "GMS.h"
 #include "GSS.h"
 #include "Components/HealthSystem.h"
-#include "Components/PMC_GroundChunk.h"
+#include "Components/GroundChunk.h"
 #include "DataAssets/DA_Foliage.h"
 #include "SkyCraft/Components/FoliageHISM.h"
 #include "Net/UnrealNetwork.h"
@@ -112,9 +112,9 @@ void AIsland::OnConstruction(const FTransform& Transform)
 	if (Resolution % 2 != 0) Resolution += 1;
 	for (UInstancedStaticMeshComponent* ISM : ISM_Components) if (IsValid(ISM)) ISM->DestroyComponent();
 	ISM_Components.Empty();
-	PMC_Main->ClearAllMeshSections();
+	if (IsValid(PMC_Main)) PMC_Main->ClearAllMeshSections();
 	ID.TopVertices.Empty();
-	ID.TopVerticesRawAxis.Empty();
+	ID.TopVerticesAxis.Empty();
 	SpawnISM_Components();
 	StartIsland();
 }
@@ -273,6 +273,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 	// Generate TopVertices
 	_ID.TopVertices.Reserve(Resolution * Resolution);
 	_ID.TopUVs.Reserve(Resolution * Resolution);
+	int32 HalfResolution = Resolution / 2;
 	int32 CurrentVertexIndex = 0;
 	const float VertexOffset = (Resolution * CellSize) / 2;
 	for (int32 X = 0; X < Resolution; ++X)
@@ -282,8 +283,11 @@ FIslandData AIsland::Island_GenerateGeometry()
 			FVector2D Vertex(X * CellSize - VertexOffset, Y * CellSize - VertexOffset);
 			if (IsInsideShape(Vertex, _ID.KeyShapePoints))
 			{
-				_ID.TopVerticesRawAxis.Add(FVector2D(X, Y));
-				_ID.TopVerticesMap.Add(X * Resolution + Y, CurrentVertexIndex++);
+				_ID.TopVerticesAxis.Add(FVector2D(X, Y));
+				FVertexData VertexData;
+				VertexData.VertexIndex = CurrentVertexIndex++;
+				if (bGroundChunked) VertexData.GroundChunkIndex = GroundChunkIndex(X,Y,HalfResolution);
+				_ID.TopVerticesMap.Add(X * Resolution + Y, VertexData);
 				_ID.TopVertices.Add(FVector(Vertex, 0));
 				_ID.TopUVs.Add(FVector2D(Vertex.X / (Resolution - 1), Vertex.Y / (Resolution - 1)));
 			}
@@ -298,9 +302,9 @@ FIslandData AIsland::Island_GenerateGeometry()
 		{
 			for (int32 Y = Offset-3; Y <= Offset+3; ++Y)
 			{
-				if (int32* VertexIndex = _ID.TopVerticesMap.Find(X * Resolution + Y))
+				if (FVertexData* VertexData = _ID.TopVerticesMap.Find(X * Resolution + Y))
 				{
-					_ID.DeadVerticesMap.Add(X * Resolution + Y, *VertexIndex);
+					_ID.DeadVerticesMap.Add(X * Resolution + Y, VertexData->VertexIndex);
 				}
 			}
 		}
@@ -311,14 +315,14 @@ FIslandData AIsland::Island_GenerateGeometry()
 	{
 		if (IsEdgeVertex(_ID.TopVertices[i], _ID.TopVerticesMap, 5))
 		{
-			_ID.EdgeTopVerticesMap.Add(_ID.TopVerticesRawAxis[i].X * Resolution + _ID.TopVerticesRawAxis[i].Y);
+			_ID.EdgeTopVerticesMap.Add(_ID.TopVerticesAxis[i].X * Resolution + _ID.TopVerticesAxis[i].Y);
 		}
 	}
 
 	// TopVertices Random Height
 	for (int32 i = 0; i < _ID.TopVertices.Num(); ++i)
 	{
-		const int32 VertexKey = _ID.TopVerticesRawAxis[i].X * Resolution + _ID.TopVerticesRawAxis[i].Y;
+		const int32 VertexKey = _ID.TopVerticesAxis[i].X * Resolution + _ID.TopVerticesAxis[i].Y;
 		if (!_ID.EdgeTopVerticesMap.Contains(VertexKey) && !_ID.DeadVerticesMap.Contains(VertexKey))
 		{
 			const float SmallNoise = SeededNoise2D(_ID.TopVertices[i].X * SmallNoiseScale, _ID.TopVertices[i].Y * SmallNoiseScale, Seed.GetInitialSeed()) * SmallNoiseStrength + SmallNoiseHeight;
@@ -340,12 +344,12 @@ FIslandData AIsland::Island_GenerateGeometry()
             if (_ID.TopVerticesMap.Contains(TL) && _ID.TopVerticesMap.Contains(TR) &&
                 _ID.TopVerticesMap.Contains(BL) && _ID.TopVerticesMap.Contains(BR))
             {
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[TL]);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[BL]);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[BR]);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[TL]);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[BR]);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[TR]);
+                _ID.TopTriangles.Add(_ID.TopVerticesMap[TL].VertexIndex);
+                _ID.TopTriangles.Add(_ID.TopVerticesMap[BL].VertexIndex);
+                _ID.TopTriangles.Add(_ID.TopVerticesMap[BR].VertexIndex);
+                _ID.TopTriangles.Add(_ID.TopVerticesMap[TL].VertexIndex);
+                _ID.TopTriangles.Add(_ID.TopVerticesMap[BR].VertexIndex);
+                _ID.TopTriangles.Add(_ID.TopVerticesMap[TR].VertexIndex);
             }
         }
     }
@@ -442,24 +446,26 @@ FIslandData AIsland::Island_GenerateGeometry()
 void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 {
 	ID = _ID;
-
-	if (bGroundChunked)
-	{
-		for (int32 i = 0; i < 4; ++i)
-		{
-			UPMC_GroundChunk* PMC_GroundChunk = NewObject<UPMC_GroundChunk>(this);
-			PMC_GroundChunk->SetupAttachment(PMC_Main);
-			PMC_GroundChunk->RegisterComponent();
-		}
-	}
+	bIDGenerated = true;
+	OnIDGenerated.Broadcast();
 	
 	for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
 	{
 		ISM_Components[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
 	}
-
+	
 	if (HasAuthority())
 	{
+		if (bGroundChunked)
+		{
+			for (int32 i = 0; i < 4; ++i)
+			{
+				UGroundChunk* GroundChunk = NewObject<UGroundChunk>(this);
+				GroundChunk->RegisterComponent();
+				GroundChunks.Add(GroundChunk);
+			}
+		}
+		
 		if (ServerLOD == 0) Auth_SpawnFoliageComponents();
 		if (bLoadFromSave) LoadIsland();
 	}
@@ -474,12 +480,317 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 	IslandDebugs();
 #endif
 	
-	bIslandGenerated = true;
+	bFullGenerated = true;
 	bIsGenerating = false;
-	OnIslandGenerated.Broadcast(this);
+	OnFullGenerated.Broadcast();
+	OnIslandFullGenerated.Broadcast(this);
 }
 
-bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& VerticesMap, int32 EdgeThickness) const
+void AIsland::FoliageRemove(FVector_NetQuantize Location, float Radius)
+{
+	for (UFoliageHISM*& FoliageComp : FoliageComponents)
+	{
+		FoliageComp->RemoveInSphere(Location, Radius);
+	}
+}
+
+void AIsland::FoliageAdd(UDA_Foliage* DA_Foliage, FVector_NetQuantize Location, float Radius)
+{
+	for (UFoliageHISM*& FoliageComp : FoliageComponents)
+	{
+		if (FoliageComp->DA_Foliage == DA_Foliage)
+		{
+			FoliageComp->AddInSphere(Location, Radius);
+		}
+	}
+}
+
+void AIsland::TerrainSmooth(FVector_NetQuantize Location, float Radius, float SmoothFactor)
+{
+    TArray<int32> VerticesToSmooth = FindVerticesInRadius(Location, Radius);
+    if (VerticesToSmooth.IsEmpty()) return;
+
+	TArray<float> VerticesHeights;
+    TArray<float> NewHeights;
+	float Sum = 0.0f;
+	for (const int32 VertexIndex : VerticesToSmooth)
+	{
+		const float Height = ID.TopVertices[VertexIndex].Z;
+		VerticesHeights.Add(Height);
+		Sum += Height;
+	}
+
+    for (const int32& VertexIndex : VerticesToSmooth)
+    {
+            float AverageHeight = Sum / VerticesToSmooth.Num();
+            float SmoothedHeight = FMath::Lerp(ID.TopVertices[VertexIndex].Z, AverageHeight, SmoothFactor);
+            
+            NewHeights.Add(SmoothedHeight);
+    }
+    
+	int32 i = 0;
+    for (const int32& VertexIndex : VerticesToSmooth)
+    {
+        ID.TopVertices[VertexIndex].Z = NewHeights[i];
+        FEditedVertex EditedVertex;
+        EditedVertex.VertexIndex = VertexIndex;
+        EditedVertex.SetHeight(NewHeights[i], MinTerrainHeight, MaxTerrainHeight);
+        EditedVertices.Add(EditedVertex);
+    	++i;
+    }
+    
+    // Mark the property dirty (for replication/editor) then recalc normals and update the mesh.
+    MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, EditedVertices, this);
+    CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
+    PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
+}
+
+void AIsland::TerrainEdit(FVector_NetQuantize Location, float Radius, float Strength)
+{
+	TArray<int32> FoundVertices = FindVerticesInRadius(Location, Radius);
+	if (FoundVertices.IsEmpty()) return;
+	if (Strength < 0) SmoothVertices(FoundVertices, 0.3f);
+	else SmoothVertices(FoundVertices, 0.15f);
+	for (const int32& VertexIndex : FoundVertices)
+	{
+		FVector VertexPos = ID.TopVertices[VertexIndex];
+		const float Distance = FVector::Dist2D(VertexPos, Location); // Ignore Z for radial distance
+
+		// Normalize distance (0.0 at center, 1.0 at edge)
+		const float NormalizedDistance = FMath::Clamp(Distance / Radius, 0.0f, 1.0f);
+		const float FalloffStrength = Strength * (1.0f - FMath::SmoothStep(0.0f, 1.0f, NormalizedDistance));
+		FEditedVertex EditedVertex;
+		EditedVertex.SetHeight(ID.TopVertices[VertexIndex].Z + FalloffStrength, MinTerrainHeight, MaxTerrainHeight);
+		ID.TopVertices[VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
+		EditedVertex.VertexIndex = VertexIndex;
+		if (bGroundChunked)
+		{
+			if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
+			{
+				if (GroundChunks.IsValidIndex(VertexData->GroundChunkIndex) && GroundChunks[VertexData->GroundChunkIndex])
+				{
+					GroundChunks[VertexData->GroundChunkIndex]->EditedVertices.Add(EditedVertex);
+					MARK_PROPERTY_DIRTY_FROM_NAME(UGroundChunk, EditedVertices, GroundChunks[VertexData->GroundChunkIndex]);
+				}
+			}
+		}
+		else
+		{
+			EditedVertices.Add(EditedVertex);
+			MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, EditedVertices, this);
+		}
+	}
+	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
+	PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
+}
+
+TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius)
+{
+	TArray<int32> FoundVertices;
+	
+	float RadiusSqr = Radius * Radius;
+
+	const float VertexOffset = (Resolution * CellSize) / 2;
+	int32 MinX = FMath::Clamp(FMath::FloorToInt((Location.X - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+	int32 MaxX = FMath::Clamp(FMath::CeilToInt((Location.X + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+	int32 MinY = FMath::Clamp(FMath::FloorToInt((Location.Y - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+	int32 MaxY = FMath::Clamp(FMath::CeilToInt((Location.Y + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+	
+	// Iterate through the possible grid points
+	for (int32 X = MinX; X <= MaxX; ++X)
+	{
+		for (int32 Y = MinY; Y <= MaxY; ++Y)
+		{
+			const int32 Key = X * Resolution + Y;
+			if (const FVertexData* VertexData = ID.TopVerticesMap.Find(Key))
+			{
+				if (ID.EdgeTopVerticesMap.Contains(Key) || ID.DeadVerticesMap.Contains(Key)) continue;
+				if (FVector::DistSquared(ID.TopVertices[VertexData->VertexIndex], Location) <= RadiusSqr)
+				{
+					FoundVertices.Add(VertexData->VertexIndex);
+					// DrawDebugPoint(GetWorld(), GetActorLocation()+VertexLocation, 13.0f, FColor::Red, false, 15.0f);
+				}
+			}
+		}
+	}
+
+	return FoundVertices;
+}
+
+void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float SmoothFactor)
+{
+	if (VerticesToSmooth.IsEmpty()) return;
+
+	TArray<float> VerticesHeights;
+	TArray<float> NewHeights;
+	float Sum = 0.0f;
+	for (const int32 VertexIndex : VerticesToSmooth)
+	{
+		const float Height = ID.TopVertices[VertexIndex].Z;
+		VerticesHeights.Add(Height);
+		Sum += Height;
+	}
+
+	for (const int32& VertexIndex : VerticesToSmooth)
+	{
+		float AverageHeight = Sum / VerticesToSmooth.Num();
+		float SmoothedHeight = FMath::Lerp(ID.TopVertices[VertexIndex].Z, AverageHeight, SmoothFactor);
+            
+		NewHeights.Add(SmoothedHeight);
+	}
+    
+	int32 i = 0;
+	for (const int32& VertexIndex : VerticesToSmooth)
+	{
+		ID.TopVertices[VertexIndex].Z = NewHeights[i];
+		FEditedVertex EditedVertex;
+		EditedVertex.VertexIndex = VertexIndex;
+		EditedVertex.SetHeight(NewHeights[i], MinTerrainHeight, MaxTerrainHeight);
+		EditedVertices.Add(EditedVertex);
+		++i;
+	}
+}
+
+void AIsland::SetServerLOD(int32 NewLOD)
+{
+	if (bFullGenerated && !bIsGenerating)
+	{
+		if (NewLOD == 0 && !bFoliageComponentsSpawned)
+		{
+			Auth_SpawnFoliageComponents();
+		}
+	}
+	ServerLOD = NewLOD;
+	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, ServerLOD, this);
+	OnServerLOD.Broadcast();
+}
+
+void AIsland::OnRep_ServerLOD()
+{
+	OnServerLOD.Broadcast();
+}
+
+void AIsland::OnRep_EditedVertices()
+{
+	if (!bFullGenerated)
+	{
+		OnFullGenerated.AddDynamic(this, &AIsland::OnRep_EditedVertices);
+		return;
+	}
+	
+	for (FEditedVertex& EditedVertex : EditedVertices)
+	{
+		if (!ID.TopVertices.IsValidIndex(EditedVertex.VertexIndex)) continue;
+		ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
+	}
+	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
+	PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
+}
+
+void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	if (!HasAuthority()) return;
+	SaveIsland();
+	for (int32 i = Buildings.Num() - 1; i >= 0; --i)
+	{
+		if (IsValid(Buildings[i])) Buildings[i]->Destroy();
+	}
+}
+
+void AIsland::LoadIsland()
+{
+	if (bGroundChunked)
+	{
+		int32 i = 0;
+		for (FSS_GroundChunk& FSS_GroundChunk : SS_Island.GroundChunks)
+		{
+			if (!GroundChunks.IsValidIndex(i)) continue;
+			if (!IsValid(GroundChunks[i])) continue;
+			GroundChunks[i]->EditedVertices = FSS_GroundChunk.EditedVertices;
+			if (GroundChunks[i]->EditedVertices.IsEmpty()) continue;
+			for (const FEditedVertex& EditedVertex : GroundChunks[i]->EditedVertices)
+			{
+				ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
+			}
+			++i;
+		}
+	}
+	else
+	{
+		EditedVertices = SS_Island.EditedVertices;
+		if (!EditedVertices.IsEmpty())
+		{
+			for (const FEditedVertex& EditedVertex : EditedVertices)
+			{
+				ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
+			}
+		}
+	}
+	SS_Island.EditedVertices.Empty();
+	SS_Island.GroundChunks.Empty();
+	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
+}
+
+void AIsland::SaveIsland()
+{
+	if (!bIslandCanSave) return;
+	// TODO: SaveLODs
+	TArray<FSS_Building> SS_Buildings;
+	SaveBuildings(SS_Buildings);
+	TArray<FSS_DroppedItem> SS_DroppedItems = SaveDroppedItems();
+	SS_Island.Buildings = SS_Buildings;
+	SS_Island.DroppedItems = SS_DroppedItems;
+	TArray<FSS_Foliage> SS_Foliage;
+	SaveFoliage(SS_Foliage);
+	SS_Island.Foliage = SS_Foliage;
+	if (bGroundChunked)
+	{
+		for (UGroundChunk*& PMC_GroundChunk : GroundChunks)
+		{
+			if (!PMC_GroundChunk) continue;
+			SS_Island.GroundChunks.Add(FSS_GroundChunk(PMC_GroundChunk->EditedVertices));
+		}
+	}
+	else SS_Island.EditedVertices = EditedVertices;
+	if (bIslandArchon) return;
+	if (!IsValid(GSS) && !IsValid(GSS->GMS)) return;
+	GSS->GMS->SavedIslands.Add(HashCombine(GetTypeHash(Coords.X),GetTypeHash(Coords.Y)), SS_Island);
+}
+
+void AIsland::SaveBuildings(TArray<FSS_Building>& SS_Buildings)
+{
+	for (ABM*& Building : Buildings)
+	{
+		if (!IsValid(Building)) return;
+		if (Building->GetOwner() != nullptr) return; // Check if this building not in Preview
+		FSS_Building SS_Building;
+		SS_Building.ID = Building->ID;
+		SS_Building.BM_Class = Building->GetClass();
+		SS_Building.Location = Building->GetRootComponent()->GetRelativeLocation();
+		SS_Building.Rotation = Building->GetRootComponent()->GetRelativeRotation();
+		SS_Building.Health = Building->HealthSystem->Health;
+		SS_Building.Grounded = Building->Grounded;
+		SS_Building.Supports = Building->ConvertToIDs(Building->Supports);
+		SS_Building.Depends = Building->ConvertToIDs(Building->Depends);
+		SS_Building.Parameters = Building->SaveBuildingParameters();
+		SS_Buildings.Add(SS_Building);
+	}
+}
+
+void AIsland::SaveFoliage(TArray<FSS_Foliage>& SS_Foliage)
+{
+	for (UFoliageHISM*& FoliageComponent : FoliageComponents)
+	{
+		FSS_Foliage SaveFoliage;
+		SaveFoliage.DA_Foliage = FoliageComponent->DA_Foliage;
+		SaveFoliage.InitialInstancesRemoved = FoliageComponent->InitialInstancesRemoved;
+		SaveFoliage.DynamicInstancesAdded = FoliageComponent->DynamicInstancesAdded;
+		SS_Foliage.Add(SaveFoliage);
+	}
+}
+
+bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const
 {
 	const float VertexOffset = (Resolution * CellSize) / 2;
 	const int32 X = (Vertex.X + VertexOffset) / CellSize;
@@ -634,269 +945,15 @@ float AIsland::TriangleArea(const FVector& V0, const FVector& V1, const FVector&
 	return FVector::CrossProduct(AB, AC).Size() * 0.5f;
 }
 
-void AIsland::FoliageRemove(FVector_NetQuantize Location, float Radius)
+uint8 AIsland::GroundChunkIndex(int32 X, int32 Y, int32 HalfResolution)
 {
-	for (UFoliageHISM*& FoliageComp : FoliageComponents)
+	if (X < HalfResolution)
 	{
-		FoliageComp->RemoveInSphere(Location, Radius);
+		return (Y < HalfResolution) ? 0 : 2; // Top-left or Bottom-left
 	}
-}
-
-void AIsland::FoliageAdd(UDA_Foliage* DA_Foliage, FVector_NetQuantize Location, float Radius)
-{
-	for (UFoliageHISM*& FoliageComp : FoliageComponents)
+	else
 	{
-		if (FoliageComp->DA_Foliage == DA_Foliage)
-		{
-			FoliageComp->AddInSphere(Location, Radius);
-		}
-	}
-}
-
-void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float SmoothFactor)
-{
-	if (VerticesToSmooth.IsEmpty()) return;
-
-	TArray<float> VerticesHeights;
-	TArray<float> NewHeights;
-	float Sum = 0.0f;
-	for (const int32 VertexIndex : VerticesToSmooth)
-	{
-		const float Height = ID.TopVertices[VertexIndex].Z;
-		VerticesHeights.Add(Height);
-		Sum += Height;
-	}
-
-	for (const int32& VertexIndex : VerticesToSmooth)
-	{
-		float AverageHeight = Sum / VerticesToSmooth.Num();
-		float SmoothedHeight = FMath::Lerp(ID.TopVertices[VertexIndex].Z, AverageHeight, SmoothFactor);
-            
-		NewHeights.Add(SmoothedHeight);
-	}
-    
-	int32 i = 0;
-	for (const int32& VertexIndex : VerticesToSmooth)
-	{
-		ID.TopVertices[VertexIndex].Z = NewHeights[i];
-		FEditedVertex EditedVertex;
-		EditedVertex.VertexIndex = VertexIndex;
-		EditedVertex.SetHeight(NewHeights[i], MinTerrainHeight, MaxTerrainHeight);
-		EditedVertices.Add(EditedVertex);
-		++i;
-	}
-}
-
-void AIsland::TerrainSmooth(FVector_NetQuantize Location, float Radius, float SmoothFactor)
-{
-    TArray<int32> VerticesToSmooth = FindVerticesInRadius(Location, Radius);
-    if (VerticesToSmooth.IsEmpty()) return;
-
-	TArray<float> VerticesHeights;
-    TArray<float> NewHeights;
-	float Sum = 0.0f;
-	for (const int32 VertexIndex : VerticesToSmooth)
-	{
-		const float Height = ID.TopVertices[VertexIndex].Z;
-		VerticesHeights.Add(Height);
-		Sum += Height;
-	}
-
-    for (const int32& VertexIndex : VerticesToSmooth)
-    {
-            float AverageHeight = Sum / VerticesToSmooth.Num();
-            float SmoothedHeight = FMath::Lerp(ID.TopVertices[VertexIndex].Z, AverageHeight, SmoothFactor);
-            
-            NewHeights.Add(SmoothedHeight);
-    }
-    
-	int32 i = 0;
-    for (const int32& VertexIndex : VerticesToSmooth)
-    {
-        ID.TopVertices[VertexIndex].Z = NewHeights[i];
-        FEditedVertex EditedVertex;
-        EditedVertex.VertexIndex = VertexIndex;
-        EditedVertex.SetHeight(NewHeights[i], MinTerrainHeight, MaxTerrainHeight);
-        EditedVertices.Add(EditedVertex);
-    	++i;
-    }
-    
-    // Mark the property dirty (for replication/editor) then recalc normals and update the mesh.
-    MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, EditedVertices, this);
-    CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
-    PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
-}
-
-void AIsland::TerrainEdit(FVector_NetQuantize Location, float Radius, float Strength)
-{
-	TArray<int32> FoundVertices = FindVerticesInRadius(Location, Radius);
-	if (FoundVertices.IsEmpty()) return;
-	if (Strength < 0) SmoothVertices(FoundVertices, 0.3f);
-	else SmoothVertices(FoundVertices, 0.15f);
-	for (const int32& VertexIndex : FoundVertices)
-	{
-		FVector VertexPos = ID.TopVertices[VertexIndex];
-		const float Distance = FVector::Dist2D(VertexPos, Location); // Ignore Z for radial distance
-
-		// Normalize distance (0.0 at center, 1.0 at edge)
-		const float NormalizedDistance = FMath::Clamp(Distance / Radius, 0.0f, 1.0f);
-		const float FalloffStrength = Strength * (1.0f - FMath::SmoothStep(0.0f, 1.0f, NormalizedDistance));
-		FEditedVertex EditedVertex;
-		EditedVertex.SetHeight(ID.TopVertices[VertexIndex].Z + FalloffStrength, MinTerrainHeight, MaxTerrainHeight);
-		ID.TopVertices[VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
-		EditedVertex.VertexIndex = VertexIndex;
-		EditedVertices.Add(EditedVertex);
-	}
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, EditedVertices, this);
-	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
-	PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
-}
-
-TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius)
-{
-	TArray<int32> FoundVertices;
-	
-	float RadiusSqr = Radius * Radius;
-
-	const float VertexOffset = (Resolution * CellSize) / 2;
-	int32 MinX = FMath::Clamp(FMath::FloorToInt((Location.X - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-	int32 MaxX = FMath::Clamp(FMath::CeilToInt((Location.X + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-	int32 MinY = FMath::Clamp(FMath::FloorToInt((Location.Y - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-	int32 MaxY = FMath::Clamp(FMath::CeilToInt((Location.Y + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-	
-	// Iterate through the possible grid points
-	for (int32 X = MinX; X <= MaxX; ++X)
-	{
-		for (int32 Y = MinY; Y <= MaxY; ++Y)
-		{
-			const int32 Key = X * Resolution + Y;
-			if (const int32* VertexIndex = ID.TopVerticesMap.Find(Key))
-			{
-				if (ID.EdgeTopVerticesMap.Contains(Key) || ID.DeadVerticesMap.Contains(Key)) continue;
-				if (FVector::DistSquared(ID.TopVertices[*VertexIndex], Location) <= RadiusSqr)
-				{
-					FoundVertices.Add(*VertexIndex);
-					// DrawDebugPoint(GetWorld(), GetActorLocation()+VertexLocation, 13.0f, FColor::Red, false, 15.0f);
-				}
-			}
-		}
-	}
-
-	return FoundVertices;
-}
-
-void AIsland::SetServerLOD(int32 NewLOD)
-{
-	if (bIslandGenerated && !bIsGenerating)
-	{
-		if (NewLOD == 0 && !bFoliageComponentsSpawned)
-		{
-			Auth_SpawnFoliageComponents();
-		}
-	}
-	ServerLOD = NewLOD;
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, ServerLOD, this);
-	OnServerLOD.Broadcast();
-}
-
-void AIsland::OnRep_ServerLOD()
-{
-	OnServerLOD.Broadcast();
-}
-
-void AIsland::ClientIslandGenerated(AIsland* Island)
-{
-	OnRep_EditedVertices();
-}
-
-void AIsland::OnRep_EditedVertices()
-{
-	if (!bIslandGenerated)
-	{
-		OnIslandGenerated.AddDynamic(this, &AIsland::ClientIslandGenerated);
-		return;
-	}
-	
-	for (FEditedVertex& EditedVertex : EditedVertices)
-	{
-		if (!ID.TopVertices.IsValidIndex(EditedVertex.VertexIndex)) continue;
-		ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
-	}
-	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
-	PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
-}
-
-void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-	if (!HasAuthority()) return;
-	SaveIsland();
-	for (int32 i = Buildings.Num() - 1; i >= 0; --i)
-	{
-		if (IsValid(Buildings[i])) Buildings[i]->Destroy();
-	}
-}
-
-void AIsland::LoadIsland()
-{
-	EditedVertices = SS_Island.EditedVertices;
-	if (!EditedVertices.IsEmpty())
-	{
-		for (const FEditedVertex& EditedVertex : EditedVertices)
-		{
-			ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
-		}
-	}
-	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
-}
-
-void AIsland::SaveIsland()
-{
-	if (!bIslandCanSave) return;
-	// TODO: SaveLODs
-	TArray<FSS_Building> SS_Buildings;
-	SaveBuildings(SS_Buildings);
-	TArray<FSS_DroppedItem> SS_DroppedItems = SaveDroppedItems();
-	SS_Island.Buildings = SS_Buildings;
-	SS_Island.DroppedItems = SS_DroppedItems;
-	TArray<FSS_Foliage> SS_Foliage;
-	SaveFoliage(SS_Foliage);
-	SS_Island.Foliage = SS_Foliage;
-	SS_Island.EditedVertices = EditedVertices;
-	if (bIslandArchon) return;
-	if (!IsValid(GSS) && !IsValid(GSS->GMS)) return;
-	GSS->GMS->SavedIslands.Add(HashCombine(GetTypeHash(Coords.X),GetTypeHash(Coords.Y)), SS_Island);
-}
-
-void AIsland::SaveBuildings(TArray<FSS_Building>& SS_Buildings)
-{
-	for (ABM*& Building : Buildings)
-	{
-		if (!IsValid(Building)) return;
-		if (Building->GetOwner() != nullptr) return; // Check if this building not in Preview
-		FSS_Building SS_Building;
-		SS_Building.ID = Building->ID;
-		SS_Building.BM_Class = Building->GetClass();
-		SS_Building.Location = Building->GetRootComponent()->GetRelativeLocation();
-		SS_Building.Rotation = Building->GetRootComponent()->GetRelativeRotation();
-		SS_Building.Health = Building->HealthSystem->Health;
-		SS_Building.Grounded = Building->Grounded;
-		SS_Building.Supports = Building->ConvertToIDs(Building->Supports);
-		SS_Building.Depends = Building->ConvertToIDs(Building->Depends);
-		SS_Building.Parameters = Building->SaveBuildingParameters();
-		SS_Buildings.Add(SS_Building);
-	}
-}
-
-void AIsland::SaveFoliage(TArray<FSS_Foliage>& SS_Foliage)
-{
-	for (UFoliageHISM*& FoliageComponent : FoliageComponents)
-	{
-		FSS_Foliage SaveFoliage;
-		SaveFoliage.DA_Foliage = FoliageComponent->DA_Foliage;
-		SaveFoliage.InitialInstancesRemoved = FoliageComponent->InitialInstancesRemoved;
-		SaveFoliage.DynamicInstancesAdded = FoliageComponent->DynamicInstancesAdded;
-		SS_Foliage.Add(SaveFoliage);
+		return (Y < HalfResolution) ? 1 : 3; // Top-right or Bottom-right
 	}
 }
 
@@ -908,8 +965,8 @@ void AIsland::IslandDebugs()
 		for (int32 i = 0; i < ID.TopVertices.Num(); ++i)
 		{
 			// Get the absolute values of the x and y components to determine dominance
-			float AbsX = FMath::Abs(ID.TopVerticesRawAxis[i].X);
-			float AbsY = FMath::Abs(ID.TopVerticesRawAxis[i].Y);
+			float AbsX = FMath::Abs(ID.TopVerticesAxis[i].X);
+			float AbsY = FMath::Abs(ID.TopVerticesAxis[i].Y);
 
 			// Calculate the total for normalization
 			float Total = AbsX + AbsY;
@@ -972,8 +1029,8 @@ void AIsland::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
+	DOREPLIFETIME_CONDITION(AIsland, Seed, COND_InitialOnly);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, ServerLOD, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, Seed, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, SS_Astralons, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, IslandSize, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, EditedVertices, Params);

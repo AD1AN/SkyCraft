@@ -13,6 +13,7 @@
 #include "Structs/EditedVertex.h"
 #include "Island.generated.h"
 
+class UGroundChunk;
 class AGSS;
 class UDA_Foliage;
 class UFoliageHISM;
@@ -42,17 +43,23 @@ struct FFoliageAsset
 	FFloatMinMax ScaleZ = FFloatMinMax(1,1);
 };
 
+struct FVertexData
+{
+	int32 VertexIndex; // Index of TopVertices.
+	uint8 GroundChunkIndex;
+};
+
 struct FIslandData
 {
 	TArray<FVector2D> KeyShapePoints;
 	TArray<FVector2D> InterpShapePoints;
 	TArray<FVector2D> AllShapePoints;
 	TMap<int32, FCliffData> GeneratedCliffs;
-	TArray<FVector2D> TopVerticesRawAxis; // Raw Axis = (X,Y)
-	TMap<int32, int32> TopVerticesMap; // Key: Combined Axis = (X * Resolution + Y)
+	TArray<FVector2D> TopVerticesAxis; // Raw Axis = (X,Y)
+	TMap<int32, FVertexData> TopVerticesMap; // VertexKey: Combined Axis = (X * Resolution + Y)
 	TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
-	TMap<int32, int32> EdgeTopVerticesMap; // Key: Same as top.
-	TMap<int32, int32> DeadVerticesMap; // Key: Same as top. Needed for Island Archon's Crystal.
+	TMap<int32, int32> EdgeTopVerticesMap; // VertexKey
+	TMap<int32, int32> DeadVerticesMap; // VertexKey. For Island Archon's Crystal and maybe for future needs.
 	TArray<int32> TopTriangles;
 	TArray<FVector2D> TopUVs;
 	TArray<FVector> TopNormals;
@@ -139,17 +146,23 @@ public:
 	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> BottomMaterial;
 	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UStaticMesh>> SM_Cliffs;
 	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UDA_Foliage>> DataAssetsFoliage;
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandGenerated, AIsland*, Island);
-	UPROPERTY(BlueprintAssignable) FOnIslandGenerated OnIslandGenerated;
-	UFUNCTION() void ClientIslandGenerated(AIsland* Island);
 	
 	FThreadSafeBool bIsGenerating = false;
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bIslandGenerated = false;
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIDGenerated);
+	UPROPERTY(BlueprintAssignable) FOnIDGenerated OnIDGenerated;
+	UPROPERTY(BlueprintReadOnly) bool bIDGenerated = false;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFullGenerated);
+	UPROPERTY(BlueprintAssignable) FOnFullGenerated OnFullGenerated;
+	UPROPERTY(BlueprintReadOnly) bool bFullGenerated = false;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandFullGenerated, AIsland*, Island);
+	UPROPERTY(BlueprintAssignable) FOnIslandFullGenerated OnIslandFullGenerated;
 	
 	FIslandData ID;
-	// If resolution > 100 = then true.
+	// Just for data chunk replication. If resolution > 100 = then true.
 	UPROPERTY() bool bGroundChunked = false;
+	UPROPERTY() TArray<UGroundChunk*> GroundChunks;
+	
 	UPROPERTY(ReplicatedUsing=OnRep_EditedVertices) TArray<FEditedVertex> EditedVertices;
 	UFUNCTION() void OnRep_EditedVertices();
 	UPROPERTY(EditAnywhere) float MinTerrainHeight = -1000;
@@ -168,7 +181,7 @@ public:
 	void Island_GenerateComplete(const FIslandData& _ID);
 	void Auth_SpawnFoliageComponents();
 
-	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& VerticesMap, int32 EdgeThickness) const;
+	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const;
 	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
 	void CalculateNormalsAndTangents(const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector2D>& UVs, TArray<FVector>& OutNormals, TArray<FProcMeshTangent>& OutTangents);
 	float SeededNoise2D(float X, float Y, int32 InSeed);
@@ -182,6 +195,8 @@ public:
 	
 	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2);
 	TArray<int32> FindVerticesInRadius(const FVector Location, float Radius); // Maybe for future needs
+
+	uint8 GroundChunkIndex(int32 X, int32 Y, int32 HalfResolution);
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere) bool DebugAllVertices = false;
