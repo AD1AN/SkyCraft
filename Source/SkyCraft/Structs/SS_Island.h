@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "EditedVertex.h"
 #include "NPCParameters.h"
 #include "SS_Building.h"
 #include "Slot.h"
@@ -64,8 +65,9 @@ USTRUCT(BlueprintType)
 struct FSS_Island
 {
 	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_IslandLOD> IslandLODs;
+	UPROPERTY() TArray<FEditedVertex> EditedVertices;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Foliage> Foliage;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_IslandLOD> IslandLODs;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Building> Buildings;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_DroppedItem> DroppedItems;
 };

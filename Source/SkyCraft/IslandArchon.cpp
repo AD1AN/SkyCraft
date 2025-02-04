@@ -12,6 +12,7 @@ AIslandArchon::AIslandArchon()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	ServerLOD = 0;
+	bIslandArchon = true;
 }
 
 void AIslandArchon::AuthSetCrystal(bool newCrystal)

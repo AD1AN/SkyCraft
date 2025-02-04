@@ -10,6 +10,7 @@
 #include "ProceduralMeshComponent.h"
 #include "Structs/Coords.h"
 #include "Structs/FloatMinMax.h"
+#include "Structs/EditedVertex.h"
 #include "Island.generated.h"
 
 class AGSS;
@@ -46,20 +47,16 @@ struct FIslandData
 	TArray<FVector2D> KeyShapePoints;
 	TArray<FVector2D> InterpShapePoints;
 	TArray<FVector2D> AllShapePoints;
-
 	TMap<int32, FCliffData> GeneratedCliffs;
-
-	TArray<FVector2D> TopVerticesRawAxisOff; // Raw Axis offset to origin center = (X,Y)
 	TArray<FVector2D> TopVerticesRawAxis; // Raw Axis = (X,Y)
 	TMap<int32, int32> TopVerticesMap; // Key: Combined Axis = (X * Resolution + Y)
 	TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
-	TArray<FVector2D> EdgeTopVertices; // 2D Locations
-	TMap<int32, int32> EdgeTopVerticesMap; // Key: Combined Axis = (X * Resolution + Y)
+	TMap<int32, int32> EdgeTopVerticesMap; // Key: Same as top.
+	TMap<int32, int32> DeadVerticesMap; // Key: Same as top. Needed for Island Archon's Crystal.
 	TArray<int32> TopTriangles;
 	TArray<FVector2D> TopUVs;
 	TArray<FVector> TopNormals;
 	TArray<FProcMeshTangent> TopTangents;
-	
 	TArray<FVector> BottomVertices;
 	TArray<int32> BottomTriangles;
 	TArray<FVector2D> BottomUVs;
@@ -73,7 +70,7 @@ class SKYCRAFT_API AIsland : public AActor, public IIslandInterface
 	GENERATED_BODY()
 public:
 	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene = nullptr;
-	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* ProceduralMeshComponent = nullptr;
+	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* PMC_Main = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
 	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> ISM_Components;
 	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
@@ -83,6 +80,7 @@ public:
 
 	UPROPERTY() AGSS* GSS = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FCoords Coords;
+	bool bIslandArchon = false;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
 	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
@@ -96,7 +94,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(float NewSize);
 	UFUNCTION() void OnRep_IslandSize();
 
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) bool bIslandFromSave = false;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) bool bLoadFromSave = false;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FSS_Island SS_Island;
 	UPROPERTY(BlueprintReadWrite) bool bIslandCanSave = false;
 	
@@ -144,15 +142,23 @@ public:
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandGenerated, AIsland*, Island);
 	UPROPERTY(BlueprintAssignable) FOnIslandGenerated OnIslandGenerated;
+	UFUNCTION() void ClientIslandGenerated(AIsland* Island);
 	
 	FThreadSafeBool bIsGenerating = false;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bIslandGenerated = false;
 	
 	FIslandData ID;
+	// If resolution > 100 = then true.
+	UPROPERTY() bool bGroundChunked = false;
+	UPROPERTY(ReplicatedUsing=OnRep_EditedVertices) TArray<FEditedVertex> EditedVertices;
+	UFUNCTION() void OnRep_EditedVertices();
+	UPROPERTY(EditAnywhere) float MinTerrainHeight = -1000;
+	UPROPERTY(EditAnywhere) float MaxTerrainHeight = 3000;
 	
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	UFUNCTION(BlueprintCallable) void SaveIsland(bool IsArchon = false);
+	UFUNCTION(BlueprintCallable) void LoadIsland();
+	UFUNCTION(BlueprintCallable) void SaveIsland();
 	UPROPERTY(BlueprintReadWrite) TArray<ABM*> Buildings;
 	void SaveBuildings(TArray<FSS_Building>& SS_Buildings);
 	void SaveFoliage(TArray<FSS_Foliage>& SS_Foliage);
@@ -162,17 +168,17 @@ public:
 	void Island_GenerateComplete(const FIslandData& _ID);
 	void Auth_SpawnFoliageComponents();
 
-	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& AxisVertexMap, int32 EdgeThickness) const;
+	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, int32>& VerticesMap, int32 EdgeThickness) const;
 	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
 	void CalculateNormalsAndTangents(const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector2D>& UVs, TArray<FVector>& OutNormals, TArray<FProcMeshTangent>& OutTangents);
 	float SeededNoise2D(float X, float Y, int32 InSeed);
 	float TriangleArea(const FVector& V0, const FVector& V1, const FVector& V2); // Maybe for future needs
 	
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void FoliageRemoveSphere(FVector_NetQuantize Location, float Radius);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void FoliageAddSphere(UDA_Foliage* DA_Foliage, FVector_NetQuantize Location, float Radius);
-
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void TerrainAdd(FVector Location, float Radius);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void TerrainSubtract(FVector Location, float Radius);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void FoliageRemove(FVector_NetQuantize Location, float Radius);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void FoliageAdd(UDA_Foliage* DA_Foliage, FVector_NetQuantize Location, float Radius);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void TerrainSmooth(FVector_NetQuantize Location, float Radius, float SmoothFactor);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void TerrainEdit(FVector_NetQuantize Location, float Radius, float Strength);
+	void SmoothVertices(const TArray<int32>& VerticesToSmooth, float SmoothFactor);
 	
 	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2);
 	TArray<int32> FindVerticesInRadius(const FVector Location, float Radius); // Maybe for future needs

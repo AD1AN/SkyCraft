@@ -45,7 +45,7 @@ void UFoliageHISM::StartComponent(AIsland* _Island)
 	Island->FoliageComponents.AddUnique(this);
 	Generate_InitialInstances(Island->ID);
 	AddInstances(InitialInstances, false,false,false);
-	if (Island->bIslandFromSave)
+	if (Island->bLoadFromSave)
 	{
 		for (FSS_Foliage& SS_Foliage : Island->SS_Island.Foliage)
 		{
@@ -284,9 +284,10 @@ void UFoliageHISM::RemoveInSphere(FVector_NetQuantize Location, float Radius)
             		else
             		{
             			FTransform HideTransform(InitialInstances[InstanceIndex]);
-            			HideTransform.SetLocation(HideTransform.GetLocation() - FVector(0,0,20));
+            			HideTransform.SetLocation(FVector(0,0,-200));
             			HideTransform.SetScale3D(FVector(0, 0, 0));
             			UpdateInstanceTransform(InstanceIndex, HideTransform, false, false, true);
+            			GridMap.Remove(GridKey);
             			InitialInstancesRemoved.Add(InstanceIndex);
             			MARK_PROPERTY_DIRTY_FROM_NAME(UFoliageHISM, InitialInstancesRemoved, this);
             		}
@@ -300,30 +301,6 @@ void UFoliageHISM::RemoveInSphere(FVector_NetQuantize Location, float Radius)
 void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
 {
 	const float SpacingSqr = FMath::Square(DA_Foliage->Spacing);
-
-	// ========== Show InitialInstances ===============
-	
-	for (int32 RemovedIndex = InitialInstancesRemoved.Num()-1; RemovedIndex >= 0; --RemovedIndex)
-	{
-		const int32& InstanceIndex = InitialInstancesRemoved[RemovedIndex];
-		// This InitialInstance is not exist.
-		if (!InitialInstances.IsValidIndex(InstanceIndex))
-		{
-			// For fail safe. Can happen after load old version save file. (Different algorithm)
-			InitialInstancesRemoved.RemoveAt(RemovedIndex);
-			continue;
-		}
-		const FVector_NetQuantize InitialInstanceLoc = InitialInstances[InstanceIndex].GetLocation();
-		if (FVector_NetQuantize::DistSquared(InitialInstanceLoc, Location) <= SpacingSqr)
-		{
-			UpdateInstanceTransform(InstanceIndex, InitialInstances[InstanceIndex], false, false, true);
-			InitialInstancesRemoved.RemoveAt(RemovedIndex);
-			MARK_PROPERTY_DIRTY_FROM_NAME(UFoliageHISM, InitialInstancesRemoved, this);
-		}
-	}
-
-	// ========== Add DynamicInstances ===============
-
     int32 Attempts = 0;
     while (Attempts < DA_Foliage->MaxAttempts)
     {
@@ -364,7 +341,7 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
             ++Attempts;
             continue;
         }
-  
+
         // Find 3 closest Vertices
         TArray<TPair<int32, float>> ClosestVertices; // Pair of VertexIndex and DistanceSquared
         for (const TPair<int32, int32>& VertexEntry : Island->ID.TopVerticesMap)
@@ -454,8 +431,12 @@ void UFoliageHISM::LoadFromSave(const FSS_Foliage& SS_Foliage)
 	for (const int32& InstanceIndex : InitialInstancesRemoved)
 	{
 		if (!InitialInstances.IsValidIndex(InstanceIndex)) continue;
+		const int32 GridX = FMath::RoundToInt(InitialInstances[InstanceIndex].GetLocation().X / DA_Foliage->Spacing);
+		const int32 GridY = FMath::RoundToInt(InitialInstances[InstanceIndex].GetLocation().Y / DA_Foliage->Spacing);
+		const int32 GridKey = HashCombine(GetTypeHash(GridX), GetTypeHash(GridY));
+		GridMap.Remove(GridKey);
 		FTransform HideTransform(InitialInstances[InstanceIndex]);
-		HideTransform.SetLocation(HideTransform.GetLocation() - FVector(0,0,20));
+		HideTransform.SetLocation(FVector(0,0,-200));
 		HideTransform.SetScale3D(FVector(0, 0, 0));
 		UpdateInstanceTransform(InstanceIndex, HideTransform, false, false, true);
 	}

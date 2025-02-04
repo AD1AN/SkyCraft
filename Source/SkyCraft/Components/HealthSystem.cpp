@@ -35,7 +35,8 @@ void UHealthSystem::SpawnDamageNumbers(int32 Damage, AActor* AttachTo, FVector H
 	if (!DamageNumbersClass) return;
 
 	UGIS* GIS = Cast<UGIS>(GetWorld()->GetGameInstance());
-	if (!GIS) return;
+	if (!IsValid(GIS)) return;
+	if (!IsValid(GIS->PCS)) return;
 	
 	FVector WorldHitLocation = HitLocation;
 	if (AttachTo) WorldHitLocation = AttachTo->GetTransform().TransformPosition(HitLocation);

@@ -12,6 +12,8 @@ class SKYCRAFT_API UDA_Foliage : public UDataAsset
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) FText Name;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSoftObjectPtr<UTexture2D> Icon = nullptr;
 	UPROPERTY(EditDefaultsOnly) TObjectPtr<UStaticMesh> StaticMesh = nullptr;
 	UPROPERTY(EditDefaultsOnly) float Spacing = 50.0f;
 	UPROPERTY(EditDefaultsOnly) int32 MaxAttempts = 50;

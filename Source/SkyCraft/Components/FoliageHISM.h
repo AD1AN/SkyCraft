@@ -17,6 +17,9 @@ struct FDynamicInstance
 	GENERATED_BODY()
 
 	UPROPERTY() FVector_NetQuantize Location;
+
+	// TODO rotation can be FVector_NetQuantizeNormal and scale can be removed and be recreated by location seed. 
+	
 	UPROPERTY() FVector_NetQuantize Rotation;
 	UPROPERTY() FVector_NetQuantize10 Scale = FVector_NetQuantize10(1,1,1);
 

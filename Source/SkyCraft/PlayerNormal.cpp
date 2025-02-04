@@ -35,7 +35,7 @@ void APlayerNormal::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, 
 		const AActor* BaseOwner = UAdianFL::GetRootActor(NewBase->GetOwner());
 		if (BaseOwner && BaseOwner->IsA(Island))
 		{
-			NewBase = Cast<AIsland>(BaseOwner)->ProceduralMeshComponent;
+			NewBase = Cast<AIsland>(BaseOwner)->PMC_Main;
 		}
 	}
 

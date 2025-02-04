@@ -42,7 +42,8 @@ void UInteractSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 				{
 					SetComponentTickEnabled(false);
 				}
-			} 
+				continue;
+			}
 			if (FVector::Distance(GetOwner()->GetActorLocation(), CurrentProlonged[i].Pawn->GetActorLocation()) > 300)
 			{
 				OnServerInterrupted.Broadcast(EInterruptedBy::Distance, CurrentProlonged[i].InteractKey, CurrentProlonged[i].Pawn);
