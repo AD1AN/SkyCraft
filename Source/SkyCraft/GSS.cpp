@@ -42,8 +42,9 @@ void AGSS::Multicast_SpawnFXAttached_Implementation(FFX FX, FVector LocalLocatio
 void AGSS::BeginPlay()
 {
 	Super::BeginPlay();
+	GIS = GetWorld()->GetGameInstance<UGIS>();
 	if (!HasAuthority()) return;
-	GMS = Cast<AGMS>(GetWorld()->GetAuthGameMode());
+	GMS = GetWorld()->GetAuthGameMode<AGMS>();
 	GMS->GSS = this;
 }
 

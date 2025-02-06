@@ -113,12 +113,11 @@ void AIsland::OnConstruction(const FTransform& Transform)
 	if (!bOnConstruction) return;
 	
 	if (Resolution % 2 != 0) Resolution += 1;
-	for (UInstancedStaticMeshComponent* ISM : ISM_Components) if (IsValid(ISM)) ISM->DestroyComponent();
-	ISM_Components.Empty();
+	for (UInstancedStaticMeshComponent* ISM : CliffsComponents) if (IsValid(ISM)) ISM->DestroyComponent();
+	CliffsComponents.Empty();
 	if (IsValid(PMC_Main)) PMC_Main->ClearAllMeshSections();
 	ID.TopVertices.Empty();
 	ID.TopVerticesAxis.Empty();
-	SpawnISM_Components();
 	StartIsland();
 }
 #endif
@@ -127,31 +126,30 @@ void AIsland::BeginPlay()
 {
 	Super::BeginPlay();
 	Seed.Reset();
-	SpawnISM_Components();
 	StartIsland();
 }
 
-void AIsland::SpawnISM_Components()
+void AIsland::SpawnCliffsComponents()
 {
-	// Spawn Cliffs ISM Components
-	for(TObjectPtr<UStaticMesh>& SM : SM_Cliffs)
+	if (!DA_IslandBiome) return;
+	for(auto& StaticMesh : DA_IslandBiome->Cliffs)
 	{
-		if (!SM) continue;
+		if (!StaticMesh) continue;
 		
-		UInstancedStaticMeshComponent* ISM = NewObject<UInstancedStaticMeshComponent>(this);
-		ISM->SetStaticMesh(SM);
-		ISM->SetupAttachment(RootComponent);
-		ISM->LDMaxDrawDistance = 1000000;
-		ISM->RegisterComponent();
-		ISM_Components.Add(ISM);
+		UInstancedStaticMeshComponent* Cliff = NewObject<UInstancedStaticMeshComponent>(this);
+		Cliff->SetStaticMesh(StaticMesh);
+		Cliff->SetupAttachment(RootComponent);
+		Cliff->LDMaxDrawDistance = 1000000;
+		Cliff->RegisterComponent();
+		CliffsComponents.Add(Cliff);
 	}
 }
 
-void AIsland::Auth_SpawnFoliageComponents()
+void AIsland::SpawnFoliageComponents()
 {
 	if (IsNetMode(NM_Client)) return;
-	
-	for(const TObjectPtr<UDA_Foliage>& DA_Foliage : DataAssetsFoliage)
+	if (!DA_IslandBiome) return;
+	for(auto& DA_Foliage : DA_IslandBiome->Foliage)
 	{
 		if (!DA_Foliage->StaticMesh) continue;
 	
@@ -172,12 +170,14 @@ void AIsland::StartIsland()
 		DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
 	}
 	
+	SpawnCliffsComponents();
+	
 	if (ServerLOD > 0)
 	{
-		// FTimerHandle TimerHandle;
-		// float RandomStartTime = FMath::RandRange(5.5f, 15.0f);
-		// GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AIsland::StartAsyncGenerate, RandomStartTime);
-		StartAsyncGenerate();
+		FTimerHandle TimerHandle;
+		float RandomStartTime = FMath::RandRange(5.5f, 15.0f);
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AIsland::StartAsyncGenerate, RandomStartTime);
+		// StartAsyncGenerate();
 	}
 	else
 	{
@@ -279,9 +279,9 @@ FIslandData AIsland::Island_GenerateGeometry()
 		FRandomStream InstanceSeed = Seed.GetInitialSeed() + (i * 100);
 		FVector InstanceScale(1, 1, InstanceSeed.FRandRange(0.8f, 1.5f));
 		
-		if (!ISM_Components.IsEmpty())
+		if (!CliffsComponents.IsEmpty())
 		{
-			_ID.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, ISM_Components.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
+			_ID.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, CliffsComponents.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
 		}
 	}
 	
@@ -467,7 +467,7 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 	
 	for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
 	{
-		ISM_Components[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
+		CliffsComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
 	}
 	
 	if (HasAuthority())
@@ -484,15 +484,19 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 			}
 		}
 		
-		if (ServerLOD == 0) Auth_SpawnFoliageComponents();
+		if (ServerLOD == 0) SpawnFoliageComponents();
 		if (bLoadFromSave) LoadIsland();
 	}
 	
 	PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
 	PMC_Main->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
 
-	if (TopMaterial) PMC_Main->SetMaterial(0, TopMaterial);
-	if (BottomMaterial) PMC_Main->SetMaterial(1, BottomMaterial);
+	if (DA_IslandBiome)
+	{
+		if (DA_IslandBiome->TopMaterial) PMC_Main->SetMaterial(0, DA_IslandBiome->TopMaterial);
+		if (DA_IslandBiome->BottomMaterial) PMC_Main->SetMaterial(1, DA_IslandBiome->BottomMaterial);
+	}
+	
 
 #if WITH_EDITOR
 	IslandDebugs();
@@ -675,7 +679,7 @@ void AIsland::SetServerLOD(int32 NewLOD)
 	{
 		if (NewLOD == 0)
 		{
-			if (!bFoliageComponentsSpawned) Auth_SpawnFoliageComponents();
+			if (!bFoliageComponentsSpawned) SpawnFoliageComponents();
 			if (LoadedLowestLOD != 0)
 			{
 				LoadBuildings();

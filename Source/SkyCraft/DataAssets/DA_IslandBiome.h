@@ -43,5 +43,9 @@ class SKYCRAFT_API UDA_IslandBiome : public UDataAsset
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) FText BiomeName;
+	UPROPERTY(EditDefaultsOnly) TObjectPtr<UMaterialInterface> TopMaterial;
+	UPROPERTY(EditDefaultsOnly) TObjectPtr<UMaterialInterface> BottomMaterial;
+	UPROPERTY(EditDefaultsOnly) TArray<TObjectPtr<UStaticMesh>> Cliffs;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<TObjectPtr<UDA_Foliage>> Foliage;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FIslandLOD> IslandLODs;
 };

@@ -7,7 +7,6 @@
 #include "Structs/Coords.h"
 #include "ChunkIsland.generated.h"
 
-class UBoxComponent;
 class AIsland;
 class AGMS;
 class UChunker;
@@ -19,7 +18,11 @@ class SKYCRAFT_API AChunkIsland : public AActor
 	
 public:
 #if WITH_EDITORONLY_DATA
-	UPROPERTY(VisibleInstanceOnly) UBoxComponent* BoxComponent = nullptr;
+	UPROPERTY(VisibleInstanceOnly) class UBoxComponent* BoxComponent = nullptr;
+	UPROPERTY(VisibleInstanceOnly) class UTextRenderComponent* TextRenderComponent = nullptr;
+#endif
+#if WITH_EDITOR
+	void UpdateText();
 #endif
 	
 	AChunkIsland();
@@ -29,7 +32,7 @@ public:
 	TArray<UChunker*> Chunkers;
 	FCoords Coords;
 	FRandomStream ChunkSeed;
-	int32 ServerLOD = 666;
+	int32 ServerLOD = 666; // I'm the devil!
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangeLOD);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnChangeLOD OnChangeLOD;

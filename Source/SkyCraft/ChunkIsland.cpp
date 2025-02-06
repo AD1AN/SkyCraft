@@ -2,11 +2,13 @@
 
 #include "ChunkIsland.h"
 
+#include "GIS.h"
 #include "GMS.h"
 #include "GSS.h"
 #include "Island.h"
-#include "Components/BoxComponent.h"
 #include "Components/Chunker.h"
+#include "Components/BoxComponent.h"
+#include "Components/TextRenderComponent.h"
 
 AChunkIsland::AChunkIsland()
 {
@@ -15,9 +17,18 @@ AChunkIsland::AChunkIsland()
 
 #if WITH_EDITOR
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>("BoxComponent");
+	BoxComponent->SetupAttachment(RootComponent);
 	BoxComponent->bIsEditorOnly = true;
-	BoxComponent->bHiddenInGame = false;
 	BoxComponent->SetCollisionProfileName("NoCollision");
+
+	TextRenderComponent = CreateDefaultSubobject<UTextRenderComponent>("TextRenderComponent");
+	TextRenderComponent->SetupAttachment(BoxComponent);
+	TextRenderComponent->SetRelativeLocation(FVector(0,0,500));
+	TextRenderComponent->bIsEditorOnly = true;
+	TextRenderComponent->bHiddenInGame = true;
+	TextRenderComponent->WorldSize = 3000;
+	TextRenderComponent->TextRenderColor = FColor::Red;
+	TextRenderComponent->HorizontalAlignment = EHTA_Center;
 #endif
 }
 
@@ -25,7 +36,12 @@ void AChunkIsland::BeginPlay()
 {
 	Super::BeginPlay();
 #if WITH_EDITOR
-	BoxComponent->SetBoxExtent(FVector(GMS->GSS->ChunkSize/2, GMS->GSS->ChunkSize/2, 10));
+	if (GMS->GSS->GIS->DebugChunks)
+	{
+		BoxComponent->bHiddenInGame = false;
+		BoxComponent->SetBoxExtent(FVector(GMS->GSS->ChunkSize/2, GMS->GSS->ChunkSize/2, 10));
+		TextRenderComponent->bHiddenInGame = false;
+	}
 #endif
 	UpdateLOD();
 }
@@ -64,7 +80,7 @@ void AChunkIsland::UpdateLOD()
 	{
 		if (!Chunker) continue;
 		const int32 DistanceX = FMath::Abs(Chunker->CurrentCoords.X - Coords.X);
-		const int32 DistanceY = FMath::Abs(Chunker->CurrentCoords.X - Coords.X);
+		const int32 DistanceY = FMath::Abs(Chunker->CurrentCoords.Y - Coords.Y);
 		const int32 ChunkDistance = FMath::Max(DistanceX, DistanceY);
 		if (ChunkDistance < ClosestChunkDistance || ClosestChunkDistance == INDEX_NONE)
 		{
@@ -74,6 +90,26 @@ void AChunkIsland::UpdateLOD()
 	if (ClosestChunkDistance == INDEX_NONE) UE_LOG(LogTemp, Error, TEXT("AChunkIsland::UpdateLOD() ClosestDistance is INDEX_NONE"));
 	ServerLOD = ClosestChunkDistance;
 	OnChangeLOD.Broadcast();
+#if WITH_EDITOR
+	if (GMS->GSS->GIS->DebugChunks) UpdateText();
+#endif
 	if (IsValid(Island)) Island->SetServerLOD(ClosestChunkDistance);
 }
 
+
+#if WITH_EDITOR
+void AChunkIsland::UpdateText()
+{
+	FString DisplayText = FString::Printf(
+		TEXT("XY: %d / %d\n"
+			"Chunkers: %d\n"
+			"ChunkSeed: %d\n"
+			"ServerLOD: %d"),
+			Coords.X, Coords.Y,
+			Chunkers.Num(),
+			ChunkSeed.GetInitialSeed(),
+			ServerLOD);
+
+	TextRenderComponent->SetText(FText::FromString(DisplayText));
+}
+#endif

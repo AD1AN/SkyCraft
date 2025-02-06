@@ -91,7 +91,7 @@ public:
 	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene = nullptr;
 	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* PMC_Main = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
-	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> ISM_Components;
+	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> CliffsComponents;
 	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
 	bool bFoliageComponentsSpawned = false;
 	
@@ -160,11 +160,6 @@ public:
 	UPROPERTY(EditAnywhere) float BottomUVScale = 0.0005f;
 	UPROPERTY(EditAnywhere) float BottomRandomHorizontal = 0.025f;
 	UPROPERTY(EditAnywhere) float BottomRandomVertical = 0.05f;
-
-	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> TopMaterial;
-	UPROPERTY(EditAnywhere) TObjectPtr<UMaterialInterface> BottomMaterial;
-	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UStaticMesh>> SM_Cliffs;
-	UPROPERTY(EditAnywhere) TArray<TObjectPtr<UDA_Foliage>> DataAssetsFoliage;
 	
 	FThreadSafeBool bIsGenerating = false;
 	
@@ -201,12 +196,12 @@ public:
 	TArray<FSS_Building> SaveBuildings();
 	TArray<FSS_Foliage> SaveFoliage();
 	
-	void SpawnISM_Components();
+	void SpawnCliffsComponents();
 	void StartIsland();
 	void StartAsyncGenerate();
 	FIslandData Island_GenerateGeometry();
 	void Island_GenerateComplete(const FIslandData& _ID);
-	void Auth_SpawnFoliageComponents();
+	void SpawnFoliageComponents();
 
 	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const;
 	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);

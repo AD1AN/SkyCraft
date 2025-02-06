@@ -99,7 +99,7 @@ void UChunker::SpawnChunks()
 					FoundChunk = GSS->GMS->SpawnedChunkIslandsCoords.Find(ChunkCoords);
 					if (FoundChunk == INDEX_NONE)
 					{
-						uint32 CombinedSeed = HashCombine(HashCombine(GetTypeHash(GSS->WorldSeed.GetInitialSeed()), GetTypeHash(X)), GetTypeHash(Y));
+						uint32 CombinedSeed = HashCombine(HashCombine(GetTypeHash(GSS->WorldSeed.GetInitialSeed()), GetTypeHash(ChunkCoords.X)), GetTypeHash(ChunkCoords.Y));
 						FRandomStream ChunkSeed(CombinedSeed);
 						FTransform ChunkTransform;
 						ChunkTransform.SetLocation(FVector(ChunkCoords.X * GSS->ChunkSize, ChunkCoords.Y * GSS->ChunkSize, GSS->IslandsAltitude.Max));

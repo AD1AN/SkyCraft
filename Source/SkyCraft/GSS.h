@@ -7,6 +7,7 @@
 #include "Structs/FloatMinMax.h"
 #include "GSS.generated.h"
 
+class UGIS;
 class AGMS;
 class APSS;
 
@@ -19,13 +20,14 @@ public:
 	AGSS();
 
 	UPROPERTY() AGMS* GMS = nullptr;
+	UPROPERTY() UGIS* GIS = nullptr;
 	
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float ChunkSize = 150000;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) int32 ChunkRenderRange = 5;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float ChunkSize = 100000;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) int32 ChunkRenderRange = 10;
 
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax IslandsAltitude = FFloatMinMax(40000, 45000);
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax IslandsAltitude = FFloatMinMax(90000, 95000);
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Replicated) FFloatMinMax TraversalAltitude = FFloatMinMax(30000, 100000);
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax Suffocation = FFloatMinMax(50000, 150000);
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax Suffocation = FFloatMinMax(80000, 150000);
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float IslandArchonSpawnXY = 75000.0;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax IslandArchonSpawnZ = FFloatMinMax(80000, 95000);
 	
