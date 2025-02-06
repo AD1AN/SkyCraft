@@ -120,8 +120,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FSS_Island SS_Island;
 	UPROPERTY(BlueprintReadWrite) bool bIslandCanSave = false;
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCurrentLOD);
-	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCurrentLOD OnServerLOD;
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnServerLOD);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnServerLOD OnServerLOD;
 	UPROPERTY(ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 ServerLOD = -1;
 	// Last rendered LOD.
 	int32 LoadedLowestLOD = INDEX_NONE;
@@ -160,7 +160,9 @@ public:
 	UPROPERTY(EditAnywhere) float BottomUVScale = 0.0005f;
 	UPROPERTY(EditAnywhere) float BottomRandomHorizontal = 0.025f;
 	UPROPERTY(EditAnywhere) float BottomRandomVertical = 0.05f;
-	
+
+	FTimerHandle TimerGenerate;
+	bool AsyncGenerateCanceled = false;
 	FThreadSafeBool bIsGenerating = false;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIDGenerated);

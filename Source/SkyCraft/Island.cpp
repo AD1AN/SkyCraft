@@ -23,6 +23,8 @@ AIsland::AIsland()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	bReplicates = true;
 	SetNetUpdateFrequency(1);
+	SetMinNetUpdateFrequency(1);
+	SetNetCullDistanceSquared(485999968256.0f);
 	NetPriority = 2.0f;
 
 	RootScene = CreateDefaultSubobject<USceneComponent>("RootScene");
@@ -167,16 +169,19 @@ void AIsland::StartIsland()
 	if (bIslandArchon)
 	{
 		GSS = GetWorld()->GetGameState<AGSS>();
-		DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
+		if (HasAuthority())
+		{
+			DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
+		}
 	}
+	
+	Seed.Reset();
 	
 	SpawnCliffsComponents();
 	
 	if (ServerLOD > 0)
 	{
-		FTimerHandle TimerHandle;
-		float RandomStartTime = FMath::RandRange(5.5f, 15.0f);
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AIsland::StartAsyncGenerate, RandomStartTime);
+		GetWorld()->GetTimerManager().SetTimer(TimerGenerate, this, &AIsland::StartAsyncGenerate, FMath::FRandRange(0.025f, 1.125f));
 		// StartAsyncGenerate();
 	}
 	else
@@ -196,6 +201,7 @@ void AIsland::StartAsyncGenerate()
 		{
 			if (this && this->IsValidLowLevel())
 			{
+				if (AsyncGenerateCanceled) return;
 				Island_GenerateComplete(ID);
 			}
 		});
@@ -496,16 +502,66 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 		if (DA_IslandBiome->TopMaterial) PMC_Main->SetMaterial(0, DA_IslandBiome->TopMaterial);
 		if (DA_IslandBiome->BottomMaterial) PMC_Main->SetMaterial(1, DA_IslandBiome->BottomMaterial);
 	}
-	
 
 #if WITH_EDITOR
 	IslandDebugs();
 #endif
 	
+	bIslandCanSave = true;
 	bFullGenerated = true;
 	bIsGenerating = false;
 	OnFullGenerated.Broadcast();
 	OnIslandFullGenerated.Broadcast(this);
+}
+
+void AIsland::SetServerLOD(int32 NewLOD)
+{
+	if (!bIDGenerated && NewLOD == 0)
+	{
+		if (GetWorld()->GetTimerManager().IsTimerActive(TimerGenerate))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(TimerGenerate);
+		}
+		else
+		{
+			AsyncGenerateCanceled = true;
+		}
+		const FIslandData _ID = Island_GenerateGeometry();
+		Island_GenerateComplete(_ID);
+	}
+	
+	if (bFullGenerated && !bIsGenerating)
+	{
+		if (NewLOD == 0)
+		{
+			if (!bFoliageComponentsSpawned) SpawnFoliageComponents();
+			if (LoadedLowestLOD != 0)
+			{
+				LoadBuildings();
+				LoadDroppedItems();
+			}
+		}
+	}
+
+	if (NewLOD < LoadedLowestLOD)
+	{
+		if (bLoadFromSave)
+		{
+			for (int32 LoadLowestLOD = LoadedLowestLOD-1; LoadLowestLOD >= NewLOD; --LoadLowestLOD)
+			{
+				LoadLOD(LoadLowestLOD);
+			}
+		}
+		else
+		{
+			// generate
+		}
+	}
+	
+	LoadedLowestLOD = NewLOD;
+	ServerLOD = NewLOD;
+	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, ServerLOD, this);
+	OnServerLOD.Broadcast();
 }
 
 void AIsland::FoliageRemove(FVector_NetQuantize Location, float Radius)
@@ -671,42 +727,6 @@ void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float Smooth
 		EditedVertices.Add(EditedVertex);
 		++i;
 	}
-}
-
-void AIsland::SetServerLOD(int32 NewLOD)
-{
-	if (bFullGenerated && !bIsGenerating)
-	{
-		if (NewLOD == 0)
-		{
-			if (!bFoliageComponentsSpawned) SpawnFoliageComponents();
-			if (LoadedLowestLOD != 0)
-			{
-				LoadBuildings();
-				LoadDroppedItems();
-			}
-		}
-	}
-
-	if (NewLOD < LoadedLowestLOD)
-	{
-		if (bLoadFromSave)
-		{
-			for (int32 LoadLowestLOD = LoadedLowestLOD-1; LoadLowestLOD >= NewLOD; --LoadLowestLOD)
-			{
-				LoadLOD(LoadLowestLOD);
-			}
-		}
-		else
-		{
-			// generate
-		}
-	}
-	
-	LoadedLowestLOD = NewLOD;
-	ServerLOD = NewLOD;
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, ServerLOD, this);
-	OnServerLOD.Broadcast();
 }
 
 void AIsland::OnRep_ServerLOD()
