@@ -7,9 +7,12 @@
 #include "DroppedItem.h"
 #include "GMS.h"
 #include "GSS.h"
+#include "NPC.h"
 #include "Components/HealthSystem.h"
-#include "Components/GroundChunk.h"
+#include "Components/TerrainChunk.h"
 #include "DataAssets/DA_Foliage.h"
+#include "DataAssets/DA_IslandBiome.h"
+#include "DataAssets/DA_Resource.h"
 #include "SkyCraft/Components/FoliageHISM.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
@@ -47,21 +50,21 @@ void AIsland::OnRep_IslandSize()
 
 TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
 {
-	TArray<FSS_DroppedItem> SavedDroppedItems;
-	for (const ADroppedItem* DroppedItem : DroppedItems)
+	TArray<FSS_DroppedItem> SS_DroppedItems;
+	for (auto*& DroppedItem : DroppedItems)
 	{
-		if (!IsValid(DroppedItem)) continue;
-		FSS_DroppedItem SavedDroppedItem;
-		SavedDroppedItem.RelativeLocation = DroppedItem->GetRootComponent()->GetRelativeLocation();
-		SavedDroppedItem.Slot = DroppedItem->Slot;
-		SavedDroppedItems.Add(SavedDroppedItem);
+		if (!DroppedItem) continue;
+		FSS_DroppedItem SS_DroppedItem;
+		SS_DroppedItem.RelativeLocation = DroppedItem->GetRootComponent()->GetRelativeLocation();
+		SS_DroppedItem.Slot = DroppedItem->Slot;
+		SS_DroppedItems.Add(SS_DroppedItem);
 	}
-	return SavedDroppedItems;
+	return SS_DroppedItems;
 }
 
-void AIsland::LoadDroppedItems(TArray<FSS_DroppedItem> SS_DroppedItems)
+void AIsland::LoadDroppedItems()
 {
-	for (FSS_DroppedItem SS_DroppedItem : SS_DroppedItems)
+	for (auto& SS_DroppedItem : SS_Island.DroppedItems)
 	{
 		FTransform SpawnTransform;
 		SpawnTransform.SetLocation(SS_DroppedItem.RelativeLocation);
@@ -123,7 +126,6 @@ void AIsland::OnConstruction(const FTransform& Transform)
 void AIsland::BeginPlay()
 {
 	Super::BeginPlay();
-	GSS = Cast<AGSS>(GetWorld()->GetGameState());
 	Seed.Reset();
 	SpawnISM_Components();
 	StartIsland();
@@ -164,27 +166,40 @@ void AIsland::Auth_SpawnFoliageComponents()
 
 void AIsland::StartIsland()
 {
-	if (bIsGenerating) return;
-	bIsGenerating = true;
+	if (bIslandArchon)
+	{
+		GSS = GetWorld()->GetGameState<AGSS>();
+		DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
+	}
+	
 	if (ServerLOD > 0)
 	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-		{
-			FIslandData ID = Island_GenerateGeometry();
-			AsyncTask(ENamedThreads::GameThread, [this, ID]
-			{
-				if (this && this->IsValidLowLevel())
-				{
-					Island_GenerateComplete(ID);
-				}
-			});
-		});
+		// FTimerHandle TimerHandle;
+		// float RandomStartTime = FMath::RandRange(5.5f, 15.0f);
+		// GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AIsland::StartAsyncGenerate, RandomStartTime);
+		StartAsyncGenerate();
 	}
 	else
 	{
 		const FIslandData _ID = Island_GenerateGeometry();
 		Island_GenerateComplete(_ID);
 	}
+}
+
+void AIsland::StartAsyncGenerate()
+{
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	{
+		FIslandData ID = Island_GenerateGeometry();
+
+		AsyncTask(ENamedThreads::GameThread, [this, ID]
+		{
+			if (this && this->IsValidLowLevel())
+			{
+				Island_GenerateComplete(ID);
+			}
+		});
+	});
 }
 
 FIslandData AIsland::Island_GenerateGeometry()
@@ -210,7 +225,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 	}
 
 	// Is Ground Chunked
-	if (Resolution > 100) bGroundChunked = true;
+	if (Resolution > 100) bTerrainChunked = true;
 	
 	// Generate KeyShapePoints
 	const float Angle = 6.2832f / ShapePoints;
@@ -286,7 +301,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 				_ID.TopVerticesAxis.Add(FVector2D(X, Y));
 				FVertexData VertexData;
 				VertexData.VertexIndex = CurrentVertexIndex++;
-				if (bGroundChunked) VertexData.GroundChunkIndex = GroundChunkIndex(X,Y,HalfResolution);
+				if (bTerrainChunked) VertexData.TerrainChunkIndex = TerrainChunkIndex(X,Y,HalfResolution);
 				_ID.TopVerticesMap.Add(X * Resolution + Y, VertexData);
 				_ID.TopVertices.Add(FVector(Vertex, 0));
 				_ID.TopUVs.Add(FVector2D(Vertex.X / (Resolution - 1), Vertex.Y / (Resolution - 1)));
@@ -445,6 +460,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 
 void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 {
+	if (!IsValid(this)) return;
 	ID = _ID;
 	bIDGenerated = true;
 	OnIDGenerated.Broadcast();
@@ -456,13 +472,15 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 	
 	if (HasAuthority())
 	{
-		if (bGroundChunked)
+		LoadedLowestLOD = FMath::Max(GSS->ChunkRenderRange, DA_IslandBiome->IslandLODs.Num());
+		
+		if (bTerrainChunked)
 		{
 			for (int32 i = 0; i < 4; ++i)
 			{
-				UGroundChunk* GroundChunk = NewObject<UGroundChunk>(this);
-				GroundChunk->RegisterComponent();
-				GroundChunks.Add(GroundChunk);
+				UTerrainChunk* TerrainChunk = NewObject<UTerrainChunk>(this);
+				TerrainChunk->RegisterComponent();
+				TerrainChunks.Add(TerrainChunk);
 			}
 		}
 		
@@ -563,14 +581,14 @@ void AIsland::TerrainEdit(FVector_NetQuantize Location, float Radius, float Stre
 		EditedVertex.SetHeight(ID.TopVertices[VertexIndex].Z + FalloffStrength, MinTerrainHeight, MaxTerrainHeight);
 		ID.TopVertices[VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
 		EditedVertex.VertexIndex = VertexIndex;
-		if (bGroundChunked)
+		if (bTerrainChunked)
 		{
 			if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
 			{
-				if (GroundChunks.IsValidIndex(VertexData->GroundChunkIndex) && GroundChunks[VertexData->GroundChunkIndex])
+				if (TerrainChunks.IsValidIndex(VertexData->TerrainChunkIndex) && TerrainChunks[VertexData->TerrainChunkIndex])
 				{
-					GroundChunks[VertexData->GroundChunkIndex]->EditedVertices.Add(EditedVertex);
-					MARK_PROPERTY_DIRTY_FROM_NAME(UGroundChunk, EditedVertices, GroundChunks[VertexData->GroundChunkIndex]);
+					TerrainChunks[VertexData->TerrainChunkIndex]->EditedVertices.Add(EditedVertex);
+					MARK_PROPERTY_DIRTY_FROM_NAME(UTerrainChunk, EditedVertices, TerrainChunks[VertexData->TerrainChunkIndex]);
 				}
 			}
 		}
@@ -655,11 +673,33 @@ void AIsland::SetServerLOD(int32 NewLOD)
 {
 	if (bFullGenerated && !bIsGenerating)
 	{
-		if (NewLOD == 0 && !bFoliageComponentsSpawned)
+		if (NewLOD == 0)
 		{
-			Auth_SpawnFoliageComponents();
+			if (!bFoliageComponentsSpawned) Auth_SpawnFoliageComponents();
+			if (LoadedLowestLOD != 0)
+			{
+				LoadBuildings();
+				LoadDroppedItems();
+			}
 		}
 	}
+
+	if (NewLOD < LoadedLowestLOD)
+	{
+		if (bLoadFromSave)
+		{
+			for (int32 LoadLowestLOD = LoadedLowestLOD-1; LoadLowestLOD >= NewLOD; --LoadLowestLOD)
+			{
+				LoadLOD(LoadLowestLOD);
+			}
+		}
+		else
+		{
+			// generate
+		}
+	}
+	
+	LoadedLowestLOD = NewLOD;
 	ServerLOD = NewLOD;
 	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, ServerLOD, this);
 	OnServerLOD.Broadcast();
@@ -698,18 +738,36 @@ void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
+void AIsland::DestroyLODs()
+{
+	for (auto& SpawnedLOD : SpawnedLODs)
+	{
+		for (AResource* Res : SpawnedLOD.Value.Resources)
+		{
+			if (!Res) continue;
+			Res->Destroy();
+		}
+		for (ANPC* NPC : SpawnedLOD.Value.NPCs)
+		{
+			if (!IsValid(NPC)) continue;
+			NPC->Destroy();
+		}
+	}
+	SpawnedLODs.Empty();
+}
+
 void AIsland::LoadIsland()
 {
-	if (bGroundChunked)
+	if (bTerrainChunked)
 	{
 		int32 i = 0;
-		for (FSS_GroundChunk& FSS_GroundChunk : SS_Island.GroundChunks)
+		for (FSS_TerrainChunk& SS_TerrainChunk : SS_Island.TerrainChunks)
 		{
-			if (!GroundChunks.IsValidIndex(i)) continue;
-			if (!IsValid(GroundChunks[i])) continue;
-			GroundChunks[i]->EditedVertices = FSS_GroundChunk.EditedVertices;
-			if (GroundChunks[i]->EditedVertices.IsEmpty()) continue;
-			for (const FEditedVertex& EditedVertex : GroundChunks[i]->EditedVertices)
+			if (!TerrainChunks.IsValidIndex(i)) continue;
+			if (!IsValid(TerrainChunks[i])) continue;
+			TerrainChunks[i]->EditedVertices = SS_TerrainChunk.EditedVertices;
+			if (TerrainChunks[i]->EditedVertices.IsEmpty()) continue;
+			for (const FEditedVertex& EditedVertex : TerrainChunks[i]->EditedVertices)
 			{
 				ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
 			}
@@ -728,42 +786,201 @@ void AIsland::LoadIsland()
 		}
 	}
 	SS_Island.EditedVertices.Empty();
-	SS_Island.GroundChunks.Empty();
+	SS_Island.TerrainChunks.Empty();
 	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
+}
+
+bool AIsland::LoadLOD(int32 LoadLOD)
+{
+	for (auto& IslandLOD : SS_Island.IslandLODs)
+	{
+		if (IslandLOD.LOD != LoadLOD) continue;
+		
+		TArray<AResource*> LoadedResources = LoadResources(IslandLOD.Resources);
+		TArray<ANPC*> LoadedNPCs = LoadNPCs(IslandLOD.NPCs);
+		
+		FEntities* SpawnedLOD = SpawnedLODs.Find(LoadLOD);
+		if (!SpawnedLOD) SpawnedLOD = &SpawnedLODs.Add(LoadLOD, FEntities{});
+		
+		SpawnedLOD->Resources = LoadedResources;
+		SpawnedLOD->NPCs = LoadedNPCs;
+		return true;
+	}
+	return false;
+}
+
+TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
+{
+	if (SS_Resources.IsEmpty()) return {};
+	
+	TArray<AResource*> LoadedResources;
+	for (const auto& SS_Resource : SS_Resources)
+	{
+		if (!SS_Resource.DA_Resource) continue;
+		FTransform ResTransform;
+		ResTransform.SetLocation(SS_Resource.RelativeLocation);
+		ResTransform.SetRotation(FQuat(SS_Resource.RelativeRotation));
+		TSubclassOf<AResource> ResourceClass = (SS_Resource.DA_Resource->OverrideResourceClass) ? SS_Resource.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
+		SpawnedRes->bLoaded = true;
+		SpawnedRes->LoadHealth = SS_Resource.Health;
+		SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
+		SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
+		SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
+		SpawnedRes->Growing = SS_Resource.Growing;
+		SpawnedRes->GrowMarkTime = SS_Resource.GrowMarkTime;
+		SpawnedRes->GrowSavedTime = SS_Resource.GrowSavedTime;
+		SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
+		SpawnedRes->FinishSpawning(ResTransform);
+		LoadedResources.Add(SpawnedRes);
+	}
+	return LoadedResources;
+}
+
+TArray<ANPC*> AIsland::LoadNPCs(TArray<FSS_NPC>& SS_NPCs)
+{
+	if (SS_NPCs.IsEmpty()) return {};
+	
+	TArray<ANPC*> LoadedNPCs;
+	for (const auto& SS_NPC : SS_NPCs)
+	{
+		if (!IsValid(SS_NPC.NPC_Class)) continue;
+		FTransform LoadTransform = SS_NPC.Transform;
+		LoadTransform.SetLocation(SS_NPC.Transform.GetLocation() + FVector(0,0,100));
+		ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPC.NPC_Class, LoadTransform);
+		SpawnedNPC->Island = this;
+		SpawnedNPC->FinishSpawning(LoadTransform);
+		SpawnedNPC->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
+		SpawnedNPC->HealthSystem->Health = SS_NPC.Health;
+		SpawnedNPC->LoadNPC(SS_NPC);
+		LoadedNPCs.Add(SpawnedNPC);
+	}
+	return LoadedNPCs;
+}
+
+void AIsland::LoadBuildings()
+{
+	TMap<int32, ABM*> BuildingsMap;
+	FTransform BuildingTransform;
+
+	// Spawn buildings and map them.
+	for (auto& SS_Building : SS_Island.Buildings)
+	{
+		if (!IsValid(SS_Building.BM_Class)) continue;
+		BuildingTransform.SetLocation(SS_Building.Location);
+		BuildingTransform.SetRotation(SS_Building.Rotation.Quaternion());
+		ABM* SpawnedBuilding = GetWorld()->SpawnActorDeferred<ABM>(SS_Building.BM_Class, BuildingTransform);
+		SpawnedBuilding->HealthSystem->Health = SS_Building.Health;
+		SpawnedBuilding->Grounded = SS_Building.Grounded;
+		SpawnedBuilding->ID = SS_Building.ID;
+		SpawnedBuilding->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+		SpawnedBuilding->FinishSpawning(BuildingTransform);
+		SpawnedBuilding->LoadBuildingParameters(SS_Building.Parameters);
+		BuildingsMap.Add(SS_Building.ID, SpawnedBuilding);
+	}
+
+	// Resolve Supports & Depends pointers.
+	for (auto& SS_Building : SS_Island.Buildings)
+	{
+		ABM* Building = BuildingsMap.FindRef(SS_Building.ID);
+		if (!Building) continue;
+		for (const auto SupportIndex : SS_Building.Supports)
+		{
+			if (ABM* SupportBuilding = BuildingsMap.FindRef(SupportIndex))
+			{
+				Building->Supports.Add(SupportBuilding);
+			}
+		}
+		for (const auto DependIndex : SS_Building.Depends)
+		{
+			if (ABM* DependBuilding = BuildingsMap.FindRef(DependIndex))
+			{
+				Building->Depends.Add(DependBuilding);
+			}
+		}
+	}
+	
+	TArray<ABM*> OutBuildings;
+	BuildingsMap.GenerateValueArray(OutBuildings);
+	Buildings = OutBuildings;
 }
 
 void AIsland::SaveIsland()
 {
 	if (!bIslandCanSave) return;
-	// TODO: SaveLODs
-	TArray<FSS_Building> SS_Buildings;
-	SaveBuildings(SS_Buildings);
+	TArray<FSS_IslandLOD> SS_IslandLODs = SaveLODs();
+	TArray<FSS_Building> SS_Buildings = SaveBuildings();
 	TArray<FSS_DroppedItem> SS_DroppedItems = SaveDroppedItems();
+	TArray<FSS_Foliage> SS_Foliage = SaveFoliage();
+	SS_Island.IslandLODs = SS_IslandLODs;
 	SS_Island.Buildings = SS_Buildings;
 	SS_Island.DroppedItems = SS_DroppedItems;
-	TArray<FSS_Foliage> SS_Foliage;
-	SaveFoliage(SS_Foliage);
 	SS_Island.Foliage = SS_Foliage;
-	if (bGroundChunked)
+	
+	if (bTerrainChunked)
 	{
-		for (UGroundChunk*& PMC_GroundChunk : GroundChunks)
+		for (auto& TerrainChunk : TerrainChunks)
 		{
-			if (!PMC_GroundChunk) continue;
-			SS_Island.GroundChunks.Add(FSS_GroundChunk(PMC_GroundChunk->EditedVertices));
+			if (!TerrainChunk) continue;
+			SS_Island.TerrainChunks.Add(FSS_TerrainChunk(TerrainChunk->EditedVertices));
 		}
 	}
-	else SS_Island.EditedVertices = EditedVertices;
-	if (bIslandArchon) return;
+	else
+	{
+		SS_Island.EditedVertices = EditedVertices;
+	}
+	
+	if (bIslandArchon) return; // Do not save IslandArchon in SavedIslands.
 	if (!IsValid(GSS) && !IsValid(GSS->GMS)) return;
 	GSS->GMS->SavedIslands.Add(HashCombine(GetTypeHash(Coords.X),GetTypeHash(Coords.Y)), SS_Island);
 }
 
-void AIsland::SaveBuildings(TArray<FSS_Building>& SS_Buildings)
+TArray<FSS_IslandLOD> AIsland::SaveLODs()
 {
-	for (ABM*& Building : Buildings)
+	TArray<FSS_IslandLOD> SS_IslandLODs;
+	for (const auto& SpawnedLOD : SpawnedLODs)
 	{
-		if (!IsValid(Building)) return;
-		if (Building->GetOwner() != nullptr) return; // Check if this building not in Preview
+		FSS_IslandLOD SS_IslandLOD;
+		SS_IslandLOD.LOD = SpawnedLOD.Key;
+		
+		for (auto& Res : SpawnedLOD.Value.Resources)
+		{
+			if (!IsValid(Res)) continue;
+			FSS_Resource SS_Resource;
+			SS_Resource.RelativeLocation = Res->StaticMeshComponent->GetRelativeLocation();
+			SS_Resource.RelativeRotation = Res->StaticMeshComponent->GetRelativeRotation();
+			SS_Resource.DA_Resource = Res->DA_Resource;
+			SS_Resource.ResourceSize = Res->ResourceSize;
+			SS_Resource.SM_Variety = Res->SM_Variety;
+			SS_Resource.Health = Res->HealthSystem->Health;
+			SS_Resource.Growing = Res->Growing;
+			SS_Resource.GrowMarkTime = Res->GrowMarkTime;
+			SS_Resource.GrowSavedTime = Res->GrowSavedTime;
+			SS_IslandLOD.Resources.Add(SS_Resource);
+		}
+		
+		for (auto& NPC : SpawnedLOD.Value.NPCs)
+		{
+			if (!IsValid(NPC)) continue;
+			FSS_NPC SS_NPC;
+			SS_NPC = NPC->SaveNPC();
+			SS_IslandLOD.NPCs.Add(SS_NPC);
+		}
+		
+		SS_IslandLODs.Add(SS_IslandLOD);
+	}
+	return SS_IslandLODs;
+}
+
+TArray<FSS_Building> AIsland::SaveBuildings()
+{
+	if (Buildings.IsEmpty()) return {};
+
+	TArray<FSS_Building> SS_Buildings;
+	for (auto*& Building : Buildings)
+	{
+		if (!Building) continue;
+		if (Building->GetOwner() != nullptr) continue; // Check if this building not in Preview
 		FSS_Building SS_Building;
 		SS_Building.ID = Building->ID;
 		SS_Building.BM_Class = Building->GetClass();
@@ -776,18 +993,21 @@ void AIsland::SaveBuildings(TArray<FSS_Building>& SS_Buildings)
 		SS_Building.Parameters = Building->SaveBuildingParameters();
 		SS_Buildings.Add(SS_Building);
 	}
+	return SS_Buildings;
 }
 
-void AIsland::SaveFoliage(TArray<FSS_Foliage>& SS_Foliage)
+TArray<FSS_Foliage> AIsland::SaveFoliage()
 {
+	TArray<FSS_Foliage> SS_Foliage;
 	for (UFoliageHISM*& FoliageComponent : FoliageComponents)
 	{
-		FSS_Foliage SaveFoliage;
-		SaveFoliage.DA_Foliage = FoliageComponent->DA_Foliage;
-		SaveFoliage.InitialInstancesRemoved = FoliageComponent->InitialInstancesRemoved;
-		SaveFoliage.DynamicInstancesAdded = FoliageComponent->DynamicInstancesAdded;
-		SS_Foliage.Add(SaveFoliage);
+		FSS_Foliage SavedFoliage;
+		SavedFoliage.DA_Foliage = FoliageComponent->DA_Foliage;
+		SavedFoliage.InitialInstancesRemoved = FoliageComponent->InitialInstancesRemoved;
+		SavedFoliage.DynamicInstancesAdded = FoliageComponent->DynamicInstancesAdded;
+		SS_Foliage.Add(SavedFoliage);
 	}
+	return SS_Foliage;
 }
 
 bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const
@@ -945,7 +1165,7 @@ float AIsland::TriangleArea(const FVector& V0, const FVector& V1, const FVector&
 	return FVector::CrossProduct(AB, AC).Size() * 0.5f;
 }
 
-uint8 AIsland::GroundChunkIndex(int32 X, int32 Y, int32 HalfResolution)
+uint8 AIsland::TerrainChunkIndex(int32 X, int32 Y, int32 HalfResolution)
 {
 	if (X < HalfResolution)
 	{
@@ -1028,7 +1248,8 @@ void AIsland::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
-	
+
+	DOREPLIFETIME_CONDITION(AIsland, DA_IslandBiome, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AIsland, Seed, COND_InitialOnly);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, ServerLOD, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, SS_Astralons, Params);

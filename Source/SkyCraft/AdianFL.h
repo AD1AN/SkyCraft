@@ -100,8 +100,17 @@ public:
 	static FVector ToLocalSpace(FVector WorldLocation, AActor* ToActor);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
-	static int32 HashCoords(FCoords Coords);
-	
+	static int32 HashCoords(FCoords Coords)
+	{
+		return HashCombine(GetTypeHash(Coords.X), GetTypeHash(Coords.Y));
+	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static int32 HashIntegers(int32 A, int32 B)
+	{
+		return HashCombine(GetTypeHash(A), GetTypeHash(B));
+	}
+
 	UFUNCTION(BlueprintCallable, Category="AdianFL")
 	static void ForceDestroyComponent(UActorComponent* ActorComponent)
 	{

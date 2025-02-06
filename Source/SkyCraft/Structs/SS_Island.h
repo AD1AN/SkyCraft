@@ -62,7 +62,7 @@ struct FSS_Foliage
 };
 
 USTRUCT()
-struct FSS_GroundChunk
+struct FSS_TerrainChunk
 {
 	GENERATED_BODY()
 	UPROPERTY() TArray<FEditedVertex> EditedVertices;
@@ -73,7 +73,7 @@ struct FSS_Island
 {
 	GENERATED_BODY()
 	UPROPERTY() TArray<FEditedVertex> EditedVertices;
-	UPROPERTY() TArray<FSS_GroundChunk> GroundChunks;
+	UPROPERTY() TArray<FSS_TerrainChunk> TerrainChunks;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Foliage> Foliage;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_IslandLOD> IslandLODs;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Building> Buildings;

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "SkyCraft/Structs/Uint8MinMax.h"
+#include "SkyCraft/Island.h"
 #include "EntityGenerator.generated.h"
 
 class AResource;
@@ -41,14 +42,6 @@ struct FGenerateNPCsIn
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) TSubclassOf<ANPC> NPC_Class;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) float MaxFloorSlope = 80.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) int32 LOD;
-};
-
-USTRUCT(BlueprintType)
-struct FEntities
-{
-	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<AResource*> Resources;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<ANPC*> NPCs;
 };
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))

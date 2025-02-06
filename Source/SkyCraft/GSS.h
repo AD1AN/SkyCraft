@@ -35,6 +35,8 @@ public:
 	// -------------------------------------
 
 	virtual void BeginPlay() override;
+
+	UPROPERTY(BlueprintReadWrite, Replicated) FRandomStream WorldSeed;
 	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_SpawnFXAttached(FFX FX, FVector LocalLocation = FVector::ZeroVector, AActor* AttachTo = nullptr, USoundAttenuation* AttenuationSettings = nullptr);
 

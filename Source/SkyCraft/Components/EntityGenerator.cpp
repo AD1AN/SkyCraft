@@ -182,6 +182,7 @@ TArray<FSS_IslandLOD> UEntityGenerator::SaveLODs()
 	}
 	return SavedLODs;
 }
+
 void UEntityGenerator::LoadResources(TArray<FSS_Resource> Resources, int32 LOD)
 {
 	if (Resources.IsEmpty()) return;
@@ -208,6 +209,7 @@ void UEntityGenerator::LoadResources(TArray<FSS_Resource> Resources, int32 LOD)
 		SpawnedLOD->Resources.Add(SpawnedRes);
 	}
 }
+
 void UEntityGenerator::LoadNPCs(TArray<FSS_NPC> NPCs, int32 LOD)
 {
 	if (NPCs.IsEmpty()) return;
@@ -229,6 +231,7 @@ void UEntityGenerator::LoadNPCs(TArray<FSS_NPC> NPCs, int32 LOD)
 		SpawnedLOD->NPCs.Add(SpawnedNPC);
 	}
 }
+
 bool UEntityGenerator::LoadLOD(TArray<FSS_IslandLOD> SS_LODs, int32 LoadLOD)
 {
 	for (const FSS_IslandLOD SS_LOD : SS_LODs)
@@ -240,6 +243,7 @@ bool UEntityGenerator::LoadLOD(TArray<FSS_IslandLOD> SS_LODs, int32 LoadLOD)
 	}
 	return false;
 }
+
 void UEntityGenerator::DestroyLODs()
 {
 	for (TPair<int32, FEntities> LOD : SpawnedLODs)

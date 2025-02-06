@@ -44,6 +44,7 @@ void AGSS::BeginPlay()
 	Super::BeginPlay();
 	if (!HasAuthority()) return;
 	GMS = Cast<AGMS>(GetWorld()->GetAuthGameMode());
+	GMS->GSS = this;
 }
 
 void AGSS::SetHostPlayer(APSS* Host)
@@ -91,7 +92,8 @@ void AGSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
-	
+
+	DOREPLIFETIME_CONDITION(AGSS, WorldSeed, COND_InitialOnly);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, TraversalAltitude, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, HostPlayer, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, BuildingInfiniteHeight, Params);

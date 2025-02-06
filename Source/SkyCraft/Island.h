@@ -13,15 +13,27 @@
 #include "Structs/EditedVertex.h"
 #include "Island.generated.h"
 
-class UGroundChunk;
+class UDA_IslandBiome;
+class AChunkIsland;
+class UTerrainChunk;
 class AGSS;
 class UDA_Foliage;
 class UFoliageHISM;
 class UProceduralMeshComponent;
 class UHierarchicalInstancedStaticMeshComponent;
 class ADroppedItem;
+class AResource;
+class ANPC;
 class ABM;
 struct FSS_Building;
+
+USTRUCT(BlueprintType)
+struct FEntities
+{
+	GENERATED_BODY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<AResource*> Resources;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<ANPC*> NPCs;
+};
 
 struct FCliffData
 {
@@ -46,7 +58,7 @@ struct FFoliageAsset
 struct FVertexData
 {
 	int32 VertexIndex; // Index of TopVertices.
-	uint8 GroundChunkIndex;
+	uint8 TerrainChunkIndex;
 };
 
 struct FIslandData
@@ -86,7 +98,10 @@ public:
 	AIsland();
 
 	UPROPERTY() AGSS* GSS = nullptr;
+	UPROPERTY() AChunkIsland* ChunkIsland;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FCoords Coords;
+	UPROPERTY(Replicated) UDA_IslandBiome* DA_IslandBiome = nullptr;
+	
 	bool bIslandArchon = false;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
@@ -108,15 +123,19 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCurrentLOD);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCurrentLOD OnServerLOD;
 	UPROPERTY(ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 ServerLOD = -1;
-	UPROPERTY(BlueprintReadOnly) int32 ClientLOD = -1; // TODO: Implement Client LOD system.
+	// Last rendered LOD.
+	int32 LoadedLowestLOD = INDEX_NONE;
+	UPROPERTY(BlueprintReadOnly) int32 ClientLOD = -1; // TODO: Implement Client LOD system, maybe for future needs.
 	UFUNCTION(BlueprintCallable) void SetServerLOD(int32 NewLOD);
 
 	UFUNCTION() void OnRep_ServerLOD();
 	
+	UPROPERTY(BlueprintReadWrite) TMap<int32, FEntities> SpawnedLODs; // Key: LOD index
+	UPROPERTY(BlueprintReadWrite) TArray<ABM*> Buildings;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) TArray<ADroppedItem*> DroppedItems;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated) TArray<FSS_Astralon> SS_Astralons;
 	UFUNCTION(BlueprintCallable) TArray<FSS_DroppedItem> SaveDroppedItems();
-	UFUNCTION(BlueprintCallable) void LoadDroppedItems(TArray<FSS_DroppedItem> SS_DroppedItems);
+	void LoadDroppedItems();
 	virtual void AddDroppedItem(ADroppedItem* DroppedItem) override;
 	virtual void RemoveDroppedItem(ADroppedItem* DroppedItem) override;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddConstellation(FSS_Astralon NewConstellation);
@@ -159,10 +178,9 @@ public:
 	UPROPERTY(BlueprintAssignable) FOnIslandFullGenerated OnIslandFullGenerated;
 	
 	FIslandData ID;
-	// Just for data chunk replication. If resolution > 100 = then true.
-	UPROPERTY() bool bGroundChunked = false;
-	UPROPERTY() TArray<UGroundChunk*> GroundChunks;
-	
+	// EditedVertices TerrainChunk replication. If resolution > 100 = then true.
+	UPROPERTY() bool bTerrainChunked = false;
+	UPROPERTY() TArray<UTerrainChunk*> TerrainChunks;
 	UPROPERTY(ReplicatedUsing=OnRep_EditedVertices) TArray<FEditedVertex> EditedVertices;
 	UFUNCTION() void OnRep_EditedVertices();
 	UPROPERTY(EditAnywhere) float MinTerrainHeight = -1000;
@@ -170,13 +188,22 @@ public:
 	
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	UFUNCTION(BlueprintCallable) void DestroyLODs();
+	
 	UFUNCTION(BlueprintCallable) void LoadIsland();
+	bool LoadLOD(int32 LoadLOD);
+	TArray<AResource*> LoadResources(TArray<FSS_Resource>& SS_Resources);
+	TArray<ANPC*> LoadNPCs(TArray<FSS_NPC>& SS_NPCs);
+	void LoadBuildings();
+	
 	UFUNCTION(BlueprintCallable) void SaveIsland();
-	UPROPERTY(BlueprintReadWrite) TArray<ABM*> Buildings;
-	void SaveBuildings(TArray<FSS_Building>& SS_Buildings);
-	void SaveFoliage(TArray<FSS_Foliage>& SS_Foliage);
+	TArray<FSS_IslandLOD> SaveLODs();
+	TArray<FSS_Building> SaveBuildings();
+	TArray<FSS_Foliage> SaveFoliage();
+	
 	void SpawnISM_Components();
 	void StartIsland();
+	void StartAsyncGenerate();
 	FIslandData Island_GenerateGeometry();
 	void Island_GenerateComplete(const FIslandData& _ID);
 	void Auth_SpawnFoliageComponents();
@@ -196,7 +223,7 @@ public:
 	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2);
 	TArray<int32> FindVerticesInRadius(const FVector Location, float Radius); // Maybe for future needs
 
-	uint8 GroundChunkIndex(int32 X, int32 Y, int32 HalfResolution);
+	uint8 TerrainChunkIndex(int32 X, int32 Y, int32 HalfResolution);
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere) bool DebugAllVertices = false;

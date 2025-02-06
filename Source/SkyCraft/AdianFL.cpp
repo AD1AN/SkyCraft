@@ -229,8 +229,3 @@ FVector UAdianFL::ToLocalSpace(FVector WorldLocation, AActor* ToActor)
 {
 	return ToActor->GetTransform().InverseTransformPosition(WorldLocation);
 }
-
-int32 UAdianFL::HashCoords(FCoords Coords)
-{
-	return HashCombine(GetTypeHash(Coords.X), GetTypeHash(Coords.Y));
-}
