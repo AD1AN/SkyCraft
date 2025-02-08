@@ -166,9 +166,9 @@ void ADroppedItem::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimit
 		FAttachmentTransformRules AttachmentTransformRules(FAttachmentTransformRules::KeepWorldTransform);
 		AttachmentTransformRules.bWeldSimulatedBodies = true;
 		AttachToActor(NewIsland, AttachmentTransformRules);
-		if (IsValid(AttachedToIsland)) AttachedToIsland->RemoveDroppedItem(this);
+		if (IsValid(AttachedToIsland)) AttachedToIsland->DroppedItems.Remove(this);
 		AttachedToIsland = NewIsland;
-		AttachedToIsland->AddDroppedItem(this);
+		AttachedToIsland->DroppedItems.Add(this);
 	}
 	if (FMath::Acos(FVector::DotProduct(HitNormal, FVector::UpVector)) <= 45.0f)
 	{

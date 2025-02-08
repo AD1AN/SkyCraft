@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "SkyCraft/Structs/EditedVertex.h"
 #include "TerrainChunk.generated.h"
 
 class AIsland;

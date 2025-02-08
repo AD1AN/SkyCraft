@@ -117,10 +117,10 @@ void UFoliageHISM::Generate_InitialInstances(const FIslandData& _ID)
         }
         
         const FVector TriangleNormal = FVector::CrossProduct(V2 - V0, V1 - V0).GetSafeNormal();
-        if (DA_Foliage->bMaxSlope)
+        if (DA_Foliage->bMaxFloorSlope)
         {
         	const float SlopeAngle = FMath::Acos(FVector::DotProduct(TriangleNormal, FVector::UpVector)) * (180.0f / PI);
-        	if (SlopeAngle > DA_Foliage->MaxSlope)
+        	if (SlopeAngle > DA_Foliage->MaxFloorSlope)
         	{
         		++Attempts;
         		continue;
@@ -385,10 +385,10 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
   
         // Calculate the triangle normal and check slope limits
         FVector TriangleNormal = FVector::CrossProduct(V2 - V0, V1 - V0).GetSafeNormal();
-        if (DA_Foliage->bMaxSlope)
+        if (DA_Foliage->bMaxFloorSlope)
         {
             float SlopeAngle = FMath::Acos(FVector::DotProduct(TriangleNormal, FVector::UpVector)) * (180.0f / PI);
-            if (SlopeAngle > DA_Foliage->MaxSlope)
+            if (SlopeAngle > DA_Foliage->MaxFloorSlope)
             {
                 ++Attempts;
                 continue;

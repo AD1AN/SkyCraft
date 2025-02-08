@@ -4,12 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SkyCraft/Interfaces/IslandInterface.h"
 #include "Structs/SS_Astralon.h"
 #include "Structs/SS_Island.h"
 #include "ProceduralMeshComponent.h"
 #include "Structs/Coords.h"
-#include "Structs/FloatMinMax.h"
 #include "Structs/EditedVertex.h"
 #include "Island.generated.h"
 
@@ -38,21 +36,6 @@ struct FEntities
 struct FCliffData
 {
 	TArray<FTransform> Instances;
-};
-
-USTRUCT(BlueprintType)
-struct FFoliageAsset
-{
-	GENERATED_BODY()
-	UPROPERTY(EditDefaultsOnly) TObjectPtr<UStaticMesh> StaticMesh = nullptr;
-	UPROPERTY(EditDefaultsOnly) float Spacing = 50.0f;
-	UPROPERTY(EditDefaultsOnly) bool bRotationAlignGround = true;
-	UPROPERTY(EditDefaultsOnly) bool bMaxSlope = false;
-	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="bMaxSlope", EditConditionHides))
-	float MaxSlope = 45.0f;
-	UPROPERTY(EditDefaultsOnly) bool bRandomScale = false;
-	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="bRandomScale", EditConditionHides))
-	FFloatMinMax ScaleZ = FFloatMinMax(1,1);
 };
 
 struct FVertexData
@@ -84,63 +67,31 @@ struct FIslandData
 };
 
 UCLASS(Blueprintable)
-class SKYCRAFT_API AIsland : public AActor, public IIslandInterface
+class SKYCRAFT_API AIsland : public AActor
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene = nullptr;
-	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* PMC_Main = nullptr;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
-	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> CliffsComponents;
-	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
-	bool bFoliageComponentsSpawned = false;
+	UPROPERTY() USceneComponent* RootScene = nullptr;
+	UPROPERTY() UProceduralMeshComponent* PMC_Main = nullptr;
+	UPROPERTY(BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
+	UPROPERTY() TArray<UInstancedStaticMeshComponent*> CliffsComponents;
+	UPROPERTY() TArray<UFoliageHISM*> FoliageComponents;
+	
+	bool bIslandArchon = false;
 	
 	AIsland();
 
 	UPROPERTY() AGSS* GSS = nullptr;
 	UPROPERTY() AChunkIsland* ChunkIsland;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FCoords Coords;
-	UPROPERTY(Replicated) UDA_IslandBiome* DA_IslandBiome = nullptr;
+	UPROPERTY(Replicated, EditAnywhere) UDA_IslandBiome* DA_IslandBiome = nullptr;
 	
-	bool bIslandArchon = false;
-	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
-	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
+	FTimerHandle TimerGenerate;
+	UPROPERTY(VisibleInstanceOnly) bool AsyncGenerateCanceled = false;
+	FThreadSafeBool bIsGenerating = false;
 
-	UPROPERTY(Replicated, BlueprintReadWrite, meta=(ExposeOnSpawn))
-	FRandomStream Seed = 0;
+	FIslandData ID;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_IslandSize, BlueprintReadOnly, EditAnywhere, meta=(ExposeOnSpawn))
-	float IslandSize = 0.5f; // 0 = is small. 1 = is biggest.
-	
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(float NewSize);
-	UFUNCTION() void OnRep_IslandSize();
-
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) bool bLoadFromSave = false;
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FSS_Island SS_Island;
-	UPROPERTY(BlueprintReadWrite) bool bIslandCanSave = false;
-	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnServerLOD);
-	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnServerLOD OnServerLOD;
-	UPROPERTY(ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 ServerLOD = -1;
-	// Last rendered LOD.
-	int32 LoadedLowestLOD = INDEX_NONE;
-	UPROPERTY(BlueprintReadOnly) int32 ClientLOD = -1; // TODO: Implement Client LOD system, maybe for future needs.
-	UFUNCTION(BlueprintCallable) void SetServerLOD(int32 NewLOD);
-
-	UFUNCTION() void OnRep_ServerLOD();
-	
-	UPROPERTY(BlueprintReadWrite) TMap<int32, FEntities> SpawnedLODs; // Key: LOD index
-	UPROPERTY(BlueprintReadWrite) TArray<ABM*> Buildings;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) TArray<ADroppedItem*> DroppedItems;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Replicated) TArray<FSS_Astralon> SS_Astralons;
-	UFUNCTION(BlueprintCallable) TArray<FSS_DroppedItem> SaveDroppedItems();
-	void LoadDroppedItems();
-	virtual void AddDroppedItem(ADroppedItem* DroppedItem) override;
-	virtual void RemoveDroppedItem(ADroppedItem* DroppedItem) override;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddConstellation(FSS_Astralon NewConstellation);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveConstellation(FSS_Astralon RemoveConstellation);
-
 	UPROPERTY(EditAnywhere) bool bOnConstruction = false;
 	UPROPERTY(EditAnywhere) bool bRandomIsland = true;
 	
@@ -161,23 +112,52 @@ public:
 	UPROPERTY(EditAnywhere) float BottomRandomHorizontal = 0.025f;
 	UPROPERTY(EditAnywhere) float BottomRandomVertical = 0.05f;
 
-	FTimerHandle TimerGenerate;
-	bool AsyncGenerateCanceled = false;
-	FThreadSafeBool bIsGenerating = false;
+	// --------------------------------------------------
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
+	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
+
+	UPROPERTY(Replicated, VisibleInstanceOnly) FRandomStream Seed = 0;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_IslandSize, BlueprintReadOnly, EditAnywhere, meta=(ExposeOnSpawn))
+	float IslandSize = 0.5f; // 0 = is small. 1 = is biggest.
+	
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(float NewSize);
+	UFUNCTION() void OnRep_IslandSize();
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn)) bool bLoadFromSave = false;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn)) FSS_Island SS_Island;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) bool bIslandCanSave = false;
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnServerLOD);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnServerLOD OnServerLOD;
+	UPROPERTY(VisibleInstanceOnly, ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 ServerLOD = -1;
+	UPROPERTY(VisibleInstanceOnly) int32 LoadedLowestLOD = 666; // Only decreases.
+	UPROPERTY(VisibleInstanceOnly) int32 ClientLOD = -1; // TODO: Implement Client LOD system, maybe for future needs.
+	UFUNCTION(BlueprintCallable) void SetServerLOD(int32 NewLOD);
+	
+	TMap<UDA_Resource*, TMap<int32, FVector>> ResourcesGridMap;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TMap<int32, FEntities> SpawnedLODs; // Key: LOD index. INDEX_NONE = AlwaysLOD.
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ABM*> Buildings;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ADroppedItem*> DroppedItems;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) TArray<FSS_Astralon> SS_Astralons;
+	UFUNCTION(BlueprintCallable) TArray<FSS_DroppedItem> SaveDroppedItems();
+	void LoadDroppedItems();
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddConstellation(FSS_Astralon NewConstellation);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveConstellation(FSS_Astralon RemoveConstellation);
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIDGenerated);
 	UPROPERTY(BlueprintAssignable) FOnIDGenerated OnIDGenerated;
-	UPROPERTY(BlueprintReadOnly) bool bIDGenerated = false;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bIDGenerated = false;
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFullGenerated);
 	UPROPERTY(BlueprintAssignable) FOnFullGenerated OnFullGenerated;
-	UPROPERTY(BlueprintReadOnly) bool bFullGenerated = false;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bFullGenerated = false;
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandFullGenerated, AIsland*, Island);
 	UPROPERTY(BlueprintAssignable) FOnIslandFullGenerated OnIslandFullGenerated;
 	
-	FIslandData ID;
 	// EditedVertices TerrainChunk replication. If resolution > 100 = then true.
-	UPROPERTY() bool bTerrainChunked = false;
-	UPROPERTY() TArray<UTerrainChunk*> TerrainChunks;
+	UPROPERTY(VisibleInstanceOnly) bool bTerrainChunked = false;
+	UPROPERTY(VisibleInstanceOnly) TArray<UTerrainChunk*> TerrainChunks;
 	UPROPERTY(ReplicatedUsing=OnRep_EditedVertices) TArray<FEditedVertex> EditedVertices;
 	UFUNCTION() void OnRep_EditedVertices();
 	UPROPERTY(EditAnywhere) float MinTerrainHeight = -1000;
@@ -189,6 +169,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable) void LoadIsland();
 	bool LoadLOD(int32 LoadLOD);
+	void GenerateLOD(int32 GenerateLOD);
 	TArray<AResource*> LoadResources(TArray<FSS_Resource>& SS_Resources);
 	TArray<ANPC*> LoadNPCs(TArray<FSS_NPC>& SS_NPCs);
 	void LoadBuildings();
@@ -221,6 +202,8 @@ public:
 	TArray<int32> FindVerticesInRadius(const FVector Location, float Radius); // Maybe for future needs
 
 	uint8 TerrainChunkIndex(int32 X, int32 Y, int32 HalfResolution);
+
+	UFUNCTION() void OnRep_ServerLOD() { OnServerLOD.Broadcast(); }
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere) bool DebugAllVertices = false;

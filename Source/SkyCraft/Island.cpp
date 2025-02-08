@@ -24,7 +24,7 @@ AIsland::AIsland()
 	bReplicates = true;
 	SetNetUpdateFrequency(1);
 	SetMinNetUpdateFrequency(1);
-	SetNetCullDistanceSquared(485999968256.0f);
+	SetNetCullDistanceSquared(490000000000.0f);
 	NetPriority = 2.0f;
 
 	RootScene = CreateDefaultSubobject<USceneComponent>("RootScene");
@@ -78,16 +78,6 @@ void AIsland::LoadDroppedItems()
 	}
 }
 
-void AIsland::AddDroppedItem(ADroppedItem* DroppedItem)
-{
-	DroppedItems.Add(DroppedItem);
-}
-
-void AIsland::RemoveDroppedItem(ADroppedItem* DroppedItem)
-{
-	DroppedItems.Remove(DroppedItem);
-}
-
 void AIsland::AddConstellation(FSS_Astralon NewConstellation)
 {
 	SS_Astralons.Add(NewConstellation);
@@ -120,7 +110,9 @@ void AIsland::OnConstruction(const FTransform& Transform)
 	if (IsValid(PMC_Main)) PMC_Main->ClearAllMeshSections();
 	ID.TopVertices.Empty();
 	ID.TopVerticesAxis.Empty();
-	StartIsland();
+	Seed.Reset();
+	const FIslandData _ID = Island_GenerateGeometry();
+	Island_GenerateComplete(_ID);
 }
 #endif
 
@@ -161,7 +153,6 @@ void AIsland::SpawnFoliageComponents()
 		FHISM->DA_Foliage = DA_Foliage;
 		FHISM->RegisterComponent();
 	}
-	bFoliageComponentsSpawned = true;
 }
 
 void AIsland::StartIsland()
@@ -169,7 +160,7 @@ void AIsland::StartIsland()
 	if (bIslandArchon)
 	{
 		GSS = GetWorld()->GetGameState<AGSS>();
-		if (HasAuthority())
+		if (HasAuthority() && !DA_IslandBiome)
 		{
 			DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
 		}
@@ -466,6 +457,32 @@ FIslandData AIsland::Island_GenerateGeometry()
 
 void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 {
+#if WITH_EDITOR
+	if (bOnConstruction)
+	{
+		ID = _ID;
+		PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
+		PMC_Main->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
+		for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
+		{
+			CliffsComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
+		}
+		if (DA_IslandBiome)
+		{
+			if (DA_IslandBiome->TopMaterial) PMC_Main->SetMaterial(0, DA_IslandBiome->TopMaterial);
+			if (DA_IslandBiome->BottomMaterial) PMC_Main->SetMaterial(1, DA_IslandBiome->BottomMaterial);
+		}
+		bIDGenerated = true;
+		OnIDGenerated.Broadcast();
+		bFullGenerated = true;
+		bIsGenerating = false;
+		OnFullGenerated.Broadcast();
+		OnIslandFullGenerated.Broadcast(this);
+		IslandDebugs();
+		return;
+	}
+#endif
+	
 	if (!IsValid(this)) return;
 	ID = _ID;
 	bIDGenerated = true;
@@ -478,8 +495,6 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 	
 	if (HasAuthority())
 	{
-		LoadedLowestLOD = FMath::Max(GSS->ChunkRenderRange, DA_IslandBiome->IslandLODs.Num());
-		
 		if (bTerrainChunked)
 		{
 			for (int32 i = 0; i < 4; ++i)
@@ -490,8 +505,25 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 			}
 		}
 		
-		if (ServerLOD == 0) SpawnFoliageComponents();
+		LoadedLowestLOD = FMath::Max(GSS->ChunkRenderRange, DA_IslandBiome->IslandLODs.Num());
+		
+		if (ServerLOD == 0)
+		{
+			SpawnFoliageComponents();
+			LoadBuildings();
+			LoadDroppedItems();
+		}
 		if (bLoadFromSave) LoadIsland();
+		else
+		{
+			for (int32 LoadLowestLOD = LoadedLowestLOD-1; LoadLowestLOD >= ServerLOD; --LoadLowestLOD)
+			{
+				GenerateLOD(LoadLowestLOD);
+			}
+		}
+		if (!LoadLOD(INDEX_NONE)) GenerateLOD(INDEX_NONE); // Load/Generate AlwaysLOD;
+		
+		LoadedLowestLOD = ServerLOD;
 	}
 	
 	PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
@@ -502,10 +534,6 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 		if (DA_IslandBiome->TopMaterial) PMC_Main->SetMaterial(0, DA_IslandBiome->TopMaterial);
 		if (DA_IslandBiome->BottomMaterial) PMC_Main->SetMaterial(1, DA_IslandBiome->BottomMaterial);
 	}
-
-#if WITH_EDITOR
-	IslandDebugs();
-#endif
 	
 	bIslandCanSave = true;
 	bFullGenerated = true;
@@ -516,6 +544,7 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 
 void AIsland::SetServerLOD(int32 NewLOD)
 {
+	// If AsyncGenerate Started and Not finished then Cancel and generate on game thread.
 	if (!bIDGenerated && NewLOD == 0)
 	{
 		if (GetWorld()->GetTimerManager().IsTimerActive(TimerGenerate))
@@ -530,35 +559,23 @@ void AIsland::SetServerLOD(int32 NewLOD)
 		Island_GenerateComplete(_ID);
 	}
 	
-	if (bFullGenerated && !bIsGenerating)
+	if (bFullGenerated && NewLOD < LoadedLowestLOD)
 	{
 		if (NewLOD == 0)
 		{
-			if (!bFoliageComponentsSpawned) SpawnFoliageComponents();
-			if (LoadedLowestLOD != 0)
-			{
-				LoadBuildings();
-				LoadDroppedItems();
-			}
+			SpawnFoliageComponents();
+			LoadBuildings();
+			LoadDroppedItems();
 		}
-	}
 
-	if (NewLOD < LoadedLowestLOD)
-	{
-		if (bLoadFromSave)
+		for (int32 LoadLowestLOD = LoadedLowestLOD-1; LoadLowestLOD >= NewLOD; --LoadLowestLOD)
 		{
-			for (int32 LoadLowestLOD = LoadedLowestLOD-1; LoadLowestLOD >= NewLOD; --LoadLowestLOD)
-			{
-				LoadLOD(LoadLowestLOD);
-			}
+			if (!LoadLOD(LoadLowestLOD)) GenerateLOD(LoadLowestLOD);
 		}
-		else
-		{
-			// generate
-		}
+		
+		LoadedLowestLOD = NewLOD;
 	}
 	
-	LoadedLowestLOD = NewLOD;
 	ServerLOD = NewLOD;
 	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, ServerLOD, this);
 	OnServerLOD.Broadcast();
@@ -729,11 +746,6 @@ void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float Smooth
 	}
 }
 
-void AIsland::OnRep_ServerLOD()
-{
-	OnServerLOD.Broadcast();
-}
-
 void AIsland::OnRep_EditedVertices()
 {
 	if (!bFullGenerated)
@@ -756,6 +768,7 @@ void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	if (!HasAuthority()) return;
 	SaveIsland();
+	DestroyLODs();
 	for (int32 i = Buildings.Num() - 1; i >= 0; --i)
 	{
 		if (IsValid(Buildings[i])) Buildings[i]->Destroy();
@@ -766,9 +779,9 @@ void AIsland::DestroyLODs()
 {
 	for (auto& SpawnedLOD : SpawnedLODs)
 	{
-		for (AResource* Res : SpawnedLOD.Value.Resources)
+		for (auto& Res : SpawnedLOD.Value.Resources)
 		{
-			if (!Res) continue;
+			if (!IsValid(Res)) continue;
 			Res->Destroy();
 		}
 		for (ANPC* NPC : SpawnedLOD.Value.NPCs)
@@ -782,6 +795,15 @@ void AIsland::DestroyLODs()
 
 void AIsland::LoadIsland()
 {
+	// Foliage Loads themselves in FoliageHISM
+
+	// Load/Generate IslandLODs
+	for (int32 LOD = DA_IslandBiome->IslandLODs.Num()-1; LOD >= ServerLOD; --LOD)
+	{
+		if (!LoadLOD(LOD)) GenerateLOD(LOD);
+	}
+
+	// Load Edited Vertices
 	if (bTerrainChunked)
 	{
 		int32 i = 0;
@@ -809,9 +831,9 @@ void AIsland::LoadIsland()
 			}
 		}
 	}
+	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
 	SS_Island.EditedVertices.Empty();
 	SS_Island.TerrainChunks.Empty();
-	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
 }
 
 bool AIsland::LoadLOD(int32 LoadLOD)
@@ -819,18 +841,140 @@ bool AIsland::LoadLOD(int32 LoadLOD)
 	for (auto& IslandLOD : SS_Island.IslandLODs)
 	{
 		if (IslandLOD.LOD != LoadLOD) continue;
-		
+		FEntities& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLOD);
 		TArray<AResource*> LoadedResources = LoadResources(IslandLOD.Resources);
 		TArray<ANPC*> LoadedNPCs = LoadNPCs(IslandLOD.NPCs);
-		
-		FEntities* SpawnedLOD = SpawnedLODs.Find(LoadLOD);
-		if (!SpawnedLOD) SpawnedLOD = &SpawnedLODs.Add(LoadLOD, FEntities{});
-		
-		SpawnedLOD->Resources = LoadedResources;
-		SpawnedLOD->NPCs = LoadedNPCs;
+		SpawnedLOD.Resources = LoadedResources;
+		SpawnedLOD.NPCs = LoadedNPCs;
 		return true;
 	}
 	return false;
+}
+
+void AIsland::GenerateLOD(int32 GenerateLOD)
+{
+	FIslandLOD IslandLOD;
+	if (GenerateLOD == INDEX_NONE) // AlwaysLOD
+	{
+		IslandLOD = DA_IslandBiome->AlwaysLOD;
+	}
+	else // IslandLOD
+	{
+		if (!DA_IslandBiome->IslandLODs.IsValidIndex(GenerateLOD)) return;
+		IslandLOD = DA_IslandBiome->IslandLODs[GenerateLOD];
+	}
+	
+	const float VertexOffset = (Resolution * CellSize) / 2;
+	FEntities& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLOD);
+
+	// Generate Resources
+	for (auto& IslandResource : IslandLOD.Resources)
+	{
+		UDA_Resource* DA_Resource = IslandResource.DA_Resource;
+		if (!DA_Resource) continue;
+		TMap<int32, FVector>& GridMap = ResourcesGridMap.FindOrAdd(DA_Resource);
+		
+		// IslandResource.Probability
+		int32 Attempts = 0;
+		while (Attempts < 30)
+		{
+			// Pick a random triangle
+			const int32 TriangleIndex = Seed.RandRange(0, ID.TopTriangles.Num() / 3 - 1) * 3;
+			const FVector& V0 = ID.TopVertices[ID.TopTriangles[TriangleIndex]];
+			const FVector& V1 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 1]];
+			const FVector& V2 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 2]];
+
+			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
+			
+			// Check if Edge
+			if (IslandResource.DA_Resource->AvoidIslandEdge)
+			{
+				const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / CellSize);
+				const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / CellSize);
+				if (ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
+				{
+					++Attempts;
+					continue;
+				}
+			}
+
+			// Convert to grid axis
+			const int32 GridX = FMath::RoundToInt(RandomPoint.X / DA_Resource->BodyRadius);
+			const int32 GridY = FMath::RoundToInt(RandomPoint.Y / DA_Resource->BodyRadius);
+			
+			// Check SAME TYPE neighbor cells for spacing
+			int32 CheckNeighbours = DA_Resource->SpacingNeighbours + 1;
+			bool bTooClose = false;
+			for (int32 NeighborX = -CheckNeighbours; NeighborX <= CheckNeighbours; ++NeighborX)
+			{
+				for (int32 NeighborY = -CheckNeighbours; NeighborY <= CheckNeighbours; ++NeighborY)
+				{
+					const int32 NeighborKey = HashCombine(GetTypeHash(GridX + NeighborX), GetTypeHash(GridY + NeighborY));
+					if (GridMap.Contains(NeighborKey))
+					{
+						bTooClose = true;
+						break;
+					}
+				}
+				if (bTooClose) break;
+			}
+			if (bTooClose)
+			{
+				++Attempts;
+				continue;
+			}
+			
+			// Check OTHER TYPES neighbor cells for spacing
+			for (auto& ResourceGridMap : ResourcesGridMap)
+			{
+				if (ResourceGridMap.Key == DA_Resource) continue;
+				
+				const int32 InResX = FMath::RoundToInt(RandomPoint.X / ResourceGridMap.Key->BodyRadius);
+				const int32 InResY = FMath::RoundToInt(RandomPoint.Y / ResourceGridMap.Key->BodyRadius);
+
+				for (int32 NeighborX = -1; NeighborX <= 1; ++NeighborX)
+				{
+					for (int32 NeighborY = -1; NeighborY <= 1; ++NeighborY)
+					{
+						const int32 NeighborKey = HashCombine(GetTypeHash(InResX + NeighborX), GetTypeHash(InResY + NeighborY));
+						float AddedDistanceSqr = FMath::Square(DA_Resource->BodyRadius + ResourceGridMap.Key->BodyRadius);
+						if (GridMap.Contains(NeighborKey) && FVector::DistSquared(GridMap[NeighborKey], RandomPoint) < AddedDistanceSqr)
+						{
+							bTooClose = true;
+							break;
+						}
+					}
+					if (bTooClose) break;
+				}
+				if (bTooClose) break;
+			}
+			if (bTooClose)
+			{
+				++Attempts;
+				continue;
+			}
+
+			// todo floor slope
+
+			// Accept candidate
+			FTransform ResTransform(RandomPoint);
+			const int32 GridKey = HashCombine(GetTypeHash(GridX), GetTypeHash(GridY));
+			GridMap.Add(GridKey, RandomPoint);
+			
+			TSubclassOf<AResource> ResourceClass = (DA_Resource->OverrideResourceClass) ? DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+			AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
+			SpawnedRes->DA_Resource = DA_Resource;
+			uint8 ResSize = Seed.RandRange(IslandResource.ResourceSize.Min, IslandResource.ResourceSize.Max);
+			SpawnedRes->ResourceSize = ResSize;
+			// uint8 VarietyNum = GenerateResourcesIn.DA_Resource->Size[ResSize].SM_Variety.Num();
+			// SpawnedRes->SM_Variety = (VarietyNum >= 1) ? _StreamX.RandRange(0, VarietyNum-1) : 0;
+			SpawnedRes->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+			SpawnedRes->FinishSpawning(ResTransform);
+			SpawnedLOD.Resources.Add(SpawnedRes);
+			
+			Attempts = 0;
+		}
+	}
 }
 
 TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
@@ -854,7 +998,7 @@ TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
 		SpawnedRes->Growing = SS_Resource.Growing;
 		SpawnedRes->GrowMarkTime = SS_Resource.GrowMarkTime;
 		SpawnedRes->GrowSavedTime = SS_Resource.GrowSavedTime;
-		SpawnedRes->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
+		SpawnedRes->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		SpawnedRes->FinishSpawning(ResTransform);
 		LoadedResources.Add(SpawnedRes);
 	}
@@ -962,6 +1106,7 @@ void AIsland::SaveIsland()
 TArray<FSS_IslandLOD> AIsland::SaveLODs()
 {
 	TArray<FSS_IslandLOD> SS_IslandLODs;
+	
 	for (const auto& SpawnedLOD : SpawnedLODs)
 	{
 		FSS_IslandLOD SS_IslandLOD;
@@ -971,8 +1116,8 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 		{
 			if (!IsValid(Res)) continue;
 			FSS_Resource SS_Resource;
-			SS_Resource.RelativeLocation = Res->StaticMeshComponent->GetRelativeLocation();
-			SS_Resource.RelativeRotation = Res->StaticMeshComponent->GetRelativeRotation();
+			SS_Resource.RelativeLocation = Res->GetRootComponent()->GetRelativeLocation();
+			SS_Resource.RelativeRotation = Res->GetRootComponent()->GetRelativeRotation();
 			SS_Resource.DA_Resource = Res->DA_Resource;
 			SS_Resource.ResourceSize = Res->ResourceSize;
 			SS_Resource.SM_Variety = Res->SM_Variety;
@@ -993,6 +1138,21 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 		
 		SS_IslandLODs.Add(SS_IslandLOD);
 	}
+	
+	for (auto& IslandLOD : SS_Island.IslandLODs)
+	{
+		bool isSaved = false;
+		for (auto SavedLOD : SS_IslandLODs)
+		{
+			if (IslandLOD.LOD == SavedLOD.LOD)
+			{
+				isSaved = true;
+				break;
+			}
+		}
+		if (!isSaved) SS_IslandLODs.Add(IslandLOD);
+	}
+	
 	return SS_IslandLODs;
 }
 

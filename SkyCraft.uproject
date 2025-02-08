@@ -528,6 +528,10 @@
 		{
 			"Name": "ActorSequence",
 			"Enabled": false
+		},
+		{
+			"Name": "EditorScriptingUtilities",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [

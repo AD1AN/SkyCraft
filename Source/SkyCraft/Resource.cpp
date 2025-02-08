@@ -41,8 +41,8 @@ void AResource::BeginPlay()
 	CurrentSize = DA_Resource->Size[ResourceSize];
 	StaticMeshComponent->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
 	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
-	StaticMeshComponent->LDMaxDrawDistance = CurrentSize.DrawDistance;
-	SetNetCullDistanceSquared(CurrentSize.NetCullDistanceSquared);
+	StaticMeshComponent->SetCullDistance(CurrentSize.CullDistance);
+	SetNetCullDistanceSquared(FMath::Square(CurrentSize.CullDistance));
 	
 	ImplementAssetUserData(DA_Resource->AssetUserData);
 	ImplementAssetUserData(CurrentSize.AssetUserData);

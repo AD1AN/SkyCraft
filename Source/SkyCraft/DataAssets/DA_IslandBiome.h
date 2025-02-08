@@ -23,9 +23,8 @@ USTRUCT(BlueprintType)
 struct FIslandResource
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin="0",UIMax ="1")) float Probability = 1;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) UDA_Resource* DA_Resource;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) int32 MaxSpawnPoints = 1000;
+	// UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(UIMin="0",UIMax ="1")) float Probability = 1;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UDA_Resource> DA_Resource;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) FUint8MinMax ResourceSize;
 };
 
@@ -48,4 +47,5 @@ public:
 	UPROPERTY(EditDefaultsOnly) TArray<TObjectPtr<UStaticMesh>> Cliffs;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<TObjectPtr<UDA_Foliage>> Foliage;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FIslandLOD> IslandLODs;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) FIslandLOD AlwaysLOD;
 };

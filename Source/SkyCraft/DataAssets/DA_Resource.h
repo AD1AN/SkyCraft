@@ -25,6 +25,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<UAssetUserData*> AssetUserData;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FResourceSize> Size;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<UDA_SkyTag*> SkyTags;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) float MaxFloorSlope = 35.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 SpacingNeighbours = 0;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) float BodyRadius = 50.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool AvoidIslandEdge = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(InlineEditConditionToggle)) bool bMaxFloorSlope = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bMaxFloorSlope")) float MaxFloorSlope = 45.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FInteractKeySettings> InteractKeys;
 };

@@ -227,5 +227,6 @@ AActor* UAdianFL::FindRootActor(AActor* StartActor)
 
 FVector UAdianFL::ToLocalSpace(FVector WorldLocation, AActor* ToActor)
 {
+	if (!ToActor) return WorldLocation;
 	return ToActor->GetTransform().InverseTransformPosition(WorldLocation);
 }
