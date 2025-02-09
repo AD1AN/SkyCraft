@@ -116,4 +116,10 @@ public:
 	{
 		if (IsValid(ActorComponent)) ActorComponent->DestroyComponent();
 	}
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static FName GetKeyName(const FKey& Key)
+	{
+		return Key.GetFName();
+	}
 };

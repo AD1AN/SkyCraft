@@ -55,7 +55,7 @@ public:
 	UPROPERTY(EditAnywhere) int32 ShapePoints = 20;
 	UPROPERTY(EditAnywhere) float ShapeRadius = 1000.0f;
 	UPROPERTY(EditAnywhere) int32 Resolution = 150; // Try not using odd numbers
-	UPROPERTY(EditAnywhere) float CellSize = 100.0f;
+	UPROPERTY(EditAnywhere) float CellSize = 400.0f;
 	UPROPERTY(EditAnywhere) float InterpShapePointLength = 1500.0f;
 	UPROPERTY(EditAnywhere) float ScalePerlinNoise1D = 0.25f;
 	UPROPERTY(EditAnywhere) float ScaleRandomShape = 0.5f;

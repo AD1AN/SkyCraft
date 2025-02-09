@@ -71,11 +71,11 @@ class SKYCRAFT_API AIsland : public AActor
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY() USceneComponent* RootScene = nullptr;
-	UPROPERTY() UProceduralMeshComponent* PMC_Main = nullptr;
-	UPROPERTY(BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
-	UPROPERTY() TArray<UInstancedStaticMeshComponent*> CliffsComponents;
-	UPROPERTY() TArray<UFoliageHISM*> FoliageComponents;
+	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene = nullptr;
+	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* PMC_Main = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
+	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> CliffsComponents;
+	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
 	
 	bool bIslandArchon = false;
 	

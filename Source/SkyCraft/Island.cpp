@@ -30,9 +30,10 @@ AIsland::AIsland()
 	RootScene = CreateDefaultSubobject<USceneComponent>("RootScene");
 	SetRootComponent(RootScene);
 	
-	PMC_Main = CreateDefaultSubobject<UProceduralMeshComponent>("PMC_Main");
+	PMC_Main = CreateDefaultSubobject<UProceduralMeshComponent>("ProceduralMeshComponent");
 	PMC_Main->SetupAttachment(RootComponent);
-	PMC_Main->LDMaxDrawDistance = 1000000;
+	PMC_Main->SetCollisionProfileName(TEXT("Island"));
+	PMC_Main->SetCullDistance(900000.0f);
 	
 	AttachSimulatedBodies = CreateDefaultSubobject<USceneComponent>("AttachSimulatedBodies");
 	AttachSimulatedBodies->SetupAttachment(RootComponent);
@@ -132,8 +133,9 @@ void AIsland::SpawnCliffsComponents()
 		
 		UInstancedStaticMeshComponent* Cliff = NewObject<UInstancedStaticMeshComponent>(this);
 		Cliff->SetStaticMesh(StaticMesh);
+		Cliff->SetCollisionProfileName(TEXT("Island"));
 		Cliff->SetupAttachment(RootComponent);
-		Cliff->LDMaxDrawDistance = 1000000;
+		Cliff->SetCullDistances(900000, 900000);
 		Cliff->RegisterComponent();
 		CliffsComponents.Add(Cliff);
 	}

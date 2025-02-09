@@ -40,10 +40,11 @@ ADroppedItem::ADroppedItem()
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	StaticMeshComponent->SetupAttachment(SphereComponent);
 	StaticMeshComponent->SetCollisionProfileName("NoCollision");
-	StaticMeshComponent->LDMaxDrawDistance = 50000.0f;
+	StaticMeshComponent->SetCullDistance(10000.0f);
 
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraComponent"));
 	NiagaraComponent->SetupAttachment(SphereComponent);
+	NiagaraComponent->SetCullDistance(10000.0f);
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> NiagaraSystemAsset(TEXT("/Game/Niagara/NS_DroppedItem.NS_DroppedItem"));
 	if (NiagaraSystemAsset.Succeeded()) NiagaraComponent->SetAsset(NiagaraSystemAsset.Object);
 	
@@ -124,7 +125,7 @@ void ADroppedItem::BeginPlay()
 		FStreamableManager& StreamableManager = UAssetManager::GetStreamableManager();
 		StreamableManager.RequestAsyncLoad(Slot.DA_Item->StaticMesh.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ADroppedItem::OnMeshLoaded));
 	}
-	SphereComponent->SetCollisionProfileName("ItemLoot"); // Prevents StartPickUp() trigger faster BeginPlay()
+	SphereComponent->SetCollisionProfileName("DroppedItem"); // Prevents StartPickUp() trigger faster BeginPlay()
 }
 
 void ADroppedItem::Tick(float DeltaSeconds)

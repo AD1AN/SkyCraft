@@ -43,9 +43,6 @@ void AGSS::BeginPlay()
 {
 	Super::BeginPlay();
 	GIS = GetWorld()->GetGameInstance<UGIS>();
-	if (!HasAuthority()) return;
-	GMS = GetWorld()->GetAuthGameMode<AGMS>();
-	GMS->GSS = this;
 }
 
 void AGSS::SetHostPlayer(APSS* Host)
