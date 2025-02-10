@@ -769,7 +769,7 @@ void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	if (!HasAuthority()) return;
-	SaveIsland();
+	if (!bIslandArchon) SaveIsland();
 	DestroyLODs();
 	for (int32 i = Buildings.Num() - 1; i >= 0; --i)
 	{
