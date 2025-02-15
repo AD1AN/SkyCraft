@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/ProgressBar.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/Coords.h"

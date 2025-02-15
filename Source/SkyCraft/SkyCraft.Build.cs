@@ -18,7 +18,9 @@ public class SkyCraft : ModuleRules
 			"NetCore",
 			"UMG",
 			"AdvancedSessions",
-			"ProceduralMeshComponent"
+			"ProceduralMeshComponent",
+			"Slate",
+			"SlateCore"
 		});
 		
 		if (Target.bBuildEditor)

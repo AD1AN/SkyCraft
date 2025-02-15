@@ -19,6 +19,7 @@ ABM::ABM()
 	SetNetUpdateFrequency(1);
 	SetMinNetUpdateFrequency(1);
 	NetPriority = 0.75;
+	SetNetCullDistanceSquared(900000000);
 	
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	SetRootComponent(StaticMeshComponent);

@@ -39,18 +39,6 @@ AIsland::AIsland()
 	AttachSimulatedBodies->SetupAttachment(RootComponent);
 }
 
-void AIsland::SetIslandSize(float NewSize)
-{
-	IslandSize = NewSize;
-	OnRep_IslandSize();
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, IslandSize, this);
-}
-
-void AIsland::OnRep_IslandSize()
-{
-	OnIslandSize.Broadcast();
-}
-
 TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
 {
 	TArray<FSS_DroppedItem> SS_DroppedItems;
@@ -112,16 +100,16 @@ void AIsland::OnConstruction(const FTransform& Transform)
 	ID.TopVertices.Empty();
 	ID.TopVerticesAxis.Empty();
 	Seed.Reset();
-	const FIslandData _ID = Island_GenerateGeometry();
-	Island_GenerateComplete(_ID);
+	const FIslandData _ID = GenerateIsland();
+	InitialGenerateComplete(_ID);
 }
 #endif
 
 void AIsland::BeginPlay()
 {
 	Super::BeginPlay();
-	Seed.Reset();
-	StartIsland();
+	// Read GMS about BeginPlay() order.
+	if (!bIslandArchon) StartIsland();
 }
 
 void AIsland::SpawnCliffsComponents()
@@ -147,11 +135,12 @@ void AIsland::SpawnFoliageComponents()
 	if (!DA_IslandBiome) return;
 	for(auto& DA_Foliage : DA_IslandBiome->Foliage)
 	{
+		if (!DA_Foliage) continue;
 		if (!DA_Foliage->StaticMesh) continue;
 	
 		UFoliageHISM* FHISM = NewObject<UFoliageHISM>(this);
-		FHISM->SetupAttachment(PMC_Main);
 		FHISM->SetStaticMesh(DA_Foliage->StaticMesh);
+		FHISM->SetupAttachment(PMC_Main);
 		FHISM->DA_Foliage = DA_Foliage;
 		FHISM->RegisterComponent();
 	}
@@ -159,6 +148,8 @@ void AIsland::SpawnFoliageComponents()
 
 void AIsland::StartIsland()
 {
+	Seed.Reset();
+	bIsGenerating = true;
 	if (bIslandArchon)
 	{
 		GSS = GetWorld()->GetGameState<AGSS>();
@@ -167,20 +158,15 @@ void AIsland::StartIsland()
 			DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
 		}
 	}
-	
-	Seed.Reset();
-	
 	SpawnCliffsComponents();
-	
 	if (ServerLOD > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(TimerGenerate, this, &AIsland::StartAsyncGenerate, FMath::FRandRange(0.025f, 1.125f));
-		// StartAsyncGenerate();
 	}
 	else
 	{
-		const FIslandData _ID = Island_GenerateGeometry();
-		Island_GenerateComplete(_ID);
+		const FIslandData _ID = GenerateIsland();
+		InitialGenerateComplete(_ID);
 	}
 }
 
@@ -188,26 +174,32 @@ void AIsland::StartAsyncGenerate()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		FIslandData ID = Island_GenerateGeometry();
+		FIslandData ID = GenerateIsland();
 
 		AsyncTask(ENamedThreads::GameThread, [this, ID]
 		{
 			if (this && this->IsValidLowLevel())
 			{
 				if (AsyncGenerateCanceled) return;
-				Island_GenerateComplete(ID);
+				InitialGenerateComplete(ID);
 			}
 		});
 	});
 }
 
-FIslandData AIsland::Island_GenerateGeometry()
+FIslandData AIsland::GenerateIsland()
 {
+	Seed.Reset();
 	FIslandData _ID;
 	FVector2D FromZeroToOne = FVector2D(0, 1);
 	
-	// Randomize parameters by Seed and IslandSize
-	if (bRandomIsland)
+	// Scale parameters by IslandSize
+	if (bIslandArchon)
+	{
+		ShapeRadius = 1000 + (IslandSize * 100) * 100;
+		InterpShapePointLength = FMath::GetMappedRangeValueClamped(FVector2D(0,1), FVector2D(275,1050), IslandSize);
+	}
+	else
 	{
 		// Random from seed
 		ShapePoints = Seed.FRandRange(15, 20 * (IslandSize + 1));
@@ -218,13 +210,10 @@ FIslandData AIsland::Island_GenerateGeometry()
 		// Random from IslandSize
 		ShapeRadius = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(2000,10000), IslandSize);
 		Resolution = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(50,320), IslandSize);
-		InterpShapePointLength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(500,1100), IslandSize);
+		InterpShapePointLength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(300,1100), IslandSize);
 		SmallNoiseStrength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(15,100), IslandSize);
 		BigNoiseStrength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(20,200), IslandSize);
 	}
-
-	// Is Ground Chunked
-	if (Resolution > 100) bTerrainChunked = true;
 	
 	// Generate KeyShapePoints
 	const float Angle = 6.2832f / ShapePoints;
@@ -262,7 +251,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 	}
 
 	// Generate Cliff instances on AllShapePoints
-	float CliffScale = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(0.5f, 1.0f), IslandSize);
+	float CliffScale = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(0.25f, 1.0f), IslandSize);
 	for (int32 i = 0; i < _ID.AllShapePoints.Num(); ++i)
 	{
 		const FVector2D& CurrentPoint = _ID.AllShapePoints[i];
@@ -275,8 +264,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 		// Convert direction to rotation
 		FRotator InstanceRotation(0.0f, FMath::Atan2(ForwardDir.Y, ForwardDir.X) * 180.0f / PI, 0.0f);
 		FVector InstanceLocation(CurrentPoint, 0.0f);
-		FRandomStream InstanceSeed = Seed.GetInitialSeed() + (i * 100);
-		FVector InstanceScale(1, 1, InstanceSeed.FRandRange(0.8f, 1.5f));
+		FVector InstanceScale(1, 1, Seed.FRandRange(0.8f, 1.5f));
 		
 		if (!CliffsComponents.IsEmpty())
 		{
@@ -300,7 +288,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 				_ID.TopVerticesAxis.Add(FVector2D(X, Y));
 				FVertexData VertexData;
 				VertexData.VertexIndex = CurrentVertexIndex++;
-				if (bTerrainChunked) VertexData.TerrainChunkIndex = TerrainChunkIndex(X,Y,HalfResolution);
+				VertexData.TerrainChunkIndex = TerrainChunkIndex(X,Y,HalfResolution);
 				_ID.TopVerticesMap.Add(X * Resolution + Y, VertexData);
 				_ID.TopVertices.Add(FVector(Vertex, 0));
 				_ID.TopUVs.Add(FVector2D(Vertex.X / (Resolution - 1), Vertex.Y / (Resolution - 1)));
@@ -325,9 +313,15 @@ FIslandData AIsland::Island_GenerateGeometry()
 	}
 
 	// Detect EdgeTopVertices
+	int32 EdgeThickness = 5;
+	if (ShapeRadius < 1500) EdgeThickness = 2;
+	else if (ShapeRadius >= 1500) EdgeThickness = 3;
+	else if (ShapeRadius >= 2500) EdgeThickness = 4;
+	else if (ShapeRadius >= 5000) EdgeThickness = 5;
+	else if (ShapeRadius >= 8000) EdgeThickness = 6;
 	for (int32 i = 0; i < _ID.TopVertices.Num(); ++i)
 	{
-		if (IsEdgeVertex(_ID.TopVertices[i], _ID.TopVerticesMap, 5))
+		if (IsEdgeVertex(_ID.TopVertices[i], _ID.TopVerticesMap, EdgeThickness))
 		{
 			_ID.EdgeTopVerticesMap.Add(_ID.TopVerticesAxis[i].X * Resolution + _ID.TopVerticesAxis[i].Y);
 		}
@@ -384,7 +378,9 @@ FIslandData AIsland::Island_GenerateGeometry()
 
 	// Interpolate bottom loops with Randomization
 	const int32 BottomVerticesNum = _ID.BottomVertices.Num();
-	const float BottomVertexZ = -ShapeRadius * 2.0f + Seed.FRandRange(0, ShapeRadius);
+	float BottomVertexZ;
+	if (bIslandArchon) BottomVertexZ = -ShapeRadius * 1.3f;
+	else BottomVertexZ = -ShapeRadius * 2.0f + Seed.FRandRange(0, ShapeRadius);
 	for (int32 LoopIndex = 1; LoopIndex <= NumLoops; ++LoopIndex)
 	{
 	    float InterpolationFactor = static_cast<float>(LoopIndex) / (NumLoops + 1);
@@ -403,7 +399,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 	    }
 	}
 
-	// Add Bottom Vertex (at the very bottom)
+	// Add Bottom Vertex
 	const int32 BottomVertexIndex = _ID.BottomVertices.Add(FVector(0, 0, BottomVertexZ));
 
 	// Create BottomTriangles between loops
@@ -457,7 +453,7 @@ FIslandData AIsland::Island_GenerateGeometry()
 	return _ID;
 }
 
-void AIsland::Island_GenerateComplete(const FIslandData& _ID)
+void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 {
 #if WITH_EDITOR
 	if (bOnConstruction)
@@ -497,17 +493,14 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 	
 	if (HasAuthority())
 	{
-		if (bTerrainChunked)
-		{
-			for (int32 i = 0; i < 4; ++i)
-			{
-				UTerrainChunk* TerrainChunk = NewObject<UTerrainChunk>(this);
-				TerrainChunk->RegisterComponent();
-				TerrainChunks.Add(TerrainChunk);
-			}
-		}
-		
 		LoadedLowestLOD = FMath::Max(GSS->ChunkRenderRange, DA_IslandBiome->IslandLODs.Num());
+		
+		for (int32 i = 0; i < 4; ++i)
+		{
+			UTerrainChunk* TerrainChunk = NewObject<UTerrainChunk>(this);
+			TerrainChunk->RegisterComponent();
+			TerrainChunks.Add(TerrainChunk);
+		}
 		
 		if (ServerLOD == 0)
 		{
@@ -544,21 +537,19 @@ void AIsland::Island_GenerateComplete(const FIslandData& _ID)
 	OnIslandFullGenerated.Broadcast(this);
 }
 
+void AIsland::OnRep_IslandSize()
+{
+	OnIslandSize.Broadcast();
+}
+
 void AIsland::SetServerLOD(int32 NewLOD)
 {
 	// If AsyncGenerate Started and Not finished then Cancel and generate on game thread.
 	if (!bIDGenerated && NewLOD == 0)
 	{
-		if (GetWorld()->GetTimerManager().IsTimerActive(TimerGenerate))
-		{
-			GetWorld()->GetTimerManager().ClearTimer(TimerGenerate);
-		}
-		else
-		{
-			AsyncGenerateCanceled = true;
-		}
-		const FIslandData _ID = Island_GenerateGeometry();
-		Island_GenerateComplete(_ID);
+		CancelAsyncGenerate();
+		const FIslandData _ID = GenerateIsland();
+		InitialGenerateComplete(_ID);
 	}
 	
 	if (bFullGenerated && NewLOD < LoadedLowestLOD)
@@ -632,12 +623,16 @@ void AIsland::TerrainSmooth(FVector_NetQuantize Location, float Radius, float Sm
         FEditedVertex EditedVertex;
         EditedVertex.VertexIndex = VertexIndex;
         EditedVertex.SetHeight(NewHeights[i], MinTerrainHeight, MaxTerrainHeight);
-        EditedVertices.Add(EditedVertex);
+    	if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
+    	{
+    		if (TerrainChunks.IsValidIndex(VertexData->TerrainChunkIndex) && TerrainChunks[VertexData->TerrainChunkIndex])
+    		{
+    			TerrainChunks[VertexData->TerrainChunkIndex]->EditedVertices.Add(EditedVertex);
+    			MARK_PROPERTY_DIRTY_FROM_NAME(UTerrainChunk, EditedVertices, TerrainChunks[VertexData->TerrainChunkIndex]);
+    		}
+    	}
     	++i;
     }
-    
-    // Mark the property dirty (for replication/editor) then recalc normals and update the mesh.
-    MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, EditedVertices, this);
     CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
     PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
 }
@@ -660,21 +655,13 @@ void AIsland::TerrainEdit(FVector_NetQuantize Location, float Radius, float Stre
 		EditedVertex.SetHeight(ID.TopVertices[VertexIndex].Z + FalloffStrength, MinTerrainHeight, MaxTerrainHeight);
 		ID.TopVertices[VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
 		EditedVertex.VertexIndex = VertexIndex;
-		if (bTerrainChunked)
+		if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
 		{
-			if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
+			if (TerrainChunks.IsValidIndex(VertexData->TerrainChunkIndex) && TerrainChunks[VertexData->TerrainChunkIndex])
 			{
-				if (TerrainChunks.IsValidIndex(VertexData->TerrainChunkIndex) && TerrainChunks[VertexData->TerrainChunkIndex])
-				{
-					TerrainChunks[VertexData->TerrainChunkIndex]->EditedVertices.Add(EditedVertex);
-					MARK_PROPERTY_DIRTY_FROM_NAME(UTerrainChunk, EditedVertices, TerrainChunks[VertexData->TerrainChunkIndex]);
-				}
+				TerrainChunks[VertexData->TerrainChunkIndex]->EditedVertices.Add(EditedVertex);
+				MARK_PROPERTY_DIRTY_FROM_NAME(UTerrainChunk, EditedVertices, TerrainChunks[VertexData->TerrainChunkIndex]);
 			}
-		}
-		else
-		{
-			EditedVertices.Add(EditedVertex);
-			MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, EditedVertices, this);
 		}
 	}
 	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
@@ -743,26 +730,16 @@ void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float Smooth
 		FEditedVertex EditedVertex;
 		EditedVertex.VertexIndex = VertexIndex;
 		EditedVertex.SetHeight(NewHeights[i], MinTerrainHeight, MaxTerrainHeight);
-		EditedVertices.Add(EditedVertex);
+		if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
+		{
+			if (TerrainChunks.IsValidIndex(VertexData->TerrainChunkIndex) && TerrainChunks[VertexData->TerrainChunkIndex])
+			{
+				TerrainChunks[VertexData->TerrainChunkIndex]->EditedVertices.Add(EditedVertex);
+				MARK_PROPERTY_DIRTY_FROM_NAME(UTerrainChunk, EditedVertices, TerrainChunks[VertexData->TerrainChunkIndex]);
+			}
+		}
 		++i;
 	}
-}
-
-void AIsland::OnRep_EditedVertices()
-{
-	if (!bFullGenerated)
-	{
-		OnFullGenerated.AddDynamic(this, &AIsland::OnRep_EditedVertices);
-		return;
-	}
-	
-	for (FEditedVertex& EditedVertex : EditedVertices)
-	{
-		if (!ID.TopVertices.IsValidIndex(EditedVertex.VertexIndex)) continue;
-		ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
-	}
-	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
-	PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
 }
 
 void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -805,33 +782,19 @@ void AIsland::LoadIsland()
 		if (!LoadLOD(LOD)) GenerateLOD(LOD);
 	}
 
-	// Load Edited Vertices
-	if (bTerrainChunked)
+	// Load EditedVertices
+	int32 i = 0;
+	for (FSS_TerrainChunk& SS_TerrainChunk : SS_Island.TerrainChunks)
 	{
-		int32 i = 0;
-		for (FSS_TerrainChunk& SS_TerrainChunk : SS_Island.TerrainChunks)
+		if (!TerrainChunks.IsValidIndex(i)) continue;
+		if (!IsValid(TerrainChunks[i])) continue;
+		TerrainChunks[i]->EditedVertices = SS_TerrainChunk.EditedVertices;
+		if (TerrainChunks[i]->EditedVertices.IsEmpty()) continue;
+		for (const FEditedVertex& EditedVertex : TerrainChunks[i]->EditedVertices)
 		{
-			if (!TerrainChunks.IsValidIndex(i)) continue;
-			if (!IsValid(TerrainChunks[i])) continue;
-			TerrainChunks[i]->EditedVertices = SS_TerrainChunk.EditedVertices;
-			if (TerrainChunks[i]->EditedVertices.IsEmpty()) continue;
-			for (const FEditedVertex& EditedVertex : TerrainChunks[i]->EditedVertices)
-			{
-				ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
-			}
-			++i;
+			ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
 		}
-	}
-	else
-	{
-		EditedVertices = SS_Island.EditedVertices;
-		if (!EditedVertices.IsEmpty())
-		{
-			for (const FEditedVertex& EditedVertex : EditedVertices)
-			{
-				ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
-			}
-		}
+		++i;
 	}
 	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
 	SS_Island.EditedVertices.Empty();
@@ -1087,17 +1050,10 @@ void AIsland::SaveIsland()
 	SS_Island.DroppedItems = SS_DroppedItems;
 	SS_Island.Foliage = SS_Foliage;
 	
-	if (bTerrainChunked)
+	for (auto& TerrainChunk : TerrainChunks)
 	{
-		for (auto& TerrainChunk : TerrainChunks)
-		{
-			if (!TerrainChunk) continue;
-			SS_Island.TerrainChunks.Add(FSS_TerrainChunk(TerrainChunk->EditedVertices));
-		}
-	}
-	else
-	{
-		SS_Island.EditedVertices = EditedVertices;
+		if (!TerrainChunk) continue;
+		SS_Island.TerrainChunks.Add(FSS_TerrainChunk(TerrainChunk->EditedVertices));
 	}
 	
 	if (bIslandArchon) return; // Do not save IslandArchon in SavedIslands.
@@ -1194,6 +1150,18 @@ TArray<FSS_Foliage> AIsland::SaveFoliage()
 		SS_Foliage.Add(SavedFoliage);
 	}
 	return SS_Foliage;
+}
+
+void AIsland::CancelAsyncGenerate()
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimerGenerate))
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TimerGenerate);
+	}
+	else
+	{
+		AsyncGenerateCanceled = true;
+	}
 }
 
 bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const
@@ -1440,5 +1408,4 @@ void AIsland::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, ServerLOD, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, SS_Astralons, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, IslandSize, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(AIsland, EditedVertices, Params);
 }

@@ -38,8 +38,12 @@ void APlayerNormal::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, 
 			NewBase = Cast<AIsland>(BaseOwner)->PMC_Main;
 		}
 	}
-
+	UPrimitiveComponent* OldBase = BasedMovement.MovementBase;
 	Super::SetBase(NewBase, BoneName, bNotifyActor);
+	if (OldBase != NewBase)
+	{
+		OnNewBase.Broadcast();
+	}
 }
 
 void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -16,12 +16,20 @@ class SKYCRAFT_API AIslandArchon : public AIsland
 
 public:
 	AIslandArchon();
+
+	virtual void BeginPlay() override;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCrystal); UPROPERTY(BlueprintAssignable) FOnCrystal OnCrystal;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, ReplicatedUsing=OnRep_Crystal, meta=(ExposeOnSpawn)) bool Crystal = true;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetCrystal(bool newCrystal);
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void OnRep_Crystal();
+	UFUNCTION(BlueprintCallable) void SetIslandSize(float NewSize);
+	virtual void OnRep_IslandSize() override;
+	void ResizeGenerateComplete(const FIslandData& _ID);
+	float PreviousIslandSize;
+	UFUNCTION(BlueprintImplementableEvent) void OnIslandShrink();
+	void DestroyIslandGeometry();
 	
 	UPROPERTY(Replicated, BlueprintReadOnly) APSS* ArchonPSS = nullptr;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetArchonPSS(APSS* NewArchonPSS);

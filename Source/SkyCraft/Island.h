@@ -8,7 +8,6 @@
 #include "Structs/SS_Island.h"
 #include "ProceduralMeshComponent.h"
 #include "Structs/Coords.h"
-#include "Structs/EditedVertex.h"
 #include "Island.generated.h"
 
 class UDA_IslandBiome;
@@ -44,22 +43,24 @@ struct FVertexData
 	uint8 TerrainChunkIndex;
 };
 
+USTRUCT(BlueprintType)
 struct FIslandData
 {
+	GENERATED_BODY()
 	TArray<FVector2D> KeyShapePoints;
 	TArray<FVector2D> InterpShapePoints;
 	TArray<FVector2D> AllShapePoints;
 	TMap<int32, FCliffData> GeneratedCliffs;
 	TArray<FVector2D> TopVerticesAxis; // Raw Axis = (X,Y)
 	TMap<int32, FVertexData> TopVerticesMap; // VertexKey: Combined Axis = (X * Resolution + Y)
-	TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
+	UPROPERTY(BlueprintReadOnly) TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
 	TMap<int32, int32> EdgeTopVerticesMap; // VertexKey
 	TMap<int32, int32> DeadVerticesMap; // VertexKey. For Island Archon's Crystal and maybe for future needs.
 	TArray<int32> TopTriangles;
 	TArray<FVector2D> TopUVs;
 	TArray<FVector> TopNormals;
 	TArray<FProcMeshTangent> TopTangents;
-	TArray<FVector> BottomVertices;
+	UPROPERTY(BlueprintReadOnly) TArray<FVector> BottomVertices;
 	TArray<int32> BottomTriangles;
 	TArray<FVector2D> BottomUVs;
 	TArray<FVector> BottomNormals;
@@ -90,13 +91,10 @@ public:
 	UPROPERTY(VisibleInstanceOnly) bool AsyncGenerateCanceled = false;
 	FThreadSafeBool bIsGenerating = false;
 
-	FIslandData ID;
-	
-	UPROPERTY(EditAnywhere) bool bOnConstruction = false;
-	UPROPERTY(EditAnywhere) bool bRandomIsland = true;
+	UPROPERTY(BlueprintReadOnly) FIslandData ID;
 	
 	UPROPERTY(EditAnywhere) int32 ShapePoints = 20;
-	UPROPERTY(EditAnywhere) float ShapeRadius = 1000.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) float ShapeRadius = 1000.0f;
 	UPROPERTY(EditAnywhere) int32 Resolution = 150; // Try not using odd numbers
 	UPROPERTY(EditAnywhere) float CellSize = 100.0f;
 	UPROPERTY(EditAnywhere) float InterpShapePointLength = 1500.0f;
@@ -117,13 +115,11 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
 	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
 
-	UPROPERTY(Replicated, VisibleInstanceOnly) FRandomStream Seed = 0;
+	UPROPERTY(Replicated, VisibleInstanceOnly) FRandomStream Seed;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_IslandSize, BlueprintReadOnly, EditAnywhere, meta=(ExposeOnSpawn))
-	float IslandSize = 0.5f; // 0 = is small. 1 = is biggest.
-	
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIslandSize(float NewSize);
-	UFUNCTION() void OnRep_IslandSize();
+	UPROPERTY(ReplicatedUsing=OnRep_IslandSize, BlueprintReadWrite, EditAnywhere, meta=(ExposeOnSpawn))
+	float IslandSize = 0.5f; // 0 = smallest. 1 = biggest.
+	UFUNCTION() virtual void OnRep_IslandSize();
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn)) bool bLoadFromSave = false;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn)) FSS_Island SS_Island;
@@ -155,11 +151,7 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandFullGenerated, AIsland*, Island);
 	UPROPERTY(BlueprintAssignable) FOnIslandFullGenerated OnIslandFullGenerated;
 	
-	// EditedVertices TerrainChunk replication. If resolution > 100 = then true.
-	UPROPERTY(VisibleInstanceOnly) bool bTerrainChunked = false;
 	UPROPERTY(VisibleInstanceOnly) TArray<UTerrainChunk*> TerrainChunks;
-	UPROPERTY(ReplicatedUsing=OnRep_EditedVertices) TArray<FEditedVertex> EditedVertices;
-	UFUNCTION() void OnRep_EditedVertices();
 	UPROPERTY(EditAnywhere) float MinTerrainHeight = -1000;
 	UPROPERTY(EditAnywhere) float MaxTerrainHeight = 3000;
 	
@@ -180,11 +172,12 @@ public:
 	TArray<FSS_Foliage> SaveFoliage();
 	
 	void SpawnCliffsComponents();
+	void SpawnFoliageComponents();
 	void StartIsland();
 	void StartAsyncGenerate();
-	FIslandData Island_GenerateGeometry();
-	void Island_GenerateComplete(const FIslandData& _ID);
-	void SpawnFoliageComponents();
+	void CancelAsyncGenerate();
+	FIslandData GenerateIsland();
+	void InitialGenerateComplete(const FIslandData& _ID);
 
 	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const;
 	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
@@ -206,6 +199,7 @@ public:
 	UFUNCTION() void OnRep_ServerLOD() { OnServerLOD.Broadcast(); }
 
 #if WITH_EDITORONLY_DATA
+	UPROPERTY(EditAnywhere) bool bOnConstruction = false;
 	UPROPERTY(EditAnywhere) bool DebugAllVertices = false;
 	UPROPERTY(EditAnywhere) bool DebugEdgeVertices = false;
 	UPROPERTY(EditAnywhere) bool DebugKeyShapePoints = false;
