@@ -20,7 +20,8 @@ public class SkyCraft : ModuleRules
 			"AdvancedSessions",
 			"ProceduralMeshComponent",
 			"Slate",
-			"SlateCore"
+			"SlateCore",
+			"NavigationSystem"
 		});
 		
 		if (Target.bBuildEditor)

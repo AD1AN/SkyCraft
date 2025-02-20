@@ -90,13 +90,8 @@ void UHealthSystem::AuthApplyDamage(const FApplyDamageIn In)
 	AActor* RootActor = UAdianFL::GetRootActor(GetOwner());
 	FVector HitLocation = In.HitLocation;
 	if (IsValid(RootActor)) HitLocation = RootActor->GetTransform().InverseTransformPosition(HitLocation);
-	
-	if (!In.DamageDataAsset) // DamageDataAsset SHOULD BE VALID!
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("AuthApplyDamage: DamageDataAsset Empty! THIS SHOULD NOT HAPPEN!"));
-		if (In.bShowDamageNumbers) Multicast_OnZeroDamage(RootActor, HitLocation);
-		return;
-	}
+
+	ensureAlways(In.DamageDataAsset);
 	
 	int32 _MultipliedDamage = In.BaseDamage;
 	if (bInclusiveDamageOnly)

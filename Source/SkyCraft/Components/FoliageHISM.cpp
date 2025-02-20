@@ -29,7 +29,7 @@ void UFoliageHISM::StartComponent()
 {
 	SetCastShadow(false);
 	SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	LDMaxDrawDistance = DA_Foliage->DrawDistance;
+	SetCullDistance(DA_Foliage->DrawDistance);
 	InstanceStartCullDistance = DA_Foliage->CullingDistance;
 	InstanceEndCullDistance = DA_Foliage->CullingDistance;
 	WorldPositionOffsetDisableDistance = DA_Foliage->WPO_DisableDistance;

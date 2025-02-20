@@ -2,7 +2,12 @@
 
 #include "BM.h"
 
+#include "AdianFL.h"
+#include "DroppedItem.h"
+#include "GSS.h"
+#include "Island.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Components/Inventory.h"
 #include "DataAssets/DA_Building.h"
 #include "Kismet/GameplayStatics.h"
 #include "SkyCraft/Components/HealthSystem.h"
@@ -72,6 +77,139 @@ void ABM::DismantledEffects_Implementation()
 	PlayEffects(false);
 }
 
+void ABM::Dismantle(UInventory* CauserInventory)
+{
+	TArray<ABM*> FlaggedDismantle;
+	TArray<ABM*> CheckedDepends;
+	for (const auto& Support : Supports)
+	{
+		if (!IsValid(Support)) continue;
+		if (FlaggedDismantle.Contains(Support)) continue;
+		CheckedDepends.Empty();
+		CheckedDepends.Add(this);
+		Support->Supports.Remove(this);
+		Support->Depends.Remove(this);
+		if (Support->IsSupported(CheckedDepends))
+		{
+			Support->UpdateGrounded(Support->LowestGrounded(), FlaggedDismantle);
+		}
+		else
+		{
+			Support->RecursiveDismantle(FlaggedDismantle);
+		}
+	}
+
+	for (const auto& Depend : Depends)
+	{
+		if (!IsValid(Depend)) continue;
+		Depend->Supports.Remove(this);
+	}
+
+	FlaggedDismantle.Add(this);
+
+	for (const auto& DismantleBM : FlaggedDismantle)
+	{
+		if (!IsValid(DismantleBM)) continue;
+		ensureAlways(DismantleBM->DA_Building);
+		if (DismantleBM->DA_Building)
+		{
+			for (const auto& Item : DismantleBM->DA_Building->RequiredItems)
+			{
+				if (IsValid(CauserInventory)) CauserInventory->InsertSlot(Item);
+				else
+				{
+					FTransform SpawnTransform;
+					ADroppedItem* DroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
+					AActor* RootActor = UAdianFL::GetRootActor(DismantleBM);
+					AIsland* Island = Cast<AIsland>(RootActor);
+					if (IsValid(Island))
+					{
+						DroppedItem->AttachedToIsland = Island;
+						SpawnTransform.SetLocation(Island->GetTransform().InverseTransformPosition(DismantleBM->GetActorLocation()));
+					}
+					else
+					{
+						SpawnTransform.SetLocation(DismantleBM->GetActorLocation() + FVector(0,0,10));
+					}
+					DroppedItem->DropDirectionType = EDropDirectionType::RandomDirection;
+					DroppedItem->Slot = Item;
+					DroppedItem->FinishSpawning(SpawnTransform);
+				}
+			}
+		}
+		DismantleBM->Multicast_Dismantle();
+		DismantleBM->Destroy();
+	}
+}
+
+void ABM::RecursiveDismantle(TArray<ABM*>& FlaggedDismantle)
+{
+	FlaggedDismantle.Add(this);
+	TArray<ABM*> CheckedDepends;
+	for (const auto& Support : Supports)
+	{
+		if (!IsValid(Support)) continue;
+		if (!FlaggedDismantle.Contains(Support))
+		{
+			CheckedDepends.Empty();
+			Support->Depends.Remove(this);
+			if (!Support->IsSupported(CheckedDepends))
+			{
+				Support->RecursiveDismantle(FlaggedDismantle);
+			}
+		}
+	}
+}
+
+void ABM::UpdateGrounded(uint8 NewGrounded, TArray<ABM*>& FlaggedDismantle)
+{
+	AuthSetGrounded(NewGrounded);
+	AGSS* GSS = GetWorld()->GetGameState<AGSS>();
+	check(GSS);
+	if (!GSS->BuildingInfiniteHeight && NewGrounded > GSS->GroundedMax)
+	{
+		RecursiveDismantle(FlaggedDismantle);
+	}
+	else
+	{
+		for (const auto& Support: Supports)
+		{
+			if (!IsValid(Support)) continue;
+			const uint8 LowestSupport = Support->LowestGrounded();
+			if (LowestSupport != Support->Grounded)
+			{
+				Support->UpdateGrounded(LowestSupport, FlaggedDismantle);
+			}
+		}
+	}
+}
+
+bool ABM::IsSupported(TArray<ABM*>& CheckedDepends)
+{
+	if (Grounded == 0) return true;
+	CheckedDepends.Add(this);
+	for (const auto& Depend : Depends)
+	{
+		if (!IsValid(Depend)) continue;
+		if (CheckedDepends.Contains(Depend)) continue;
+		if (Depend->Grounded == 0) return true;
+		if (Depend->IsSupported(CheckedDepends)) return true;
+	}
+	return false;
+}
+
+uint8 ABM::LowestGrounded()
+{
+	uint8 LowestGrounded = 255;
+	for (const auto& Depend : Depends)
+	{
+		if (Depend->Grounded+1 < LowestGrounded)
+		{
+			LowestGrounded = Depend->Grounded+1;
+		}
+	}
+	return LowestGrounded;
+}
 
 TArray<int32> ABM::ConvertToIDs(TArray<ABM*>& Buildings)
 {
@@ -86,11 +224,8 @@ TArray<int32> ABM::ConvertToIDs(TArray<ABM*>& Buildings)
 
 void ABM::PlayEffects(bool Builded)
 {
-	if (!DA_Building)
-	{
-		GEngine->AddOnScreenDebugMessage(-1,555.0f,FColor::Red,TEXT("BM doesn't contain DA_Building!"));
-		return;
-	}
+	ensureAlways(DA_Building);
+	if (!DA_Building) return;
 
 	UNiagaraSystem* PlayNiagara = nullptr;
 	USoundBase* PlaySound = nullptr;

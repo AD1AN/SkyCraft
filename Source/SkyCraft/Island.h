@@ -10,6 +10,7 @@
 #include "Structs/Coords.h"
 #include "Island.generated.h"
 
+class ANavMeshBoundsVolume;
 class UDA_IslandBiome;
 class AChunkIsland;
 class UTerrainChunk;
@@ -154,7 +155,8 @@ public:
 	UPROPERTY(VisibleInstanceOnly) TArray<UTerrainChunk*> TerrainChunks;
 	UPROPERTY(EditAnywhere) float MinTerrainHeight = -1000;
 	UPROPERTY(EditAnywhere) float MaxTerrainHeight = 3000;
-	
+
+	UPROPERTY(BlueprintReadWrite) bool IslandStarted = false;
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	UFUNCTION(BlueprintCallable) void DestroyLODs();
@@ -173,7 +175,7 @@ public:
 	
 	void SpawnCliffsComponents();
 	void SpawnFoliageComponents();
-	void StartIsland();
+	virtual void StartIsland();
 	void StartAsyncGenerate();
 	void CancelAsyncGenerate();
 	FIslandData GenerateIsland();
@@ -211,6 +213,9 @@ public:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	void IslandDebugs();
 #endif
+
+protected:
+	UPROPERTY() ANavMeshBoundsVolume* CurrentNMBV = nullptr;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

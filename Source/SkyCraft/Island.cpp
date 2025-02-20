@@ -7,12 +7,16 @@
 #include "DroppedItem.h"
 #include "GMS.h"
 #include "GSS.h"
+#include "NavigationSystem.h"
 #include "NPC.h"
+#include "AI/NavigationSystemBase.h"
+#include "Builders/CubeBuilder.h"
 #include "Components/HealthSystem.h"
 #include "Components/TerrainChunk.h"
 #include "DataAssets/DA_Foliage.h"
 #include "DataAssets/DA_IslandBiome.h"
 #include "DataAssets/DA_Resource.h"
+#include "NavMesh/NavMeshBoundsVolume.h"
 #include "SkyCraft/Components/FoliageHISM.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
@@ -108,6 +112,7 @@ void AIsland::OnConstruction(const FTransform& Transform)
 void AIsland::BeginPlay()
 {
 	Super::BeginPlay();
+	if (HasAuthority()) CurrentNMBV = GSS->GMS->NMBV_Use(this);
 	// Read GMS about BeginPlay() order.
 	if (!bIslandArchon) StartIsland();
 }
@@ -150,15 +155,9 @@ void AIsland::StartIsland()
 {
 	Seed.Reset();
 	bIsGenerating = true;
-	if (bIslandArchon)
-	{
-		GSS = GetWorld()->GetGameState<AGSS>();
-		if (HasAuthority() && !DA_IslandBiome)
-		{
-			DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
-		}
-	}
+
 	SpawnCliffsComponents();
+	
 	if (ServerLOD > 0)
 	{
 		GetWorld()->GetTimerManager().SetTimer(TimerGenerate, this, &AIsland::StartAsyncGenerate, FMath::FRandRange(0.025f, 1.125f));
@@ -168,6 +167,7 @@ void AIsland::StartIsland()
 		const FIslandData _ID = GenerateIsland();
 		InitialGenerateComplete(_ID);
 	}
+	IslandStarted = true;
 }
 
 void AIsland::StartAsyncGenerate()
@@ -523,6 +523,8 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 	
 	PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
 	PMC_Main->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
+	
+	FNavigationSystem::UpdateComponentData(*PMC_Main);
 
 	if (DA_IslandBiome)
 	{
@@ -752,6 +754,7 @@ void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		if (IsValid(Buildings[i])) Buildings[i]->Destroy();
 	}
+	GSS->GMS->NMBV_Unuse(CurrentNMBV);
 }
 
 void AIsland::DestroyLODs()

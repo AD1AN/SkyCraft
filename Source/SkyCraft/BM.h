@@ -7,6 +7,7 @@
 #include "SkyCraft/Structs/BuildingParameters.h"
 #include "BM.generated.h"
 
+class UInventory;
 class UNiagaraSystem;
 class UHealthSystem;
 class UDA_Building;
@@ -48,6 +49,12 @@ public:
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_Dismantle();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void Dismantled();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void DismantledEffects();
+
+	UFUNCTION(BlueprintCallable) void Dismantle(UInventory* CauserInventory);
+	void RecursiveDismantle(TArray<ABM*>& FlaggedDismantle);
+	void UpdateGrounded(uint8 NewGrounded, TArray<ABM*>& FlaggedDismantle);
+	bool IsSupported(TArray<ABM*>& CheckedDepends);
+	UFUNCTION(BlueprintCallable) uint8 LowestGrounded();
 
 	static TArray<int32> ConvertToIDs(TArray<ABM*>& Buildings);
 

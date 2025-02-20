@@ -11,6 +11,8 @@
 class AGSS;
 class UDA_IslandBiome;
 class AChunkIsland;
+class ANavMeshBoundsVolume;
+class UNavigationSystemV1;
 
 UCLASS()
 class SKYCRAFT_API AGMS : public AGameModeBase
@@ -21,6 +23,11 @@ public:
 	AGMS();
 
 	UPROPERTY() AGSS* GSS = nullptr;
+	UPROPERTY() UNavigationSystemV1* NavSystem = nullptr;
+	
+	UPROPERTY(BlueprintReadOnly) TArray<ANavMeshBoundsVolume*> Unused_NMBV;
+	UFUNCTION(BlueprintCallable) ANavMeshBoundsVolume* NMBV_Use(AActor* ActorAttach, FVector Scale = FVector(200,200,50));
+	UFUNCTION(BlueprintCallable) void NMBV_Unuse(ANavMeshBoundsVolume* NMBV);
 
 	UPROPERTY(BlueprintReadOnly) TArray<AChunkIsland*> SpawnedChunkIslands;
 	UPROPERTY(BlueprintReadOnly) TArray<FCoords> SpawnedChunkIslandsCoords;

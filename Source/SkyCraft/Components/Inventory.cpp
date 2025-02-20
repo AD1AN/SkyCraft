@@ -23,6 +23,7 @@ bool UInventory::InsertSlot(FSlot InsertingSlot)
 	if (!InsertingSlot.DA_Item) return false;
 
 	int32 SlotIndex = 0;
+	// If Inserting is stackable
 	if (InsertingSlot.DA_Item->bCanStack)
 	{
 		TArray<int32> SlotsOverflow;
@@ -77,8 +78,9 @@ bool UInventory::InsertSlot(FSlot InsertingSlot)
 			return true;
 		}
 	}
-	else
+	else // If Inserting is NOT stackable
 	{
+		// Search empty and insert it!
 		for (FSlot Slot : Slots)
 		{
 			if (!Slot.DA_Item)

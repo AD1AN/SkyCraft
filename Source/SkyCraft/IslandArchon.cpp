@@ -1,6 +1,8 @@
 // ADIAN Copyrighted
 
 #include "IslandArchon.h"
+#include "GMS.h"
+#include "GSS.h"
 #include "PSS.h"
 #include "Components/FoliageHISM.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -19,8 +21,27 @@ AIslandArchon::AIslandArchon()
 
 void AIslandArchon::BeginPlay()
 {
-	StartIsland();
+	if (Crystal) StartIsland();
+	else
+	{
+		SpawnCliffsComponents();
+	}
 	Super::BeginPlay();
+}
+
+void AIslandArchon::StartIsland()
+{
+	Seed.Reset();
+	bIsGenerating = true;
+	GSS = GetWorld()->GetGameState<AGSS>();
+	if (!DA_IslandBiome && HasAuthority())
+	{
+		DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
+	}
+	SpawnCliffsComponents();
+	
+	const FIslandData _ID = GenerateIsland();
+	InitialGenerateComplete(_ID);
 }
 
 void AIslandArchon::AuthSetCrystal(bool newCrystal)
@@ -40,6 +61,13 @@ void AIslandArchon::SetIslandSize(float NewSize)
 
 void AIslandArchon::OnRep_IslandSize()
 {
+	if (!IslandStarted) return;
+	if (!Crystal)
+	{
+		OnIslandSize.Broadcast();
+		return;
+	}
+	
 	// TODO: store Terrain EditedVertices by location and apply to new terrain.
 	DestroyIslandGeometry();
 	
@@ -52,6 +80,9 @@ void AIslandArchon::OnRep_IslandSize()
 void AIslandArchon::ResizeGenerateComplete(const FIslandData& _ID)
 {
 	ID = _ID;
+	bIDGenerated = true;
+	OnIDGenerated.Broadcast();
+	
 	for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
 	{
 		CliffsComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
@@ -77,6 +108,9 @@ void AIslandArchon::ResizeGenerateComplete(const FIslandData& _ID)
 	}
 	
 	bIsGenerating = false;
+	bFullGenerated = true;
+	bIsGenerating = false;
+	OnFullGenerated.Broadcast();
 }
 
 void AIslandArchon::DestroyIslandGeometry()
@@ -104,19 +138,23 @@ void AIslandArchon::DestroyIslandGeometry()
 		}
 		ID = {};
 	}
-	DestroyLODs();
 }
 
 void AIslandArchon::OnRep_Crystal_Implementation()
 {
+	if (!IslandStarted) return;
+	
 	if (Crystal)
 	{
 		const FIslandData _ID = GenerateIsland();
 		ResizeGenerateComplete(_ID);
+		if (HasAuthority()) GenerateLOD(INDEX_NONE); // Generate AlwaysLOD
 	}
 	else
 	{
 		DestroyIslandGeometry();
+		DestroyLODs();
+		if (HasAuthority()) SetIslandSize(0.01f);
 	}
 	OnCrystal.Broadcast();
 }
@@ -170,7 +208,6 @@ void AIslandArchon::Tick(float DeltaSeconds)
 		FoliageComp->MarkRenderStateDirty();
 	}
 }
-
 
 void AIslandArchon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

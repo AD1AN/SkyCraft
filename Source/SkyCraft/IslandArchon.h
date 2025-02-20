@@ -18,6 +18,7 @@ public:
 	AIslandArchon();
 
 	virtual void BeginPlay() override;
+	virtual void StartIsland() override;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCrystal); UPROPERTY(BlueprintAssignable) FOnCrystal OnCrystal;
 	
