@@ -15,11 +15,20 @@ AIC::AIC()
 	bAlwaysRelevant = true;
 }
 
-void AIC::BeginPlay()
+void AIC::OnRep_PlayerNormal_Implementation() // Only Clients
+{
+	check(PlayerNormal);
+	if (PlayerNormal->bCharacterStarted) AfterCharacterStarted();
+	else PlayerNormal->OnCharacterStarted.AddDynamic(this, &AIC::AfterCharacterStarted);
+}
+
+void AIC::BeginPlay() // Only Server
 {
 	Super::BeginPlay();
-	if (PlayerNormal->bCharacterStarted) OnPostBeginPlay();
-	else PlayerNormal->OnCharacterStarted.AddDynamic(this, &AIC::OnPostBeginPlay);
+	if (!HasAuthority()) return;
+	check(PlayerNormal);
+	if (PlayerNormal->bCharacterStarted) AfterCharacterStarted();
+	else PlayerNormal->OnCharacterStarted.AddDynamic(this, &AIC::AfterCharacterStarted);
 }
 
 void AIC::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -27,15 +36,15 @@ void AIC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	if (EndPlayReason == EEndPlayReason::Destroyed)
 	{
-		if (HadBeginPlay) EndItemComponent();
+		if (ComponentStarted) EndItemComponent();
 	}
 }
 
-void AIC::OnPostBeginPlay_Implementation()
+void AIC::AfterCharacterStarted_Implementation()
 {
 	StartItemComponent();
-	PlayerNormal->OnCharacterStarted.RemoveDynamic(this, &AIC::OnPostBeginPlay);
-	HadBeginPlay = true;
+	PlayerNormal->OnCharacterStarted.RemoveDynamic(this, &AIC::AfterCharacterStarted);
+	ComponentStarted = true;
 }
 
 void AIC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -44,5 +53,6 @@ void AIC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps
 	
 	DOREPLIFETIME_CONDITION(AIC, PlayerNormal, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AIC, Main, COND_InitialOnly);
+	DOREPLIFETIME(AIC, CanLMB);
 }
 

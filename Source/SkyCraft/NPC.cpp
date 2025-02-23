@@ -34,6 +34,7 @@ void ANPC::ChangedLOD()
 
 void ANPC::UpdateSettings()
 {
+	ensureAlways(Island);
 	if (!IsValid(Island)) return;
 	
 	if (Island->ServerLOD > 0)

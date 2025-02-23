@@ -16,17 +16,18 @@ class SKYCRAFT_API AIC : public AActor
 
 public:
 	AIC();
-	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) APlayerNormal* PlayerNormal = nullptr;
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_PlayerNormal, meta=(ExposeOnSpawn)) APlayerNormal* PlayerNormal = nullptr;
 	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) bool Main = true;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn)) class UInventory* Inventory = nullptr;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn)) int32 SlotIndex;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanLMB = true;
+	UPROPERTY(BlueprintReadWrite, Replicated, EditAnywhere) bool CanLMB = true;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanRMB = true;
-	UPROPERTY(BlueprintReadWrite) bool HadBeginPlay = false;
+	UPROPERTY(BlueprintReadWrite) bool ComponentStarted = false; // Can only start after character!
+	UFUNCTION(BlueprintNativeEvent) void OnRep_PlayerNormal();
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	UFUNCTION(BlueprintNativeEvent) void OnPostBeginPlay();
+	UFUNCTION(BlueprintNativeEvent) void AfterCharacterStarted();
 	UFUNCTION(BlueprintImplementableEvent) void StartItemComponent();
 	UFUNCTION(BlueprintImplementableEvent) void EndItemComponent();
 

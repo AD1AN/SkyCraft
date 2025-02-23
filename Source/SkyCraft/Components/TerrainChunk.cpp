@@ -4,6 +4,7 @@
 
 #include "TerrainChunk.h"
 #include "Net/UnrealNetwork.h"
+#include "AI/NavigationSystemBase.h"
 #include "SkyCraft/Island.h"
 
 UTerrainChunk::UTerrainChunk()

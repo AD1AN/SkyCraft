@@ -7,16 +7,13 @@
 #include "DroppedItem.h"
 #include "GMS.h"
 #include "GSS.h"
-#include "NavigationSystem.h"
 #include "NPC.h"
 #include "AI/NavigationSystemBase.h"
-#include "Builders/CubeBuilder.h"
 #include "Components/HealthSystem.h"
 #include "Components/TerrainChunk.h"
 #include "DataAssets/DA_Foliage.h"
 #include "DataAssets/DA_IslandBiome.h"
 #include "DataAssets/DA_Resource.h"
-#include "NavMesh/NavMeshBoundsVolume.h"
 #include "SkyCraft/Components/FoliageHISM.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
@@ -668,6 +665,7 @@ void AIsland::TerrainEdit(FVector_NetQuantize Location, float Radius, float Stre
 	}
 	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
 	PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
+	PMC_Main->ClearCollisionConvexMeshes(); // For NavMesh update.
 }
 
 TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius)
@@ -839,6 +837,7 @@ void AIsland::GenerateLOD(int32 GenerateLOD)
 	for (auto& IslandResource : IslandLOD.Resources)
 	{
 		UDA_Resource* DA_Resource = IslandResource.DA_Resource;
+		ensureAlways(DA_Resource);
 		if (!DA_Resource) continue;
 		TMap<int32, FVector>& GridMap = ResourcesGridMap.FindOrAdd(DA_Resource);
 		
@@ -906,7 +905,7 @@ void AIsland::GenerateLOD(int32 GenerateLOD)
 					{
 						const int32 NeighborKey = HashCombine(GetTypeHash(InResX + NeighborX), GetTypeHash(InResY + NeighborY));
 						float AddedDistanceSqr = FMath::Square(DA_Resource->BodyRadius + ResourceGridMap.Key->BodyRadius);
-						if (GridMap.Contains(NeighborKey) && FVector::DistSquared(GridMap[NeighborKey], RandomPoint) < AddedDistanceSqr)
+						if (ResourceGridMap.Value.Contains(NeighborKey) && FVector::DistSquared(ResourceGridMap.Value[NeighborKey], RandomPoint) < AddedDistanceSqr)
 						{
 							bTooClose = true;
 							break;
@@ -941,6 +940,34 @@ void AIsland::GenerateLOD(int32 GenerateLOD)
 			SpawnedLOD.Resources.Add(SpawnedRes);
 			
 			Attempts = 0;
+		}
+	}
+
+	// Generate NPCs
+	for (auto& IslandNPC : IslandLOD.NPCs)
+	{
+		ensureAlways(IslandNPC.NPC_Class);
+		if (!IslandNPC.NPC_Class) continue;
+
+		const int32 SpawnsByIslandSize = FMath::Lerp(IslandNPC.MaxSpawnPoints/10, IslandNPC.MaxSpawnPoints, IslandSize);
+		int32 Attempts = 0;
+		while (Attempts < SpawnsByIslandSize)
+		{
+			// Pick a random triangle
+			const int32 TriangleIndex = Seed.RandRange(0, ID.TopTriangles.Num() / 3 - 1) * 3;
+			const FVector& V0 = ID.TopVertices[ID.TopTriangles[TriangleIndex]];
+			const FVector& V1 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 1]];
+			const FVector& V2 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 2]];
+			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
+
+			
+			FTransform NpcTransform(RandomPoint + FVector(0,0,60));
+			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(IslandNPC.NPC_Class, NpcTransform);
+			SpawnedNPC->Island = this;
+			SpawnedNPC->FinishSpawning(NpcTransform);
+			SpawnedNPC->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+			SpawnedLOD.NPCs.Add(SpawnedNPC);
+			++Attempts;
 		}
 	}
 }
