@@ -9,6 +9,7 @@
 #include "GSS.h"
 #include "NPC.h"
 #include "AI/NavigationSystemBase.h"
+#include "Components/GrowingResourcesComponent.h"
 #include "Components/HealthSystem.h"
 #include "Components/TerrainChunk.h"
 #include "DataAssets/DA_Foliage.h"
@@ -20,7 +21,7 @@
 
 AIsland::AIsland()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	bReplicates = true;
 	SetNetUpdateFrequency(1);
@@ -38,6 +39,8 @@ AIsland::AIsland()
 	
 	AttachSimulatedBodies = CreateDefaultSubobject<USceneComponent>("AttachSimulatedBodies");
 	AttachSimulatedBodies->SetupAttachment(RootComponent);
+
+	GrowingResourcesComponent = CreateDefaultSubobject<UGrowingResourcesComponent>("GrowingResourcesComponent");
 }
 
 TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
@@ -798,7 +801,6 @@ void AIsland::LoadIsland()
 		++i;
 	}
 	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
-	SS_Island.EditedVertices.Empty();
 	SS_Island.TerrainChunks.Empty();
 }
 
@@ -930,6 +932,7 @@ void AIsland::GenerateLOD(int32 GenerateLOD)
 			
 			TSubclassOf<AResource> ResourceClass = (DA_Resource->OverrideResourceClass) ? DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
 			AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
+			SpawnedRes->Island = this;
 			SpawnedRes->DA_Resource = DA_Resource;
 			uint8 ResSize = Seed.RandRange(IslandResource.ResourceSize.Min, IslandResource.ResourceSize.Max);
 			SpawnedRes->ResourceSize = ResSize;
@@ -960,12 +963,10 @@ void AIsland::GenerateLOD(int32 GenerateLOD)
 			const FVector& V2 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 2]];
 			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 
-			
-			FTransform NpcTransform(RandomPoint + FVector(0,0,60));
+			FTransform NpcTransform(GetActorLocation() + RandomPoint + FVector(0,0,100));
 			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(IslandNPC.NPC_Class, NpcTransform);
 			SpawnedNPC->Island = this;
 			SpawnedNPC->FinishSpawning(NpcTransform);
-			SpawnedNPC->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 			SpawnedLOD.NPCs.Add(SpawnedNPC);
 			++Attempts;
 		}
@@ -986,13 +987,13 @@ TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
 		TSubclassOf<AResource> ResourceClass = (SS_Resource.DA_Resource->OverrideResourceClass) ? SS_Resource.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
 		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
 		SpawnedRes->bLoaded = true;
-		SpawnedRes->LoadHealth = SS_Resource.Health;
+		SpawnedRes->Island = this;
+		SpawnedRes->HealthSystem->Health = SS_Resource.Health;
 		SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
 		SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
 		SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
 		SpawnedRes->Growing = SS_Resource.Growing;
-		SpawnedRes->GrowMarkTime = SS_Resource.GrowMarkTime;
-		SpawnedRes->GrowSavedTime = SS_Resource.GrowSavedTime;
+		SpawnedRes->CurrentGrowTime = SS_Resource.CurrentGrowTime;
 		SpawnedRes->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		SpawnedRes->FinishSpawning(ResTransform);
 		LoadedResources.Add(SpawnedRes);
@@ -1005,16 +1006,14 @@ TArray<ANPC*> AIsland::LoadNPCs(TArray<FSS_NPC>& SS_NPCs)
 	if (SS_NPCs.IsEmpty()) return {};
 	
 	TArray<ANPC*> LoadedNPCs;
-	for (const auto& SS_NPC : SS_NPCs)
+	for (auto& SS_NPC : SS_NPCs)
 	{
 		if (!IsValid(SS_NPC.NPC_Class)) continue;
 		FTransform LoadTransform = SS_NPC.Transform;
-		LoadTransform.SetLocation(SS_NPC.Transform.GetLocation() + FVector(0,0,100));
+		LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,100));
 		ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPC.NPC_Class, LoadTransform);
 		SpawnedNPC->Island = this;
 		SpawnedNPC->FinishSpawning(LoadTransform);
-		SpawnedNPC->AttachToActor(GetOwner(), FAttachmentTransformRules::KeepRelativeTransform);
-		SpawnedNPC->HealthSystem->Health = SS_NPC.Health;
 		SpawnedNPC->LoadNPC(SS_NPC);
 		LoadedNPCs.Add(SpawnedNPC);
 	}
@@ -1111,8 +1110,7 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 			SS_Resource.SM_Variety = Res->SM_Variety;
 			SS_Resource.Health = Res->HealthSystem->Health;
 			SS_Resource.Growing = Res->Growing;
-			SS_Resource.GrowMarkTime = Res->GrowMarkTime;
-			SS_Resource.GrowSavedTime = Res->GrowSavedTime;
+			SS_Resource.CurrentGrowTime = Res->CurrentGrowTime;
 			SS_IslandLOD.Resources.Add(SS_Resource);
 		}
 		

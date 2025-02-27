@@ -32,7 +32,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax IslandArchonSpawnZ = FFloatMinMax(80000, 95000);
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) bool BuildingInfiniteHeight = false;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) uint8 GroundedMax = 7;
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) uint8 GroundedMax = 15;
 
 	// -------------------------------------
 

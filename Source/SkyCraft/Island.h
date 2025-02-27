@@ -78,6 +78,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
 	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> CliffsComponents;
 	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
+	UPROPERTY(VisibleAnywhere) class UGrowingResourcesComponent* GrowingResourcesComponent = nullptr;
 	
 	bool bIslandArchon = false;
 	
@@ -132,7 +133,7 @@ public:
 	UPROPERTY(VisibleInstanceOnly) int32 LoadedLowestLOD = 666; // Only decreases.
 	UPROPERTY(VisibleInstanceOnly) int32 ClientLOD = -1; // TODO: Implement Client LOD system, maybe for future needs.
 	UFUNCTION(BlueprintCallable) void SetServerLOD(int32 NewLOD);
-	
+
 	TMap<UDA_Resource*, TMap<int32, FVector>> ResourcesGridMap;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TMap<int32, FEntities> SpawnedLODs; // Key: LOD index. INDEX_NONE = AlwaysLOD.
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ABM*> Buildings;

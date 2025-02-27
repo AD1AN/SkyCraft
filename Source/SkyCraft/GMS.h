@@ -47,4 +47,6 @@ public:
 	UPROPERTY(BlueprintReadWrite) TMap<int32, FSS_Island> SavedIslands;
 
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
+
+	UFUNCTION(BlueprintCallable) void SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing);
 };

@@ -13,7 +13,7 @@ struct FCustomPrimitiveDataEntry
 	FName Name;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float Value;
+	float Value = 1.0f;
 };
 
 UCLASS(BlueprintType, CollapseCategories)

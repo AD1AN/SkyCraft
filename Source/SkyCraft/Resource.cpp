@@ -2,6 +2,7 @@
 
 #include "Resource.h"
 #include "AdianFL.h"
+#include "Island.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"
 #include "SkyCraft/Components/HealthSystem.h"
 #include "SkyCraft/Components/InteractSystem.h"
@@ -9,11 +10,12 @@
 #include "AssetUserData/AUD_OverrideScale.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_HealthSystem.h"
+#include "Components/GrowingResourcesComponent.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	bReplicates = true;
 	
@@ -34,7 +36,7 @@ AResource::AResource()
 void AResource::BeginPlay()
 {
 	Super::BeginPlay();
-
+	ensureAlways(DA_Resource);
 	if (!DA_Resource) return;
 	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
 
@@ -57,15 +59,36 @@ void AResource::BeginPlay()
 	StaticMeshComponent->GetAssetUserData<UAUD_SkyTags>()->DA_SkyTags.Append(DA_Resource->SkyTags);
 	
 	HealthSystem->MaxHealth = CurrentSize.Health;
-	HealthSystem->Health = (bLoaded) ? LoadHealth : CurrentSize.Health;
+	if (!bLoaded) HealthSystem->Health = CurrentSize.Health;
 	
+	HealthSystem->DropItems = CurrentSize.DropItems;
+	
+	if (HasAuthority())
+	{
+		if (!Growing) return;
+		ensureAlways(Island);
+		if (!Island) return;
+		Island->GrowingResourcesComponent->GrowingResources.Add(this);
+		if (!Island->GrowingResourcesComponent->IsComponentTickEnabled()) Island->GrowingResourcesComponent->SetComponentTickEnabled(true);
+	}
+}
+
+void AResource::GrowUp()
+{
+	uint8 NewResourceSize = ResourceSize + 1;
+	ensureAlways(DA_Resource->Size.IsValidIndex(NewResourceSize));
+	if (!DA_Resource->Size.IsValidIndex(NewResourceSize)) return;
+
+	ResourceSize = NewResourceSize;
+	CurrentSize = DA_Resource->Size[ResourceSize];
+	StaticMeshComponent->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
+	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
+	StaticMeshComponent->SetCullDistance(CurrentSize.CullDistance);
+	SetNetCullDistanceSquared(FMath::Square(CurrentSize.CullDistance));
+	HealthSystem->MaxHealth = CurrentSize.Health;
 	HealthSystem->DropItems = CurrentSize.DropItems;
 }
 
-void AResource::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
 
 void AResource::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {

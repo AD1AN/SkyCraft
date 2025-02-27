@@ -219,6 +219,7 @@ void AIslandArchon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandArchon, Crystal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandArchon, ArchonPSS, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandArchon, ArchonSteamID, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandArchon, Denizens, Params);
 }
 

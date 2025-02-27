@@ -28,7 +28,7 @@ public:
 	UFUNCTION(BlueprintCallable) void SetIslandSize(float NewSize);
 	virtual void OnRep_IslandSize() override;
 	void ResizeGenerateComplete(const FIslandData& _ID);
-	float PreviousIslandSize;
+	float PreviousIslandSize = 0;
 	UFUNCTION(BlueprintImplementableEvent) void OnIslandShrink();
 	void DestroyIslandGeometry();
 	

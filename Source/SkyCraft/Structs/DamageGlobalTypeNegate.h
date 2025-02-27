@@ -9,8 +9,8 @@ struct FDamageGlobalTypeNegate
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EDamageGlobalType DamageGlobalType;
+	EDamageGlobalType DamageGlobalType = EDamageGlobalType::Slash;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Negate;
+	float Negate = 0.0f;
 };

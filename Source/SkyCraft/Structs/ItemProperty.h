@@ -8,7 +8,7 @@ USTRUCT(BlueprintType)
 struct FItemProperty
 {
 	GENERATED_BODY()
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) class UDA_ItemProperty* Property;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) class UDA_ItemProperty* Property = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<float> Floats;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<int32> Integers;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<bool> Booleans;

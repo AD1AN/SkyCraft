@@ -6,8 +6,8 @@ USTRUCT()
 struct FEditedVertex
 {
 	GENERATED_BODY()
-	UPROPERTY() int32 VertexIndex;
-	UPROPERTY() uint16 CompressedHeight;
+	UPROPERTY() int32 VertexIndex = 0;
+	UPROPERTY() uint16 CompressedHeight = 0;
 
 	// Convert from FloatHeight to CompressedHeight
 	void SetHeight(float Height, float MinHeight, float MaxHeight)

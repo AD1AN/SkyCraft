@@ -14,7 +14,7 @@ struct FCharacterBio
 	bool Gender = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	uint8 HairStyle;
+	uint8 HairStyle = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FLinearColor HairColor = FLinearColor(0.0f,0.0f,0.0f,1.0f);

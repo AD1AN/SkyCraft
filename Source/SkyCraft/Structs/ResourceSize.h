@@ -12,6 +12,7 @@ struct FResourceSize
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) TArray<FDropItem> DropItems;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) TArray<UStaticMesh*> SM_Variety;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) float CullDistance = 150000.0f;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) float GrowTime = 600.0f; // In seconds.
 
 	FResourceSize()
 	{

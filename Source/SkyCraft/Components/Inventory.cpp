@@ -220,6 +220,7 @@ void UInventory::Swap(int32 SlotIndex, UInventory* OtherInventory, int32 OtherSl
 
 void UInventory::Spend(FSlot SpendSlot)
 {
+	ensureAlways(SpendSlot.DA_Item);
 	if (!SpendSlot.DA_Item) return;
 	
 	int16 SpendLeft = SpendSlot.Quantity;
@@ -241,6 +242,23 @@ void UInventory::Spend(FSlot SpendSlot)
 			if (SpendLeft == 0) return;
 		}
 		SlotIndex++;
+	}
+}
+
+void UInventory::ConsumeSingle(int32 SlotIndex)
+{
+	ensureAlways(Slots.IsValidIndex(SlotIndex));
+	if (!Slots.IsValidIndex(SlotIndex)) return;
+	FSlot Slot = Slots[SlotIndex];
+	if (!Slot.DA_Item) return;
+	if (Slot.Quantity <= 1)
+	{
+		Multicast_EmptySlot(SlotIndex);
+	}
+	else
+	{
+		Slot.Quantity -= 1;
+		Multicast_ChangeSlot(SlotIndex, Slot);
 	}
 }
 

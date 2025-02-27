@@ -4,12 +4,20 @@
 
 #include "AdianFL.h"
 #include "Island.h"
+#include "Components/HealthSystem.h"
+#include "Components/PlayerHunger.h"
 #include "Net/UnrealNetwork.h"
 #include "SkyCraft/Components/SkyCharacterMovementComponent.h"
 
 APlayerNormal::APlayerNormal(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
+	HealthSystem = CreateDefaultSubobject<UHealthSystem>("HealthSystem");
+	HealthSystem->Health = 1000;
+	HealthSystem->MaxHealth = HealthSystem->Health;
+	HealthSystem->DieHandle = EDieHandle::CustomOnDieEvent;
+	
+	PlayerHunger = CreateDefaultSubobject<UPlayerHunger>("PlayerHunger");
 }
 
 void APlayerNormal::BeginPlay()
@@ -55,4 +63,5 @@ void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PSS, Params);
+	DOREPLIFETIME(APlayerNormal, CurrentHunger);
 }

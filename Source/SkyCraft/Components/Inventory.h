@@ -62,6 +62,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void Swap(int32 SlotIndex, UInventory* OtherInventory, int32 OtherSlotIndex);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void Spend(FSlot SpendSlot);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void ConsumeSingle(int32 SlotIndex);
 	UFUNCTION(BlueprintCallable, BlueprintPure) int32 CountItems(UDA_Item* DA_Item);
 	UFUNCTION(BlueprintCallable, BlueprintPure) bool Craftable(TArray<FSlot> RequiredSlots);
 	UFUNCTION(BlueprintCallable, BlueprintPure) bool HasEmptySlots(int32 NumEmptySlots = 1);

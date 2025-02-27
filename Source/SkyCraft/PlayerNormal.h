@@ -13,8 +13,14 @@ UCLASS()
 class SKYCRAFT_API APlayerNormal : public ACharacter
 {
 	GENERATED_BODY()
-
 public:
+	
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UHealthSystem* HealthSystem = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UPlayerHunger* PlayerHunger = nullptr;
+
+	UPROPERTY(BlueprintReadWrite) float MaxHunger = 1000;
+	UPROPERTY(BlueprintReadWrite, Replicated) float CurrentHunger = 1000;
+	
 	APlayerNormal(const FObjectInitializer& ObjectInitializer);
 
 	/* Should not be used in blueprint */

@@ -18,7 +18,7 @@ ADroppedItem::ADroppedItem()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
-	SetReplicates(true);
+	bReplicates = true;
 	SetNetCullDistanceSquared(37500000.0f);
 	
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));

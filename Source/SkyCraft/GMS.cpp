@@ -3,8 +3,11 @@
 #include "GMS.h"
 #include "EngineUtils.h"
 #include "GSS.h"
+#include "Island.h"
 #include "NavigationSystem.h"
+#include "Resource.h"
 #include "Components/BrushComponent.h"
+#include "DataAssets/DA_Resource.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
 
 AGMS::AGMS(){}
@@ -24,6 +27,27 @@ APlayerController* AGMS::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const 
 		bWorldStarted = true;
 	}
 	return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+}
+
+void AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing)
+{
+	ensureAlways(Island);
+	if (!Island) return;
+	ensureAlways(DA_Resource);
+	if (!DA_Resource) return;
+
+	FTransform ResTransform(LocalLocation);
+	ResTransform.SetRotation(LocalRotation.Quaternion());
+	TSubclassOf<AResource> ResourceClass = (DA_Resource->OverrideResourceClass) ? DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+	AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
+	SpawnedRes->Island = Island;
+	SpawnedRes->DA_Resource = DA_Resource;
+	SpawnedRes->ResourceSize = ResourceSize;
+	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
+	SpawnedRes->Growing = Growing;
+	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
+	SpawnedRes->FinishSpawning(ResTransform);
+	Island->SpawnedLODs[INDEX_NONE].Resources.Add(SpawnedRes);
 }
 
 ANavMeshBoundsVolume* AGMS::NMBV_Use(AActor* ActorAttach, FVector Scale)

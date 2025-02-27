@@ -12,7 +12,7 @@ struct FBuildingSlot
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UDA_Building* DA_Building;
+	UDA_Building* DA_Building = nullptr;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<UDA_Building*> DA_Building_Children;

@@ -25,14 +25,13 @@ struct FSS_Resource
 {
 	GENERATED_BODY()
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FVector RelativeLocation = FVector::ZeroVector;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FRotator RelativeRotation;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FRotator RelativeRotation = FRotator::ZeroRotator;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) UDA_Resource* DA_Resource = nullptr;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) uint8 ResourceSize = 0;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) uint8 SM_Variety = 0;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) int32 Health = 405;
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) bool Growing = false;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FDateTime GrowMarkTime;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FDateTime GrowSavedTime;
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) float CurrentGrowTime = 0.0f;
 };
 
 USTRUCT(BlueprintType)
@@ -47,7 +46,7 @@ USTRUCT(BlueprintType)
 struct FSS_IslandLOD
 {
 	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) int32 LOD;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) int32 LOD = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Resource> Resources;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_NPC> NPCs;
 };
@@ -72,7 +71,6 @@ USTRUCT(BlueprintType)
 struct FSS_Island
 {
 	GENERATED_BODY()
-	UPROPERTY() TArray<FEditedVertex> EditedVertices;
 	UPROPERTY() TArray<FSS_TerrainChunk> TerrainChunks;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Foliage> Foliage;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_IslandLOD> IslandLODs;

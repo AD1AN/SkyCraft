@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "SkyCraft/Enums/InteractKey.h"
+#include "SkyCraft/Enums/InterruptedBy.h"
 #include "Interact_CPP.generated.h"
 
 class APSS;
-enum class EInteractKey : uint8;
-enum class EInterruptedBy : uint8;
 
 USTRUCT(BlueprintType)
 struct FInteractIn
@@ -16,13 +16,13 @@ struct FInteractIn
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	EInteractKey InteractKey;
+	EInteractKey InteractKey = EInteractKey::Interact1;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	APawn* Pawn;
+	APawn* Pawn = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	APSS* PSS;
+	APSS* PSS = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -31,7 +31,7 @@ struct FInteractOut
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	bool Success;
+	bool Success = false;
 };
 
 USTRUCT(BlueprintType)
@@ -40,16 +40,16 @@ struct FInterruptIn
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	EInterruptedBy InterruptedBy;
+	EInterruptedBy InterruptedBy = EInterruptedBy::Player;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	EInteractKey InteractKey;
+	EInteractKey InteractKey = EInteractKey::Interact1;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	APawn* Pawn;
+	APawn* Pawn = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	APSS* PSS;
+	APSS* PSS = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -58,7 +58,7 @@ struct FInterruptOut
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	bool Success;
+	bool Success = false;
 };
 
 UINTERFACE(MinimalAPI, meta = (CannotImplementInterfaceInBlueprint))

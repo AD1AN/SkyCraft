@@ -4,24 +4,23 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "SkyCraft/DataAssets/DA_Durability.h"
 #include "DurabilityInterface.generated.h"
 
 USTRUCT(BlueprintType)
 struct FApplyDurabilityIn
 {
 	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_Durability* DA_Durability;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) class UDA_Durability* DA_Durability = nullptr;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) class UInventory* Inventory = nullptr;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 SlotIndex;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 SlotIndex = 0;
 };
 
 USTRUCT(BlueprintType)
 struct FApplyDurabilityOut
 {
 	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool Applied;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool Broke;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool Applied = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool Broke = false;
 };
 
 UINTERFACE(MinimalAPI)
