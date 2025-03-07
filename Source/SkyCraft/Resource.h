@@ -10,7 +10,7 @@
 
 class UDA_Resource;
 class UAnalyzeActorSystem;
-class UHealthSystem;
+class UHealthComponent;
 
 UCLASS(Blueprintable)
 class SKYCRAFT_API AResource : public AActor, public IInteract_CPP
@@ -21,8 +21,8 @@ public:
 	AResource();
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) UStaticMeshComponent* StaticMeshComponent = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) UHealthSystem* HealthSystem = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UInteractSystem* InteractSystem = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) UHealthComponent* HealthComponent = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UInteractComponent* InteractComponent = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bLoaded = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) class AIsland* Island = nullptr; // Auth

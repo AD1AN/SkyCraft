@@ -24,8 +24,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) FText Name;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) FText Description;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TObjectPtr<UTexture2D> Icon = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSoftObjectPtr<UStaticMesh> StaticMesh = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSoftObjectPtr<UMaterialInterface> OverrideMaterial = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(InlineEditConditionToggle)) bool bCanStack = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bCanStack")) uint8 MaxQuantity = 1;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite) TArray<FItemProperty> InitialProperties; // ReadWrite - because of error for SearchInProperties()
@@ -42,4 +40,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides)) UDA_EquipmentStats* EquipmentStats;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides)) TSoftObjectPtr<USkeletalMesh> EQ_Male;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides)) TSoftObjectPtr<USkeletalMesh> EQ_Female;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") TSoftObjectPtr<UStaticMesh> StaticMesh = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") TSoftObjectPtr<UMaterialInterface> OverrideMaterial = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") FRotator RotationOffset = FRotator::ZeroRotator;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") FVector LocationOffset = FVector::ZeroVector;
 };

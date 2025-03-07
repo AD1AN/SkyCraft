@@ -4,12 +4,12 @@
 #include "AdianFL.h"
 #include "Island.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"
-#include "SkyCraft/Components/HealthSystem.h"
-#include "SkyCraft/Components/InteractSystem.h"
+#include "SkyCraft/Components/HealthComponent.h"
+#include "SkyCraft/Components/InteractComponent.h"
 #include "AssetUserData/AUD_AnalyzeEntity.h"
 #include "AssetUserData/AUD_OverrideScale.h"
 #include "AssetUserData/AUD_SkyTags.h"
-#include "AssetUserData/AUD_HealthSystem.h"
+#include "AssetUserData/AUD_HealthComponent.h"
 #include "Components/GrowingResourcesComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -27,10 +27,10 @@ AResource::AResource()
 	UAUD_SkyTags* SkyTags = CreateDefaultSubobject<UAUD_SkyTags>(TEXT("AUD_SkyTags"));
 	StaticMeshComponent->AddAssetUserData(SkyTags);
 	
-	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	
-	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
-	InteractSystem->bInteractable = false;
+	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
+	InteractComponent->bInteractable = false;
 }
 
 void AResource::BeginPlay()
@@ -51,23 +51,29 @@ void AResource::BeginPlay()
 	
 	if (!DA_Resource->InteractKeys.IsEmpty())
 	{
-		InteractSystem->InteractKeys = DA_Resource->InteractKeys;
-		InteractSystem->bInteractable = true;
+		InteractComponent->InteractKeys = DA_Resource->InteractKeys;
+		InteractComponent->bInteractable = true;
 		StaticMeshComponent->SetGenerateOverlapEvents(true);
 	}
 	
 	StaticMeshComponent->GetAssetUserData<UAUD_SkyTags>()->DA_SkyTags.Append(DA_Resource->SkyTags);
 	
-	HealthSystem->MaxHealth = CurrentSize.Health;
-	if (!bLoaded) HealthSystem->Health = CurrentSize.Health;
+	HealthComponent->MaxHealth = CurrentSize.Health;
+	if (!bLoaded) HealthComponent->Health = CurrentSize.Health;
 	
-	HealthSystem->DropItems = CurrentSize.DropItems;
+	HealthComponent->DropItems = CurrentSize.DropItems;
 	
 	if (HasAuthority())
 	{
 		if (!Growing) return;
 		ensureAlways(Island);
 		if (!Island) return;
+		if (!DA_Resource->Size.IsValidIndex(ResourceSize+1))
+		{
+			Growing = false;
+			return;
+		}
+		
 		Island->GrowingResourcesComponent->GrowingResources.Add(this);
 		if (!Island->GrowingResourcesComponent->IsComponentTickEnabled()) Island->GrowingResourcesComponent->SetComponentTickEnabled(true);
 	}
@@ -77,18 +83,27 @@ void AResource::GrowUp()
 {
 	uint8 NewResourceSize = ResourceSize + 1;
 	ensureAlways(DA_Resource->Size.IsValidIndex(NewResourceSize));
-	if (!DA_Resource->Size.IsValidIndex(NewResourceSize)) return;
-
-	ResourceSize = NewResourceSize;
-	CurrentSize = DA_Resource->Size[ResourceSize];
-	StaticMeshComponent->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
-	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
-	StaticMeshComponent->SetCullDistance(CurrentSize.CullDistance);
-	SetNetCullDistanceSquared(FMath::Square(CurrentSize.CullDistance));
-	HealthSystem->MaxHealth = CurrentSize.Health;
-	HealthSystem->DropItems = CurrentSize.DropItems;
+	if (!DA_Resource->Size.IsValidIndex(NewResourceSize))
+	{
+		Growing = false;
+		return;
+	}
+	
+	FTransform ResTransform(RootComponent->GetRelativeLocation());
+	ResTransform.SetRotation(RootComponent->GetRelativeRotation().Quaternion());
+	TSubclassOf<AResource> ResourceClass = (DA_Resource->OverrideResourceClass) ? DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+	AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
+	SpawnedRes->Island = Island;
+	SpawnedRes->DA_Resource = DA_Resource;
+	SpawnedRes->ResourceSize = NewResourceSize;
+	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
+	SpawnedRes->Growing = Growing;
+	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
+	SpawnedRes->FinishSpawning(ResTransform);
+	Island->SpawnedLODs[INDEX_NONE].Resources.Add(SpawnedRes);
+	
+	Destroy();
 }
-
 
 void AResource::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
@@ -108,6 +123,9 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 {
 	for (UAssetUserData* AUD : AssetUserDatas)
 	{
+		ensureAlways(AUD);
+		if (!AUD) return;
+		
 		if (AUD->IsA<UAUD_OverrideScale>())
 		{
 			UAUD_OverrideScale* aud_os = Cast<UAUD_OverrideScale>(AUD);
@@ -119,30 +137,30 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 			StaticMeshComponent->AddAssetUserData(AUD);
 			continue;
 		}
-		if (AUD->IsA<UAUD_HealthSystem>())
+		if (AUD->IsA<UAUD_HealthComponent>())
 		{
-			UAUD_HealthSystem* aud_hs = Cast<UAUD_HealthSystem>(AUD);
-			HealthSystem->bInclusiveDamageOnly = aud_hs->bInclusiveDamageOnly;
-			if (HealthSystem->bInclusiveDamageOnly)
+			UAUD_HealthComponent* aud_hs = Cast<UAUD_HealthComponent>(AUD);
+			HealthComponent->bInclusiveDamageOnly = aud_hs->bInclusiveDamageOnly;
+			if (HealthComponent->bInclusiveDamageOnly)
 			{
-				HealthSystem->InclusiveDamageDataAssets = aud_hs->InclusiveDamageDataAssets;
+				HealthComponent->InclusiveDamageDataAssets = aud_hs->InclusiveDamageDataAssets;
 			}
-			HealthSystem->DefaultTextForNonInclusive = aud_hs->DefaultTextForNonInclusive;
-			HealthSystem->ImmuneToDamageDataAssets = aud_hs->ImmuneToDamageDataAssets;
+			HealthComponent->DefaultTextForNonInclusive = aud_hs->DefaultTextForNonInclusive;
+			HealthComponent->ImmuneToDamageDataAssets = aud_hs->ImmuneToDamageDataAssets;
 
 			UStaticMesh* SizeSM = CurrentSize.SM_Variety[SM_Variety];
-			HealthSystem->DamageFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DamageFXDefault, SizeSM);
-			HealthSystem->DamageFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DamageFX, SizeSM);
-			HealthSystem->DieFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DieFXDefault, SizeSM);
-			HealthSystem->DieFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DieFX, SizeSM);
-			HealthSystem->AttenuationSettings = aud_hs->AttenuationSettings;
-			HealthSystem->DieHandle = aud_hs->DieHandle;
-			HealthSystem->bDropItems = aud_hs->bDropItems;
+			HealthComponent->DamageFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DamageFXDefault, SizeSM);
+			HealthComponent->DamageFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DamageFX, SizeSM);
+			HealthComponent->DieFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DieFXDefault, SizeSM);
+			HealthComponent->DieFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DieFX, SizeSM);
+			HealthComponent->AttenuationSettings = aud_hs->AttenuationSettings;
+			HealthComponent->DieHandle = aud_hs->DieHandle;
+			HealthComponent->bDropItems = aud_hs->bDropItems;
 			if (!aud_hs->bDropItems) continue;
-			HealthSystem->DropLocationType = aud_hs->DropLocationType;
-			HealthSystem->DropInRelativeBox = aud_hs->DropInRelativeBox;
-			HealthSystem->DropDirectionType = aud_hs->DropDirectionType;
-			HealthSystem->DropDirection = aud_hs->DropDirection;
+			HealthComponent->DropLocationType = aud_hs->DropLocationType;
+			HealthComponent->DropInRelativeBox = aud_hs->DropInRelativeBox;
+			HealthComponent->DropDirectionType = aud_hs->DropDirectionType;
+			HealthComponent->DropDirection = aud_hs->DropDirection;
 			continue;
 		}
 	}

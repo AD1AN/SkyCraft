@@ -9,7 +9,7 @@
 
 class UInventory;
 class UNiagaraSystem;
-class UHealthSystem;
+class UHealthComponent;
 class UDA_Building;
 
 USTRUCT(BlueprintType)
@@ -28,7 +28,7 @@ class SKYCRAFT_API ABM : public AActor
 public:
 	ABM();
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) UStaticMeshComponent* StaticMeshComponent = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) UHealthSystem* HealthSystem = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) UHealthComponent* HealthComponent = nullptr;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) UDA_Building* DA_Building = nullptr;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) class ABS* CurrentBS = nullptr;

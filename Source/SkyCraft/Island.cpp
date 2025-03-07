@@ -10,7 +10,7 @@
 #include "NPC.h"
 #include "AI/NavigationSystemBase.h"
 #include "Components/GrowingResourcesComponent.h"
-#include "Components/HealthSystem.h"
+#include "Components/HealthComponent.h"
 #include "Components/TerrainChunk.h"
 #include "DataAssets/DA_Foliage.h"
 #include "DataAssets/DA_IslandBiome.h"
@@ -155,7 +155,7 @@ void AIsland::StartIsland()
 {
 	Seed.Reset();
 	bIsGenerating = true;
-
+	
 	SpawnCliffsComponents();
 	
 	if (ServerLOD > 0)
@@ -781,7 +781,8 @@ void AIsland::LoadIsland()
 	// Foliage Loads themselves in FoliageHISM
 
 	// Load/Generate IslandLODs
-	for (int32 LOD = DA_IslandBiome->IslandLODs.Num()-1; LOD >= ServerLOD; --LOD)
+	int32 LowestLOD = FMath::Max(DA_IslandBiome->IslandLODs.Num()-1, SS_Island.IslandLODs.Num()-1);
+	for (int32 LOD = LowestLOD; LOD >= ServerLOD; --LOD)
 	{
 		if (!LoadLOD(LOD)) GenerateLOD(LOD);
 	}
@@ -804,14 +805,14 @@ void AIsland::LoadIsland()
 	SS_Island.TerrainChunks.Empty();
 }
 
-bool AIsland::LoadLOD(int32 LoadLOD)
+bool AIsland::LoadLOD(int32 LoadLODIndex)
 {
 	for (auto& IslandLOD : SS_Island.IslandLODs)
 	{
-		if (IslandLOD.LOD != LoadLOD) continue;
-		FEntities& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLOD);
+		if (IslandLOD.LOD != LoadLODIndex) continue;
+		FEntities& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
 		TArray<AResource*> LoadedResources = LoadResources(IslandLOD.Resources);
-		TArray<ANPC*> LoadedNPCs = LoadNPCs(IslandLOD.NPCs);
+		TArray<ANPC*> LoadedNPCs = LoadNPCs(IslandLOD.NPCs, LoadLODIndex);
 		SpawnedLOD.Resources = LoadedResources;
 		SpawnedLOD.NPCs = LoadedNPCs;
 		return true;
@@ -819,21 +820,21 @@ bool AIsland::LoadLOD(int32 LoadLOD)
 	return false;
 }
 
-void AIsland::GenerateLOD(int32 GenerateLOD)
+void AIsland::GenerateLOD(int32 GenerateLODIndex)
 {
 	FIslandLOD IslandLOD;
-	if (GenerateLOD == INDEX_NONE) // AlwaysLOD
+	if (GenerateLODIndex == INDEX_NONE) // AlwaysLOD
 	{
 		IslandLOD = DA_IslandBiome->AlwaysLOD;
 	}
 	else // IslandLOD
 	{
-		if (!DA_IslandBiome->IslandLODs.IsValidIndex(GenerateLOD)) return;
-		IslandLOD = DA_IslandBiome->IslandLODs[GenerateLOD];
+		if (!DA_IslandBiome->IslandLODs.IsValidIndex(GenerateLODIndex)) return;
+		IslandLOD = DA_IslandBiome->IslandLODs[GenerateLODIndex];
 	}
 	
 	const float VertexOffset = (Resolution * CellSize) / 2;
-	FEntities& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLOD);
+	FEntities& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLODIndex);
 
 	// Generate Resources
 	for (auto& IslandResource : IslandLOD.Resources)
@@ -927,6 +928,7 @@ void AIsland::GenerateLOD(int32 GenerateLOD)
 
 			// Accept candidate
 			FTransform ResTransform(RandomPoint);
+			ResTransform.SetRotation(FRotator(0, Seed.FRandRange(0.0f,360.0f), 0).Quaternion());
 			const int32 GridKey = HashCombine(GetTypeHash(GridX), GetTypeHash(GridY));
 			GridMap.Add(GridKey, RandomPoint);
 			
@@ -963,9 +965,10 @@ void AIsland::GenerateLOD(int32 GenerateLOD)
 			const FVector& V2 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 2]];
 			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 
-			FTransform NpcTransform(GetActorLocation() + RandomPoint + FVector(0,0,100));
+			FTransform NpcTransform(GetActorLocation() + RandomPoint + FVector(0,0,60));
 			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(IslandNPC.NPC_Class, NpcTransform);
 			SpawnedNPC->Island = this;
+			SpawnedNPC->IslandLODIndex = GenerateLODIndex;
 			SpawnedNPC->FinishSpawning(NpcTransform);
 			SpawnedLOD.NPCs.Add(SpawnedNPC);
 			++Attempts;
@@ -988,7 +991,7 @@ TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
 		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
 		SpawnedRes->bLoaded = true;
 		SpawnedRes->Island = this;
-		SpawnedRes->HealthSystem->Health = SS_Resource.Health;
+		SpawnedRes->HealthComponent->Health = SS_Resource.Health;
 		SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
 		SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
 		SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
@@ -1001,7 +1004,7 @@ TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
 	return LoadedResources;
 }
 
-TArray<ANPC*> AIsland::LoadNPCs(TArray<FSS_NPC>& SS_NPCs)
+TArray<ANPC*> AIsland::LoadNPCs(TArray<FSS_NPC>& SS_NPCs, int32 IslandLODIndex)
 {
 	if (SS_NPCs.IsEmpty()) return {};
 	
@@ -1010,9 +1013,10 @@ TArray<ANPC*> AIsland::LoadNPCs(TArray<FSS_NPC>& SS_NPCs)
 	{
 		if (!IsValid(SS_NPC.NPC_Class)) continue;
 		FTransform LoadTransform = SS_NPC.Transform;
-		LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,100));
+		LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,60));
 		ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPC.NPC_Class, LoadTransform);
 		SpawnedNPC->Island = this;
+		SpawnedNPC->IslandLODIndex = IslandLODIndex;
 		SpawnedNPC->FinishSpawning(LoadTransform);
 		SpawnedNPC->LoadNPC(SS_NPC);
 		LoadedNPCs.Add(SpawnedNPC);
@@ -1032,7 +1036,7 @@ void AIsland::LoadBuildings()
 		BuildingTransform.SetLocation(SS_Building.Location);
 		BuildingTransform.SetRotation(SS_Building.Rotation.Quaternion());
 		ABM* SpawnedBuilding = GetWorld()->SpawnActorDeferred<ABM>(SS_Building.BM_Class, BuildingTransform);
-		SpawnedBuilding->HealthSystem->Health = SS_Building.Health;
+		SpawnedBuilding->HealthComponent->Health = SS_Building.Health;
 		SpawnedBuilding->Grounded = SS_Building.Grounded;
 		SpawnedBuilding->ID = SS_Building.ID;
 		SpawnedBuilding->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
@@ -1108,7 +1112,7 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 			SS_Resource.DA_Resource = Res->DA_Resource;
 			SS_Resource.ResourceSize = Res->ResourceSize;
 			SS_Resource.SM_Variety = Res->SM_Variety;
-			SS_Resource.Health = Res->HealthSystem->Health;
+			SS_Resource.Health = Res->HealthComponent->Health;
 			SS_Resource.Growing = Res->Growing;
 			SS_Resource.CurrentGrowTime = Res->CurrentGrowTime;
 			SS_IslandLOD.Resources.Add(SS_Resource);
@@ -1156,7 +1160,7 @@ TArray<FSS_Building> AIsland::SaveBuildings()
 		SS_Building.BM_Class = Building->GetClass();
 		SS_Building.Location = Building->GetRootComponent()->GetRelativeLocation();
 		SS_Building.Rotation = Building->GetRootComponent()->GetRelativeRotation();
-		SS_Building.Health = Building->HealthSystem->Health;
+		SS_Building.Health = Building->HealthComponent->Health;
 		SS_Building.Grounded = Building->Grounded;
 		SS_Building.Supports = Building->ConvertToIDs(Building->Supports);
 		SS_Building.Depends = Building->ConvertToIDs(Building->Depends);

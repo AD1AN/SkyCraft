@@ -163,10 +163,10 @@ public:
 	UFUNCTION(BlueprintCallable) void DestroyLODs();
 	
 	UFUNCTION(BlueprintCallable) void LoadIsland();
-	bool LoadLOD(int32 LoadLOD);
-	void GenerateLOD(int32 GenerateLOD);
+	bool LoadLOD(int32 LoadLODIndex);
+	void GenerateLOD(int32 GenerateLODIndex);
 	TArray<AResource*> LoadResources(TArray<FSS_Resource>& SS_Resources);
-	TArray<ANPC*> LoadNPCs(TArray<FSS_NPC>& SS_NPCs);
+	TArray<ANPC*> LoadNPCs(TArray<FSS_NPC>& SS_NPCs, int32 IslandLODIndex);
 	void LoadBuildings();
 	
 	UFUNCTION(BlueprintCallable) void SaveIsland();

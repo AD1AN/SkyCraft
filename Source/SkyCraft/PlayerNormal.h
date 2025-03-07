@@ -15,11 +15,21 @@ class SKYCRAFT_API APlayerNormal : public ACharacter
 	GENERATED_BODY()
 public:
 	
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UHealthSystem* HealthSystem = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UPlayerHunger* PlayerHunger = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UHealthComponent* HealthComponent = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UHealthRegenComponent* HealthRegenComponent = nullptr;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UHungerComponent* HungerComponent = nullptr;
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHandsFull);
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnHandsFull OnHandsFull;
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_HandsFull) bool HandsFull = false;
+	UFUNCTION() void OnRep_HandsFull();
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHandsFull(bool bHandsFull, AActor* Actor);
+	UPROPERTY(BlueprintReadWrite) AActor* HandsFullActor = nullptr;
 
-	UPROPERTY(BlueprintReadWrite) float MaxHunger = 1000;
-	UPROPERTY(BlueprintReadWrite, Replicated) float CurrentHunger = 1000;
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_AnimLoopUpperBody) UAnimSequenceBase* AnimLoopUpperBody = nullptr;
+	UFUNCTION() void OnRep_AnimLoopUpperBody();
+	UPROPERTY(BlueprintReadOnly) bool bAnimLoopUpperBody = false;
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnimLoopUpperBody(UAnimSequenceBase* Sequence);
 	
 	APlayerNormal(const FObjectInitializer& ObjectInitializer);
 
@@ -41,6 +51,9 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
 	UPROPERTY(BlueprintAssignable) FOnNewBase OnNewBase;
 	virtual void SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor) override;
+	
+	// Called on hunger change. If (health < Max && hunger < than half) then enable health regen. 
+	UFUNCTION() void OnHunger();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

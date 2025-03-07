@@ -22,8 +22,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class USphereComponent* SphereComponent = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent = nullptr;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class UNiagaraComponent* NiagaraComponent = nullptr;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class USuffocationSystem* SuffocationSystem = nullptr;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class UInteractSystem* InteractSystem = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class USuffocationComponent* SuffocationComponent = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class UInteractComponent* InteractComponent = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly) TObjectPtr<AActor> PlayerPickedUp = nullptr;
 	float RelativeDistanceInterpolation = 0.0f;
@@ -43,6 +43,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	void EnableCollision();
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 

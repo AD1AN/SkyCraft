@@ -17,7 +17,7 @@ class SKYCRAFT_API AAstralon : public AActor
 public:
 	AAstralon();
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) class UNiagaraComponent* NiagaraComponent = nullptr;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) class UInteractSystem* InteractSystem = nullptr;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) class UInteractComponent* InteractComponent = nullptr;
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) UDA_Astralon* DA_Astralon = nullptr;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) FRelativeBox PreviewCollision;

@@ -10,7 +10,7 @@
 #include "Components/Inventory.h"
 #include "DataAssets/DA_Building.h"
 #include "Kismet/GameplayStatics.h"
-#include "SkyCraft/Components/HealthSystem.h"
+#include "SkyCraft/Components/HealthComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
 
@@ -26,9 +26,9 @@ ABM::ABM()
 	NetPriority = 0.75;
 	SetNetCullDistanceSquared(900000000);
 	
-	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshComponent");
 	SetRootComponent(StaticMeshComponent);
-	HealthSystem = CreateDefaultSubobject<UHealthSystem>(TEXT("HealthSystem"));
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>("HealthComponent");
 }
 
 FBuildingParameters ABM::SaveBuildingParameters_Implementation()

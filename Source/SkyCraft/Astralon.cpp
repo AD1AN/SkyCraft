@@ -2,7 +2,7 @@
 
 #include "Astralon.h"
 #include "NiagaraComponent.h"
-#include "Components/InteractSystem.h"
+#include "Components/InteractComponent.h"
 
 AAstralon::AAstralon()
 {
@@ -14,7 +14,7 @@ AAstralon::AAstralon()
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraComponent"));
 	SetRootComponent(NiagaraComponent);
 	
-	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
+	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 }
 
 void AAstralon::SetPreviewColor(bool Allowed)

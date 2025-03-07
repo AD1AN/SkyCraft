@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Structs/ItemComponentParameters.h"
 #include "IC.generated.h"
 
 class APAI;
@@ -18,10 +19,11 @@ public:
 	AIC();
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_PlayerNormal, meta=(ExposeOnSpawn)) APlayerNormal* PlayerNormal = nullptr;
 	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) bool Main = true;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn)) class UInventory* Inventory = nullptr;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(ExposeOnSpawn)) int32 SlotIndex;
-	UPROPERTY(BlueprintReadWrite, Replicated, EditAnywhere) bool CanLMB = true;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool CanRMB = true;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) class UInventory* Inventory = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 SlotIndex;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FItemComponentParameters ItemComponentParameters;
+	UPROPERTY(BlueprintReadWrite, Replicated) bool CanLMB = true;
+	UPROPERTY(BlueprintReadWrite) bool CanRMB = true;
 	UPROPERTY(BlueprintReadWrite) bool ComponentStarted = false; // Can only start after character!
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PlayerNormal();
 

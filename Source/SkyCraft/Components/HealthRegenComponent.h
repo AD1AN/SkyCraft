@@ -1,0 +1,50 @@
+// ADIAN Copyrighted
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "HealthRegenComponent.generated.h"
+
+class UHealthComponent;
+
+UENUM()
+enum ERegenTickEnable
+{
+	Manually,
+	Always,
+	ByHealth
+};
+
+UENUM()
+enum ERegenType
+{
+	Percentage,
+	StaticNumber
+};
+
+UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
+class SKYCRAFT_API UHealthRegenComponent : public UActorComponent
+{
+	GENERATED_BODY()
+	
+	UHealthRegenComponent();
+	
+public:
+	UPROPERTY() UHealthComponent* HealthComponent = nullptr;
+
+	UPROPERTY(EditAnywhere) bool bManualBeginPlay = true;
+	UPROPERTY(EditAnywhere) TEnumAsByte<ERegenTickEnable> RegenTickEnable = Manually;
+	UPROPERTY() float HealthPercent = false; // todo
+	
+	UPROPERTY(EditAnywhere) TEnumAsByte<ERegenType> RegenType = StaticNumber;
+	UPROPERTY(EditAnywhere) int32 HealthStaticNumber = 5;
+	UPROPERTY(EditAnywhere) int32 HealthPercentage = 1; // todo
+
+	void ManualBeginPlay(UHealthComponent* SetHealthComponent);
+	virtual void BeginPlay() override;
+
+	void TryTickEnable();
+	
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+};

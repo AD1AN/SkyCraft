@@ -6,8 +6,8 @@
 #include "NiagaraComponent.h"
 #include "Components/Inventory.h"
 #include "Components/SphereComponent.h"
-#include "SkyCraft/Components/InteractSystem.h"
-#include "SkyCraft/Components/SuffocationSystem.h"
+#include "SkyCraft/Components/InteractComponent.h"
+#include "SkyCraft/Components/SuffocationComponent.h"
 #include "SkyCraft/DataAssets/DA_Item.h"
 #include "SkyCraft/Enums/DropDirectionType.h"
 #include "Engine/StreamableManager.h"
@@ -24,6 +24,7 @@ ADroppedItem::ADroppedItem()
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	SetRootComponent(SphereComponent);
 	SphereComponent->InitSphereRadius(10.0f);
+	SphereComponent->SetCollisionProfileName("DroppedItem");
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly); // If EnableQuery then StartPickUp() can happen faster BeginPlay()
 	SphereComponent->SetUseCCD(true); // Stops falling through the ground at high velocity.
 	
@@ -48,19 +49,19 @@ ADroppedItem::ADroppedItem()
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> NiagaraSystemAsset(TEXT("/Game/Niagara/NS_DroppedItem.NS_DroppedItem"));
 	if (NiagaraSystemAsset.Succeeded()) NiagaraComponent->SetAsset(NiagaraSystemAsset.Object);
 	
-	SuffocationSystem = CreateDefaultSubobject<USuffocationSystem>(TEXT("SuffocationSystem"));
-	SuffocationSystem->PrimaryComponentTick.TickInterval = 8;
-	SuffocationSystem->SuffocationType = ESuffocationType::InstantDestroy;
+	SuffocationComponent = CreateDefaultSubobject<USuffocationComponent>(TEXT("SuffocationComponent"));
+	SuffocationComponent->PrimaryComponentTick.TickInterval = 8;
+	SuffocationComponent->SuffocationType = ESuffocationType::InstantDestroy;
 	
-	InteractSystem = CreateDefaultSubobject<UInteractSystem>(TEXT("InteractSystem"));
+	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	FInteractKeySettings IKeySettings;
 	IKeySettings.InteractKey = EInteractKey::Interact1;
 	IKeySettings.Text = NSLOCTEXT("ItemLoot", "PickUpText", "Pick Up");
 	IKeySettings.bCheckPlayer = false;
 	IKeySettings.PlayerForm = { EPlayerForm::Normal };
 	IKeySettings.bProlonged = false;
-	InteractSystem->InteractKeys = {IKeySettings};
-	InteractSystem->bInteractable = true;
+	InteractComponent->InteractKeys = {IKeySettings};
+	InteractComponent->bInteractable = true;
 }
 
 void ADroppedItem::BeginPlay()
@@ -109,13 +110,17 @@ void ADroppedItem::BeginPlay()
 			}
 		}
 	}
-	
+
+	ensureAlways(Slot.DA_Item);
 	if (!Slot.DA_Item)
 	{
-		GEngine->AddOnScreenDebugMessage(-1,555.0f,FColor::Red,TEXT("DroppedItem: Slot is empty! fix it!"));
-		if (!IsNetMode(NM_Client)) Destroy();
+		if (HasAuthority()) Destroy();
 		return;
 	}
+
+	StaticMeshComponent->SetRelativeRotation(Slot.DA_Item->RotationOffset);
+	StaticMeshComponent->SetRelativeLocation(Slot.DA_Item->LocationOffset);
+	
 	if (Slot.DA_Item->StaticMesh.IsNull()) return;
 	if (Slot.DA_Item->StaticMesh.IsValid())
 	{
@@ -125,7 +130,13 @@ void ADroppedItem::BeginPlay()
 		FStreamableManager& StreamableManager = UAssetManager::GetStreamableManager();
 		StreamableManager.RequestAsyncLoad(Slot.DA_Item->StaticMesh.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ADroppedItem::OnMeshLoaded));
 	}
-	SphereComponent->SetCollisionProfileName("DroppedItem"); // Prevents StartPickUp() trigger faster BeginPlay()
+	FTimerHandle TimerCollision;
+	GetWorld()->GetTimerManager().SetTimer(TimerCollision, this, &ADroppedItem::EnableCollision, 1.0f);
+}
+
+void ADroppedItem::EnableCollision()
+{
+	SphereComponent->SetCollisionProfileName("DroppedItem");
 }
 
 void ADroppedItem::Tick(float DeltaSeconds)
@@ -189,7 +200,7 @@ void ADroppedItem::StartPickUp(AActor* Player)
 	PlayerPickedUp = Player;
 	SphereComponent->SetSimulatePhysics(false);
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	InteractSystem->SetInteractable(false);
+	InteractComponent->SetInteractable(false);
 	RelativeDistanceInterpolation = 0;
 	SetActorTickEnabled(true);
 }
@@ -202,7 +213,7 @@ void ADroppedItem::FailPickUp()
 	PlayerPickedUp = nullptr;
 	SphereComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	SphereComponent->SetSimulatePhysics(true);
-	InteractSystem->SetInteractable(true);
+	InteractComponent->SetInteractable(true);
 }
 
 void ADroppedItem::OnMeshLoaded()

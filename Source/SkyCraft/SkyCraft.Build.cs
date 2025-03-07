@@ -21,7 +21,10 @@ public class SkyCraft : ModuleRules
 			"ProceduralMeshComponent",
 			"Slate",
 			"SlateCore",
-			"NavigationSystem"
+			"NavigationSystem",
+			"BlueprintGraph",  // Required for Blueprint-related nodes
+            "KismetCompiler",  // Ensures Blueprint nodes compile correctly
+            "Kismet"  // Base K2 nodes
 		});
 		
 		if (Target.bBuildEditor)

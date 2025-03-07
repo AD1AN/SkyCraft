@@ -15,6 +15,7 @@ UGrowingResourcesComponent::UGrowingResourcesComponent()
 void UGrowingResourcesComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	SetComponentTickInterval(FMath::FRandRange(0.95f, 1.05f));
 	if (!GetOwner()->HasAuthority()) return;
 	Island = Cast<AIsland>(GetOwner());
 	ensureAlways(Island);
@@ -26,6 +27,12 @@ void UGrowingResourcesComponent::TickComponent(float DeltaTime, enum ELevelTick 
 	for (int32 i = GrowingResources.Num() - 1; i >= 0; --i)
 	{
 		AResource* Resource = GrowingResources[i];
+		if (!IsValid(Resource))
+		{
+			GrowingResources.RemoveAt(i);
+			continue;
+		}
+		
 		Resource->CurrentGrowTime += 1.0f;
 		if (Resource->CurrentGrowTime >= Resource->DA_Resource->Size[Resource->ResourceSize].GrowTime)
 		{

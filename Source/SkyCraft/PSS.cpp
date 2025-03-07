@@ -2,7 +2,7 @@
 
 #include "PSS.h"
 #include "Net/UnrealNetwork.h"
-#include "SkyCraft/Components/InteractSystem.h"
+#include "SkyCraft/Components/InteractComponent.h"
 #include "Interfaces/Interact_CPP.h"
 #include "Net/Core/PushModel/PushModel.h"
 
@@ -45,20 +45,20 @@ EPlayerForm APSS::AuthSetPlayerForm(EPlayerForm NewPlayerForm)
 
 void APSS::Server_InterruptActor_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS)
 {
-	UInteractSystem* InteractSystem = InterruptActor->FindComponentByClass<UInteractSystem>();
-	for (int32 i = InteractSystem->CurrentProlonged.Num()-1; i >= 0; --i) // bruh, there was RemoveProlonged function in InteractSystem
+	UInteractComponent* InteractComponent = InterruptActor->FindComponentByClass<UInteractComponent>();
+	for (int32 i = InteractComponent->CurrentProlonged.Num()-1; i >= 0; --i) // bruh, there was RemoveProlonged function in InteractComponent
 	{
-		if (InteractSystem->CurrentProlonged[i].Pawn == Pawn)
+		if (InteractComponent->CurrentProlonged[i].Pawn == Pawn)
 		{
-			InteractSystem->CurrentProlonged.RemoveAt(i);
-			if (InteractSystem->CurrentProlonged.IsEmpty())
+			InteractComponent->CurrentProlonged.RemoveAt(i);
+			if (InteractComponent->CurrentProlonged.IsEmpty())
 			{
-				InteractSystem->SetComponentTickEnabled(false);
+				InteractComponent->SetComponentTickEnabled(false);
 			}
 			break;
 		}
 	}
-	InteractSystem->OnServerInterrupted.Broadcast(InterruptedBy, InteractKey, Pawn);
+	InteractComponent->OnServerInterrupted.Broadcast(InterruptedBy, InteractKey, Pawn);
 
 	IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(InterruptActor);
 	if (Interact_CPP)
@@ -75,8 +75,8 @@ void APSS::Server_InterruptActor_Implementation(AActor* InterruptActor, EInterru
 
 void APSS::Client_InterruptActor_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS)
 {
-	const UInteractSystem* InteractSystem = InterruptActor->FindComponentByClass<UInteractSystem>();
-	InteractSystem->OnClientInterrupted.Broadcast(InterruptedBy, InteractKey, Pawn);
+	const UInteractComponent* InteractComponent = InterruptActor->FindComponentByClass<UInteractComponent>();
+	InteractComponent->OnClientInterrupted.Broadcast(InterruptedBy, InteractKey, Pawn);
 	
 	IInteract_CPP* Interact_CPP = Cast<IInteract_CPP>(InterruptActor);
 	if (Interact_CPP)
