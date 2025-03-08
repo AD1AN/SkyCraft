@@ -9,6 +9,7 @@
 #include "SkyCraft/GMS.h"
 #include "SkyCraft/GSS.h"
 #include "SkyCraft/Island.h"
+#include "SkyCraft/DataAssets/DA_IslandBiome.h"
 
 UChunker::UChunker()
 {
@@ -117,14 +118,16 @@ void UChunker::SpawnChunks()
 						
 						if (ChunkSeed.FRand() > 0.5f) // Decide if there's Island in this chunk.
 						{
-							float IslandSize = ChunkSeed.FRandRange(0.0f, 1.0f);
+							UDA_IslandBiome* DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(ChunkSeed);
+							float IslandSize = ChunkSeed.FRandRange(DA_IslandBiome->IslandSize.Min, DA_IslandBiome->IslandSize.Max);
 							FTransform IslandTransform;
 							FVector IslandLocation = ChunkTransform.GetLocation();
+							
 							IslandLocation.Z = ChunkSeed.RandRange(GSS->IslandsAltitude.Min, GSS->IslandsAltitude.Max);
 							IslandTransform.SetLocation(IslandLocation);
 							AIsland* SpawnedIsland = GetWorld()->SpawnActorDeferred<AIsland>(AIsland::StaticClass(), IslandTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 							SpawnedIsland->GSS = GSS;
-							SpawnedIsland->DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(ChunkSeed);
+							SpawnedIsland->DA_IslandBiome = DA_IslandBiome;
 							// Load island from save.
 							if (FSS_Island* SS_Island = GSS->GMS->SavedIslands.Find(ChunkCoords.HashCoords()))
 							{

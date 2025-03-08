@@ -33,6 +33,7 @@ void AIslandArchon::StartIsland()
 {
 	Seed.Reset();
 	bIsGenerating = true;
+	
 	GSS = GetWorld()->GetGameState<AGSS>();
 	if (!DA_IslandBiome && HasAuthority())
 	{
