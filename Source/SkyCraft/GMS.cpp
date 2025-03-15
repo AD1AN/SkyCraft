@@ -29,12 +29,14 @@ APlayerController* AGMS::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const 
 	return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 }
 
-void AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing)
+void AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD)
 {
 	ensureAlways(Island);
 	if (!Island) return;
 	ensureAlways(DA_Resource);
 	if (!DA_Resource) return;
+	ensureAlways(DA_Resource->Size.IsValidIndex(ResourceSize));
+	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
 
 	FTransform ResTransform(LocalLocation);
 	ResTransform.SetRotation(LocalRotation.Quaternion());
@@ -43,11 +45,11 @@ void AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalR
 	SpawnedRes->Island = Island;
 	SpawnedRes->DA_Resource = DA_Resource;
 	SpawnedRes->ResourceSize = ResourceSize;
-	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
+	if (!DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) SpawnedRes->SM_Variety = FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
 	SpawnedRes->Growing = Growing;
 	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
 	SpawnedRes->FinishSpawning(ResTransform);
-	Island->SpawnedLODs[INDEX_NONE].Resources.Add(SpawnedRes);
+	Island->SpawnedLODs[IslandLOD].Resources.Add(SpawnedRes);
 }
 
 ANavMeshBoundsVolume* AGMS::NMBV_Use(AActor* ActorAttach, FVector Scale)

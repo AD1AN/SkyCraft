@@ -3,6 +3,8 @@
 #include "DropItem.h"
 #include "ResourceSize.generated.h"
 
+class UDA_Resource;
+
 USTRUCT(BlueprintType)
 struct FResourceSize
 {
@@ -13,10 +15,5 @@ struct FResourceSize
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) TArray<UStaticMesh*> SM_Variety;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) float CullDistance = 150000.0f;
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) float GrowTime = 600.0f; // In seconds.
-
-	FResourceSize()
-	{
-		DropItems.Add(FDropItem{});
-		SM_Variety.Add(nullptr);
-	}
+	UPROPERTY(BlueprintReadOnly, EditAnywhere) TObjectPtr<UDA_Resource> GrowInto = nullptr;
 };

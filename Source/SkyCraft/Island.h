@@ -84,7 +84,7 @@ public:
 	
 	AIsland();
 
-	UPROPERTY() AGSS* GSS = nullptr;
+	UPROPERTY(BlueprintReadOnly) AGSS* GSS = nullptr;
 	UPROPERTY() AChunkIsland* ChunkIsland;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FCoords Coords;
 	UPROPERTY(Replicated, EditAnywhere) UDA_IslandBiome* DA_IslandBiome = nullptr;

@@ -45,6 +45,7 @@ void AResource::BeginPlay()
 	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
 	StaticMeshComponent->SetCullDistance(CurrentSize.CullDistance);
 	SetNetCullDistanceSquared(FMath::Square(CurrentSize.CullDistance));
+	if (DA_Resource->OverlapCollision) StaticMeshComponent->SetCollisionProfileName(TEXT("ResourceOverlap"));
 	
 	ImplementAssetUserData(DA_Resource->AssetUserData);
 	ImplementAssetUserData(CurrentSize.AssetUserData);
@@ -68,7 +69,7 @@ void AResource::BeginPlay()
 		if (!Growing) return;
 		ensureAlways(Island);
 		if (!Island) return;
-		if (!DA_Resource->Size.IsValidIndex(ResourceSize+1))
+		if (!DA_Resource->Size[ResourceSize].GrowInto && !DA_Resource->Size.IsValidIndex(ResourceSize+1))
 		{
 			Growing = false;
 			return;
@@ -98,6 +99,26 @@ void AResource::GrowUp()
 	SpawnedRes->ResourceSize = NewResourceSize;
 	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
 	SpawnedRes->Growing = Growing;
+	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
+	SpawnedRes->FinishSpawning(ResTransform);
+	Island->SpawnedLODs[INDEX_NONE].Resources.Add(SpawnedRes);
+	
+	Destroy();
+}
+
+void AResource::GrowInto(UDA_Resource* NewResource)
+{
+	ensureAlways(NewResource);
+	if (!NewResource) return;
+	
+	FTransform ResTransform(RootComponent->GetRelativeLocation());
+	ResTransform.SetRotation(RootComponent->GetRelativeRotation().Quaternion());
+	TSubclassOf<AResource> ResourceClass = (NewResource->OverrideResourceClass) ? NewResource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+	AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
+	SpawnedRes->Island = Island;
+	SpawnedRes->DA_Resource = NewResource;
+	SpawnedRes->ResourceSize = 0;
+	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
 	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
 	SpawnedRes->FinishSpawning(ResTransform);
 	Island->SpawnedLODs[INDEX_NONE].Resources.Add(SpawnedRes);

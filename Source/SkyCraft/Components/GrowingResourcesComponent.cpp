@@ -36,7 +36,15 @@ void UGrowingResourcesComponent::TickComponent(float DeltaTime, enum ELevelTick 
 		Resource->CurrentGrowTime += 1.0f;
 		if (Resource->CurrentGrowTime >= Resource->DA_Resource->Size[Resource->ResourceSize].GrowTime)
 		{
-			if (Resource->DA_Resource->Size.IsValidIndex(Resource->ResourceSize + 1))
+			UDA_Resource* GrowIntoResource = Resource->DA_Resource->Size[Resource->ResourceSize].GrowInto;
+			if (GrowIntoResource)
+			{
+				Resource->GrowInto(GrowIntoResource);
+				GrowingResources.RemoveAt(i);
+				continue;
+			}
+			
+			if (Resource->DA_Resource->Size.IsValidIndex(Resource->ResourceSize+1))
 			{
 				Resource->CurrentGrowTime = 0;
 				Resource->GrowUp();

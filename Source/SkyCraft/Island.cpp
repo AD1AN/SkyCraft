@@ -126,6 +126,7 @@ void AIsland::SpawnCliffsComponents()
 		
 		UInstancedStaticMeshComponent* Cliff = NewObject<UInstancedStaticMeshComponent>(this);
 		Cliff->SetStaticMesh(StaticMesh);
+		if (DA_IslandBiome->BottomMaterial) Cliff->SetMaterial(0, DA_IslandBiome->BottomMaterial);
 		Cliff->SetCollisionProfileName(TEXT("Island"));
 		Cliff->SetupAttachment(RootComponent);
 		Cliff->SetCullDistances(900000, 900000);
@@ -856,7 +857,7 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 
 			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 			
-			// Check if Edge
+			// Avoid Island Edge
 			if (IslandResource.DA_Resource->AvoidIslandEdge)
 			{
 				const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / CellSize);
@@ -872,7 +873,7 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 			const int32 GridX = FMath::RoundToInt(RandomPoint.X / DA_Resource->BodyRadius);
 			const int32 GridY = FMath::RoundToInt(RandomPoint.Y / DA_Resource->BodyRadius);
 			
-			// Check SAME TYPE neighbor cells for spacing
+			// Check SAME RESOURCE TYPE neighbor cells for spacing
 			int32 CheckNeighbours = DA_Resource->SpacingNeighbours + 1;
 			bool bTooClose = false;
 			for (int32 NeighborX = -CheckNeighbours; NeighborX <= CheckNeighbours; ++NeighborX)
@@ -894,7 +895,7 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 				continue;
 			}
 			
-			// Check OTHER TYPES neighbor cells for spacing
+			// Check OTHER RESOURCES TYPES neighbor cells for spacing
 			for (auto& ResourceGridMap : ResourcesGridMap)
 			{
 				if (ResourceGridMap.Key == DA_Resource) continue;

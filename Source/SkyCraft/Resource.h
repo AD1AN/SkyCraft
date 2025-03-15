@@ -35,6 +35,7 @@ public:
 
 	UFUNCTION(BlueprintCallable) virtual void BeginPlay() override;
 	void GrowUp();
+	void GrowInto(UDA_Resource* NewResource);
 	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;
 	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;
 	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) override;

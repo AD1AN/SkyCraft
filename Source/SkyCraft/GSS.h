@@ -19,8 +19,8 @@ class SKYCRAFT_API AGSS : public AGameStateBase
 public:	
 	AGSS();
 
-	UPROPERTY() AGMS* GMS = nullptr;
-	UPROPERTY() UGIS* GIS = nullptr;
+	UPROPERTY(BlueprintReadOnly) AGMS* GMS = nullptr;
+	UPROPERTY(BlueprintReadOnly) UGIS* GIS = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float ChunkSize = 100000;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) int32 ChunkRenderRange = 10;

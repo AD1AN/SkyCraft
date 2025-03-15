@@ -38,7 +38,7 @@ enum class EDieHandle : uint8
 	CustomOnDieEvent
 };
 
-UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
+UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent), DisplayName="HealthComponent")
 class SKYCRAFT_API UHealthComponent : public UActorComponent
 {
 	GENERATED_BODY()

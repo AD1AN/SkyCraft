@@ -55,12 +55,7 @@ void UHealthComponent::SpawnDamageNumbers(int32 Damage, AActor* AttachTo, FVecto
 
 void UHealthComponent::AuthSetHealth(int32 NewHealth)
 {
-	Health = FMath::Clamp(NewHealth, 0, MaxHealth);;
-	if (Health <= 0)
-	{
-		Multicast_OnDie();
-		SpawnDieFX();
-	}
+	Health = FMath::Clamp(NewHealth, 0, MaxHealth);
 	MARK_PROPERTY_DIRTY_FROM_NAME(UHealthComponent, Health, this);
 	OnHealth.Broadcast();
 }
@@ -139,56 +134,6 @@ void UHealthComponent::AuthApplyDamage(const FApplyDamageIn In)
 	}
 }
 
-void UHealthComponent::SpawnDamageFX(UDataAsset* DamageDataAsset, FVector HitLocation, AActor* AttachTo)
-{
-	if (IsValid(DamageDataAsset))
-	{
-		if (FFXArray* FXArray = DamageFX.Find(DamageDataAsset))
-		{
-			for (FFX FX : FXArray->FXs)
-			{
-				// TODO: Multicast should be in this class not in GSS because multicast should not be global.
-				if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, HitLocation, AttachTo, AttenuationSettings);
-			}
-			return;
-		}
-	}
-
-	for (FFX FX : DamageFXDefault)
-	{
-		// todo this is dog shit
-		if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, HitLocation, AttachTo, AttenuationSettings);
-	}
-}
-
-void UHealthComponent::SpawnDieFX(UDataAsset* DamageDataAsset, FVector OriginLocation, AActor* AttachTo)
-{
-	if (IsValid(DamageDataAsset))
-	{
-		if (FFXArray* FXArray = DieFX.Find(DamageDataAsset))
-		{
-			for (FFX FX : FXArray->FXs)
-			{
-				// todo also dog shit
-				if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, OriginLocation, AttachTo, AttenuationSettings);
-			}
-			return;
-		}
-	}
-	
-	for (FFX FX : DieFXDefault)
-	{
-		// todo dog shit also
-		if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, OriginLocation, AttachTo, AttenuationSettings);
-	}
-}
-
-float UHealthComponent::HealthRatio()
-{
-	if (MaxHealth == 0) return 0.0f; // Prevent division by zero
-	return static_cast<float>(Health) / static_cast<float>(MaxHealth);
-}
-
 void UHealthComponent::AuthDie(UDataAsset* DamageDataAsset, FVector HitLocation)
 {
 	if (bDropItems)
@@ -239,6 +184,56 @@ void UHealthComponent::AuthDie(UDataAsset* DamageDataAsset, FVector HitLocation)
 		}
 	}
 	GetOwner()->Destroy();
+}
+
+void UHealthComponent::SpawnDamageFX(UDataAsset* DamageDataAsset, FVector HitLocation, AActor* AttachTo)
+{
+	if (IsValid(DamageDataAsset))
+	{
+		if (FFXArray* FXArray = DamageFX.Find(DamageDataAsset))
+		{
+			for (FFX FX : FXArray->FXs)
+			{
+				// TODO: Multicast should be in this class not in GSS because multicast should not be global.
+				if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, HitLocation, AttachTo, AttenuationSettings);
+			}
+			return;
+		}
+	}
+
+	for (FFX FX : DamageFXDefault)
+	{
+		// todo this is dog shit
+		if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, HitLocation, AttachTo, AttenuationSettings);
+	}
+}
+
+void UHealthComponent::SpawnDieFX(UDataAsset* DamageDataAsset, FVector OriginLocation, AActor* AttachTo)
+{
+	if (IsValid(DamageDataAsset))
+	{
+		if (FFXArray* FXArray = DieFX.Find(DamageDataAsset))
+		{
+			for (FFX FX : FXArray->FXs)
+			{
+				// todo also dog shit
+				if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, OriginLocation, AttachTo, AttenuationSettings);
+			}
+			return;
+		}
+	}
+	
+	for (FFX FX : DieFXDefault)
+	{
+		// todo dog shit also
+		if (FX.Sound || FX.Niagara) GSS->Multicast_SpawnFXAttached(FX, OriginLocation, AttachTo, AttenuationSettings);
+	}
+}
+
+float UHealthComponent::HealthRatio()
+{
+	if (MaxHealth == 0) return 0.0f; // Prevent division by zero
+	return static_cast<float>(Health) / static_cast<float>(MaxHealth);
 }
 
 void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
