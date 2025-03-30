@@ -15,7 +15,7 @@ enum class ESuffocationType : uint8
 	InstantDestroy
 };
 
-UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
+UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent), DisplayName="SuffocationComponent")
 class SKYCRAFT_API USuffocationComponent : public UActorComponent
 {
 	GENERATED_BODY()

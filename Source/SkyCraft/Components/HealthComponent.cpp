@@ -140,6 +140,9 @@ void UHealthComponent::AuthDie(UDataAsset* DamageDataAsset, FVector HitLocation)
 	{
 		for (const FDropItem& DropItem : DropItems)
 		{
+			ensureAlways(DropItem.Item);
+			if (!DropItem.Item) continue;
+			
 			uint8 RepeatDrop = 1;
 			if (DropItem.RepeatDrop > 0)
 			{

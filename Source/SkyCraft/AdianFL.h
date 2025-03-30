@@ -123,4 +123,7 @@ public:
 	{
 		return Key.GetFName();
 	}
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="AdianFL")
+	static bool DoDamage(AActor* Actor, FApplyDamageIn ApplyDamageIn);
 };

@@ -7,7 +7,7 @@
 #include "HungerComponent.generated.h"
 
 // TODO, THIS COMPONENT ONLY DESIGNED FOR PLAYER_NORMAL, REWORK IT IF NEED FOR OTHER ENTITIES!
-UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
+UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent), DisplayName="HungerComponent")
 class SKYCRAFT_API UHungerComponent : public UActorComponent
 {
 	GENERATED_BODY()

@@ -11,7 +11,7 @@
 #include "InteractComponent.generated.h"
 
 
-UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
+UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent), DisplayName="InteractComponent")
 class SKYCRAFT_API UInteractComponent : public UActorComponent
 {
 	GENERATED_BODY()

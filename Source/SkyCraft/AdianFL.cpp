@@ -3,6 +3,7 @@
 #include "AdianFL.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_StaticMeshCustomPrimitiveData.h"
+#include "Components/HealthComponent.h"
 #include "Interfaces/Interface_AssetUserData.h"
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
 #include "Structs/RelativeBox.h"
@@ -229,4 +230,14 @@ FVector UAdianFL::ToLocalSpace(FVector WorldLocation, AActor* ToActor)
 {
 	if (!ToActor) return WorldLocation;
 	return ToActor->GetTransform().InverseTransformPosition(WorldLocation);
+}
+
+bool UAdianFL::DoDamage(AActor* Actor, FApplyDamageIn ApplyDamageIn)
+{
+	if (!IsValid(Actor)) return false;
+	UHealthComponent* HealthComponent = Actor->FindComponentByClass<UHealthComponent>();
+	if (!HealthComponent) return false;
+	
+	HealthComponent->AuthApplyDamage(ApplyDamageIn);
+	return true;
 }

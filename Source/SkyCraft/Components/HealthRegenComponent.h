@@ -23,7 +23,7 @@ enum ERegenType
 	StaticNumber
 };
 
-UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
+UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent), DisplayName="HealthRegenerationComponent")
 class SKYCRAFT_API UHealthRegenComponent : public UActorComponent
 {
 	GENERATED_BODY()
