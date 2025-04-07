@@ -1,5 +1,7 @@
 // ADIAN Copyrighted
 
+#if WITH_EDITOR
+
 #include "K2Node_AdianPlayMontage.h"
 #include "Containers/UnrealString.h"
 #include "EdGraph/EdGraphPin.h"
@@ -55,3 +57,5 @@ void UK2Node_AdianPlayMontage::GetPinHoverText(const UEdGraphPin& Pin, FString& 
 }
 
 #undef LOCTEXT_NAMESPACE
+
+#endif

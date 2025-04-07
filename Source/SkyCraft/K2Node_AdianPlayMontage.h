@@ -2,6 +2,8 @@
 
 #pragma once
 
+#if WITH_EDITOR
+
 #include "CoreMinimal.h"
 #include "EdGraph/EdGraphNode.h"
 #include "Internationalization/Text.h"
@@ -29,3 +31,5 @@ class UK2Node_AdianPlayMontage : public UK2Node_BaseAsyncTask
 	virtual FText GetMenuCategory() const override;
 	//~ End UK2Node Interface
 };
+
+#endif
