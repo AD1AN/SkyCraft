@@ -7,6 +7,7 @@
 #include "GSS.h"
 #include "Island.h"
 #include "NiagaraFunctionLibrary.h"
+#include "RepHelpers.h"
 #include "Components/Inventory.h"
 #include "DataAssets/DA_Building.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,10 +26,26 @@ ABM::ABM()
 	SetMinNetUpdateFrequency(1);
 	NetPriority = 0.75;
 	SetNetCullDistanceSquared(900000000);
+	NetDormancy = DORM_DormantAll;
 	
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshComponent");
 	SetRootComponent(StaticMeshComponent);
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>("HealthComponent");
+	HealthComponent->DieHandle = EDieHandle::CustomOnDieEvent;
+}
+
+void ABM::BeginPlay()
+{
+	Super::BeginPlay();
+	if (HasAuthority())
+	{
+		HealthComponent->OnDie.AddDynamic(this, &ABM::OnDie);
+	}
+}
+
+void ABM::OnDie()
+{
+	Dismantle(nullptr);
 }
 
 FBuildingParameters ABM::SaveBuildingParameters_Implementation()
@@ -43,8 +60,7 @@ bool ABM::LoadBuildingParameters_Implementation(FBuildingParameters BuildingPara
 
 void ABM::AuthSetGrounded(uint8 NewGrounded)
 {
-	Grounded = NewGrounded;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ABM, Grounded, this);
+	REP_SET(Grounded, NewGrounded);
 }
 
 void ABM::Multicast_Build_Implementation()

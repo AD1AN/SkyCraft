@@ -1,4 +1,5 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// ADIAN Copyrighted
+
 #pragma once
 
 #include "CoreMinimal.h"

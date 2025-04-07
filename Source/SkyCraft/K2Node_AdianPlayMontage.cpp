@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// ADIAN Copyrighted
 
 #include "K2Node_AdianPlayMontage.h"
 #include "Containers/UnrealString.h"

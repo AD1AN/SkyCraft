@@ -39,6 +39,8 @@ public:
 	UPROPERTY(BlueprintReadWrite) TMap<UStaticMeshComponent*, FArrayMaterials> StoredMaterials;
 	UPROPERTY(BlueprintReadOnly, Replicated) uint8 Grounded = 0;
 	UFUNCTION(BlueprintAuthorityOnly, BlueprintCallable) void AuthSetGrounded(uint8 NewGrounded);
+
+	virtual void BeginPlay() override;
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) FBuildingParameters SaveBuildingParameters();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) bool LoadBuildingParameters(FBuildingParameters BuildingParameters);
@@ -50,6 +52,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void Dismantled();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void DismantledEffects();
 
+	UFUNCTION() void OnDie();
 	UFUNCTION(BlueprintCallable) void Dismantle(UInventory* CauserInventory);
 	void RecursiveDismantle(TArray<ABM*>& FlaggedDismantle);
 	void UpdateGrounded(uint8 NewGrounded, TArray<ABM*>& FlaggedDismantle);

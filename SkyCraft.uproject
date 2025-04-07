@@ -292,15 +292,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "InterchangeEditor",
-			"Enabled": false,
-			"SupportedTargetPlatforms": [
-				"Win64",
-				"Linux",
-				"Mac"
-			]
-		},
-		{
 			"Name": "Interchange",
 			"Enabled": false,
 			"SupportedTargetPlatforms": [
@@ -531,6 +522,10 @@
 		},
 		{
 			"Name": "EditorScriptingUtilities",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayStateTree",
 			"Enabled": true
 		}
 	],

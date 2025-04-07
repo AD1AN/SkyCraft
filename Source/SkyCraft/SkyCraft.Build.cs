@@ -21,20 +21,18 @@ public class SkyCraft : ModuleRules
 			"ProceduralMeshComponent",
 			"Slate",
 			"SlateCore",
-			"NavigationSystem",
-			"BlueprintGraph",  // Required for Blueprint-related nodes
-            "KismetCompiler",  // Ensures Blueprint nodes compile correctly
-            "Kismet"  // Base K2 nodes
+			"NavigationSystem"
 		});
 		
 		if (Target.bBuildEditor)
 		{
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
-				"UnrealEd",				// Core editor functionality
-				"LevelEditor",
+				"UnrealEd",	// Core editor functionality
 				"AssetTools",			// For asset management
-				"PropertyEditor"		// For property customization and editor extensions
+				"PropertyEditor",		// For property customization and editor extensions
+				"LevelEditor",
+				"BlueprintGraph"
 			});
 		}
 

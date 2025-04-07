@@ -29,6 +29,7 @@ struct FApplyDamageIn
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) AActor* EntityDealer = nullptr;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector HitLocation = FVector::ZeroVector;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bShowDamageNumbers = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float HitMass = 0;
 };
 
 UENUM()

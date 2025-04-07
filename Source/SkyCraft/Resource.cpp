@@ -3,6 +3,7 @@
 #include "Resource.h"
 #include "AdianFL.h"
 #include "Island.h"
+#include "RepHelpers.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"
 #include "SkyCraft/Components/HealthComponent.h"
 #include "SkyCraft/Components/InteractComponent.h"
@@ -18,6 +19,7 @@ AResource::AResource()
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	bReplicates = true;
+	NetDormancy = DORM_DormantAll;
 	
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	SetRootComponent(StaticMeshComponent);

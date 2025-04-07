@@ -10,6 +10,7 @@
 #include "SkyCraft/GSS.h"
 #include "SkyCraft/Island.h"
 #include "SkyCraft/PCS.h"
+#include "SkyCraft/RepHelpers.h"
 
 UHealthComponent::UHealthComponent()
 {
@@ -55,9 +56,8 @@ void UHealthComponent::SpawnDamageNumbers(int32 Damage, AActor* AttachTo, FVecto
 
 void UHealthComponent::AuthSetHealth(int32 NewHealth)
 {
-	Health = FMath::Clamp(NewHealth, 0, MaxHealth);
-	MARK_PROPERTY_DIRTY_FROM_NAME(UHealthComponent, Health, this);
-	OnHealth.Broadcast();
+	int32 ClampedHealth = FMath::Clamp(NewHealth, 0, MaxHealth);
+	REP_SET(Health, ClampedHealth);
 }
 
 void UHealthComponent::Multicast_OnDamage_Implementation(int32 Damage, AActor* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, AActor* EntityDealer, float DamageRatio, FVector HitLocation, bool bShowDamageNumbers)
