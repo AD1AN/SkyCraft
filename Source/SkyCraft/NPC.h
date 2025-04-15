@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/HealthInterface.h"
+#include "Interfaces/IslandInterface.h"
 #include "NPC.generated.h"
 
 class UHealthComponent;
@@ -9,12 +11,13 @@ class AIsland;
 struct FSS_NPC;
 
 UCLASS()
-class SKYCRAFT_API ANPC : public ACharacter
+class SKYCRAFT_API ANPC : public ACharacter, public IHealthInterface, public IIslandInterface
 {
 	GENERATED_BODY()
 public:
 	ANPC();
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) UHealthComponent* HealthComponent = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class USuffocationComponent* SuffocationComponent = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, Replicated) AIsland* Island = nullptr;
 	UPROPERTY(BlueprintReadOnly) int32 IslandLODIndex = 0;
@@ -34,6 +37,18 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) bool LoadNPC(const FSS_NPC& NPC_Parameters);
 	UFUNCTION() void ChangedLOD();
 	UFUNCTION() void UpdateSettings();
+
+	UPROPERTY(EditDefaultsOnly) class UNiagaraSystem* TESTNiagaraSystem = nullptr;
+	UPROPERTY(EditDefaultsOnly) class USoundBase* TESTSound = nullptr;
+	UFUNCTION(NetMulticast, Reliable) void Multicast_DelayedDestroy();
+	void NextFrameDestroy();
+
+	virtual AIsland* GetIsland() override
+	{
+		return Island;
+	}
+
+	virtual bool OnDie_Implementation(const FDamageInfo& DamageInfo) override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -1,10 +1,9 @@
 // ADIAN Copyrighted
 
 #include "HungerComponent.h"
-
-#include "HealthComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
+#include "SkyCraft/AdianFL.h"
 #include "SkyCraft/PlayerNormal.h"
 
 UHungerComponent::UHungerComponent()
@@ -48,12 +47,12 @@ void UHungerComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 	if (Hunger >= MaxHunger)
 	{
 		Hunger = MaxHunger;
-		FApplyDamageIn ApplyDamageIn;
-		ApplyDamageIn.BaseDamage = 10;
-		ApplyDamageIn.HitLocation = PlayerNormal->GetActorLocation();
-		ApplyDamageIn.bShowDamageNumbers = false;
-		ApplyDamageIn.DamageDataAsset = DamageDataAsset;
-		PlayerNormal->HealthComponent->AuthApplyDamage(ApplyDamageIn);
+
+		FDamageInfo DamageInfo;
+		DamageInfo.DA_Damage = DA_Damage;
+		DamageInfo.WorldLocation = PlayerNormal->GetActorLocation();
+		
+		UAdianFL::DoDamage(PlayerNormal, DamageInfo);
 	}
 	// TODO: stomach growling multicast sound
 }

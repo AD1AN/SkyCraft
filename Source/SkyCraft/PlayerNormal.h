@@ -3,14 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Island.h"
 #include "GameFramework/Character.h"
 #include "Components/PrimitiveComponent.h"
+#include "GeometryCollection/GeometryCollectionParticlesData.h"
+#include "Interfaces/IslandInterface.h"
 #include "PlayerNormal.generated.h"
 
 class APSS;
 
 UCLASS()
-class SKYCRAFT_API APlayerNormal : public ACharacter
+class SKYCRAFT_API APlayerNormal : public ACharacter, public IIslandInterface
 {
 	GENERATED_BODY()
 public:
@@ -33,10 +36,10 @@ public:
 	
 	APlayerNormal(const FObjectInitializer& ObjectInitializer);
 
-	/* Should not be used in blueprint */
+	// Should not be used in blueprint
 	virtual void BeginPlay() override;
 
-	/* Called once only from BeginPlay */
+	// Called once only from BeginPlay
 	UFUNCTION(BlueprintImplementableEvent) void CharacterStart();
 	
 	bool bHadBeginPlay = false;
@@ -54,6 +57,11 @@ public:
 	
 	// Called on hunger change. If (health < Max && hunger < than half) then enable health regen. 
 	UFUNCTION() void OnHunger();
+
+	virtual AIsland* GetIsland() override
+	{
+		return Cast<AIsland>(GetMovementBase()->GetOwner());
+	}
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

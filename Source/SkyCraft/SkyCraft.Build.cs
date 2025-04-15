@@ -28,11 +28,10 @@ public class SkyCraft : ModuleRules
 		{
 			PrivateDependencyModuleNames.AddRange(new string[]
 			{
-				"UnrealEd",	// Core editor functionality
-				"AssetTools",			// For asset management
-				"PropertyEditor",		// For property customization and editor extensions
+				"UnrealEd",
 				"LevelEditor",
-				"BlueprintGraph"
+				"AssetTools",
+				"PropertyEditor"
 			});
 		}
 

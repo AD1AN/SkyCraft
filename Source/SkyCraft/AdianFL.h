@@ -3,12 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ProgressBar.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/Coords.h"
+#include "SkyCraft/Damage.h"
 #include "AdianFL.generated.h"
 
+class UNiagaraSystem;
+class AIsland;
+class UNiagaraComponent;
 struct FRelativeBox;
 class UDA_SkyTag;
 class IInterface_AssetUserData;
@@ -125,5 +128,35 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="AdianFL")
-	static bool DoDamage(AActor* Actor, FApplyDamageIn ApplyDamageIn);
+	static bool DoDamage(AActor* Actor, FDamageInfo DamageInfo);
+
+	UFUNCTION(BlueprintCallable, Category="AdianFL", meta=(WorldContext = "WorldContextObject"))
+	static UNiagaraComponent* SpawnNiagaraIsland(
+	UObject* WorldContextObject,
+	UNiagaraSystem* SystemNiagara,
+	AIsland* Island,
+	FVector WorldLocation,
+	bool bAutoDestroy = true,
+	bool bAutoActivate = true,
+	bool bPreCullCheck = true);
+
+	UFUNCTION(BlueprintCallable, Category="AdianFL", meta=(WorldContext = "WorldContextObject"))
+	static UAudioComponent* SpawnSoundIsland(
+	UObject* WorldContextObject,
+	USoundBase* Sound,
+	AIsland* Island,
+	FVector WorldLocation,
+	USoundAttenuation* AttenuationSettings = nullptr,
+	float Volume = 1.0f,
+	float Pitch = 1.0f,
+	bool bAutoDestroy = true);
+
+	template<typename T>
+	static T* FindRow(UDataTable* Table, const FName& RowName)
+	{
+		return Table ? Table->FindRow<T>(RowName, "AdianFindRow") : nullptr;
+	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
+	static AIsland* GetIsland(AActor* Actor);
 };

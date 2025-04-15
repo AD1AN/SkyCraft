@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "HungerComponent.generated.h"
 
+class UDA_Damage;
+
 // TODO, THIS COMPONENT ONLY DESIGNED FOR PLAYER_NORMAL, REWORK IT IF NEED FOR OTHER ENTITIES!
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent), DisplayName="HungerComponent")
 class SKYCRAFT_API UHungerComponent : public UActorComponent
@@ -15,7 +17,7 @@ class SKYCRAFT_API UHungerComponent : public UActorComponent
 	UHungerComponent(); 
 public:
 	UPROPERTY() class APlayerNormal* PlayerNormal = nullptr;
-	UPROPERTY(EditAnywhere) UDataAsset* DamageDataAsset = nullptr;
+	UPROPERTY(EditAnywhere) UDA_Damage* DA_Damage = nullptr;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCurrentHunger);
 	UPROPERTY(BlueprintAssignable) FOnCurrentHunger OnHunger;

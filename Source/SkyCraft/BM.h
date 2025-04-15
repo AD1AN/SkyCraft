@@ -3,7 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AdianFL.h"
+#include "Island.h"
 #include "GameFramework/Actor.h"
+#include "Interfaces/IslandInterface.h"
 #include "SkyCraft/Structs/BuildingParameters.h"
 #include "BM.generated.h"
 
@@ -21,7 +24,7 @@ struct FArrayMaterials
 };
 
 UCLASS()
-class SKYCRAFT_API ABM : public AActor
+class SKYCRAFT_API ABM : public AActor, public IIslandInterface
 {
 	GENERATED_BODY()
 	
@@ -60,6 +63,12 @@ public:
 	UFUNCTION(BlueprintCallable) uint8 LowestGrounded();
 
 	static TArray<int32> ConvertToIDs(TArray<ABM*>& Buildings);
+
+	virtual AIsland* GetIsland() override
+	{
+		// I don't want to create replicated Island variable. Just get it from parent chain.
+		return Cast<AIsland>(UAdianFL::GetRootActor(this));
+	}
 
 private:
 	void PlayEffects(bool Builded);

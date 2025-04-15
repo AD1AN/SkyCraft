@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "SkyCraft/Enums/DamageGlobalType.h"
 #include "SkyCraft/Enums/DropDirectionType.h"
 #include "SkyCraft/Enums/DropLocationType.h"
+#include "SkyCraft/Damage.h"
 #include "SkyCraft/Structs/DropItem.h"
 #include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/FX.h"
@@ -14,23 +14,6 @@
 #include "HealthComponent.generated.h"
 
 class UDA_Item;
-
-USTRUCT(BlueprintType)
-struct FApplyDamageIn
-{
-	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 BaseDamage = 0;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) EDamageGlobalType DamageGlobalType = EDamageGlobalType::Pure;
-	// ALWAYS SHOULD BE VALID!
-	// Can be DA_Item/DA_DamageCauser or anything.
-	// For filtering.
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDataAsset* DamageDataAsset = nullptr;
-	// Can be Player/NPC/Objects
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) AActor* EntityDealer = nullptr;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector HitLocation = FVector::ZeroVector;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bShowDamageNumbers = true;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) float HitMass = 0;
-};
 
 UENUM()
 enum class EDieHandle : uint8
@@ -47,64 +30,51 @@ class SKYCRAFT_API UHealthComponent : public UActorComponent
 public:
 	UHealthComponent();
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_FiveParams(FOnDamage, EDamageGlobalType, DamageGlobalType, UDataAsset*, DamageDataAsset, AActor*, EntityDealer, float, DamageRatio, FVector, HitLocation);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamage, FDamageInfo, DamageInfo);
 	UPROPERTY(BlueprintAssignable) FOnDamage OnDamage;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDamage(int32 Damage, AActor* AttachTo, EDamageGlobalType DamageGlobalType, UDataAsset* DamageDataAsset, AActor* EntityDealer, float DamageRatio, FVector HitLocation, bool bShowDamageNumbers);
+	void Multicast_OnDamage(FDamageInfo DamageInfo, int32 DamageTaken);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnZeroDamage(AActor* AttachTo, FVector HitLocation);
+	void Multicast_OnZeroDamage(FDamageInfo DamageInfo);
 
-	void SpawnDamageNumbers(int32 Damage, AActor* AttachTo, FVector HitLocation);
+	void SpawnDamageNumbers(FDamageInfo DamageInfo, int32 DamageTaken);
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie); UPROPERTY(BlueprintAssignable) FOnDie OnDie;
+	UPROPERTY(BlueprintReadOnly) bool bDied = false;
 
-	UFUNCTION(NetMulticast, Reliable) void Multicast_OnDie();
+	UFUNCTION(NetMulticast, Reliable) void Multicast_OnDie(FDamageInfo DamageInfo);
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealth); UPROPERTY(BlueprintAssignable) FOnHealth OnHealth;
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetHealth(int32 NewHealth);
 	UFUNCTION() void OnRep_Health() const { OnHealth.Broadcast(); }
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_Health) int32 Health = 404;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_Health) int32 Health = 404;
 	// MaxHealth should never be 0 or less!
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, meta=(ClampMin="1", UIMin="1")) int32 MaxHealth = 404;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, meta=(ClampMin="1", UIMin="1")) int32 MaxHealth = 404;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) int32 Armor = 0;
-	//If false = ExclusiveDamageDataAssets will be used
-	//If true = InclusiveDamageDataAssets will be used
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bInclusiveDamageOnly = false;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
-	TArray<UDataAsset*> InclusiveDamageDataAssets;
-	
+	TArray<UDA_Damage*> InclusiveDamage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
 	FText DefaultTextForNonInclusive;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) TMap<UDataAsset*, FText> ImmuneToDamageDataAssets;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) TMap<UDA_Damage*, FText> ImmuneToDamage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) TMap<EDamageGlobalType, float> MultiplyDamageType;
-	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DamageFXDefault;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDataAsset*, FFXArray> DamageFX;
-	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDA_Damage*, FFXArray> DamageFX;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DieFXDefault;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDataAsset*, FFXArray> DieFX;
-	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDA_Damage*, FFXArray> DieFX;
 	UPROPERTY(EditDefaultsOnly) TSubclassOf<class ADamageNumbers> DamageNumbersClass = nullptr;
-	
 	UPROPERTY(EditDefaultsOnly) USoundAttenuation* AttenuationSettings = nullptr;
-	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) EDieHandle DieHandle;
-	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) EDieHandle DieHandle = EDieHandle::JustDestroy;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropItems = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems", EditConditionHides))
 	TArray<FDropItem> DropItems;
-
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropEssence = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence", EditConditionHides))
 	TArray<FEssence> DropEssences;
-	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems || bDropEssence", EditConditionHides))
 	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="(bDropItems || bDropEssence) && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
@@ -114,17 +84,15 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="(bDropItems || bDropEssence) && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
 	FVector DropDirection = FVector::ZeroVector;
 	
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthApplyDamage(const FApplyDamageIn In);
+	void DoDamage(const FDamageInfo& DamageInfo);
+	void DroppingItems();
 
 	UPROPERTY(VisibleInstanceOnly) class AGSS* GSS = nullptr;
-
-	void SpawnDamageFX(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector, AActor* AttachTo = nullptr);
-	void SpawnDieFX(UDataAsset* DamageDataAsset = nullptr, FVector OriginLocation = FVector::ZeroVector, AActor* AttachTo = nullptr);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure) float HealthRatio();
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AuthDie(UDataAsset* DamageDataAsset = nullptr, FVector HitLocation = FVector::ZeroVector);
+	void AuthDie(const FDamageInfo& DamageInfo);
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -6,9 +6,8 @@
 #include "SkyCraft/Structs/RelativeBox.h"
 #include "SkyCraft/Enums/DropLocationType.h"
 #include "SkyCraft/Enums/DropDirectionType.h"
+#include "SkyCraft/Components/HealthComponent.h"
 #include "AUD_HealthComponent.generated.h"
-
-enum class EDieHandle : uint8;
 
 UCLASS(BlueprintType, CollapseCategories)
 class UAUD_HealthComponent : public UAssetUserData
@@ -27,25 +26,25 @@ public:
 	bool bInclusiveDamageOnly = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
-	TArray<UDataAsset*> InclusiveDamageDataAssets;
+	TArray<UDA_Damage*> InclusiveDamage;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
 	FText DefaultTextForNonInclusive;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<UDataAsset*, FText> ImmuneToDamageDataAssets;
+	TMap<UDA_Damage*, FText> ImmuneToDamage;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DamageFXDefault;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDataAsset*, FFXArray> DamageFX;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDA_Damage*, FFXArray> DamageFX;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DieFXDefault;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDataAsset*, FFXArray> DieFX;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDA_Damage*, FFXArray> DieFX;
 
 	UPROPERTY(EditDefaultsOnly)
 	USoundAttenuation* AttenuationSettings = nullptr;
 	
 	UPROPERTY(EditDefaultsOnly)
-	EDieHandle DieHandle;
+	EDieHandle DieHandle = EDieHandle::JustDestroy;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bDropItems = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
@@ -58,7 +57,7 @@ public:
 	FVector DropDirection = FVector::ZeroVector;
 
 	TArray<FFX> DynamicNiagaraVarsArrayFX(TArray<FFX> ArrayFX, UStaticMesh* StaticMesh);
-	TMap<UDataAsset*, FFXArray> DynamicNiagaraVarsMapFX(TMap<UDataAsset*, FFXArray> MapFX, UStaticMesh* StaticMesh);
+	TMap<UDA_Damage*, FFXArray> DynamicNiagaraVarsMapFX(TMap<UDA_Damage*, FFXArray> MapFX, UStaticMesh* StaticMesh);
 };
 
 inline TArray<FFX> UAUD_HealthComponent::DynamicNiagaraVarsArrayFX(TArray<FFX> ArrayFX, UStaticMesh* StaticMesh)
@@ -80,10 +79,10 @@ inline TArray<FFX> UAUD_HealthComponent::DynamicNiagaraVarsArrayFX(TArray<FFX> A
 	return NewArrayFX;
 }
 
-inline TMap<UDataAsset*, FFXArray> UAUD_HealthComponent::DynamicNiagaraVarsMapFX(TMap<UDataAsset*, FFXArray> MapFX, UStaticMesh* StaticMesh)
+inline TMap<UDA_Damage*, FFXArray> UAUD_HealthComponent::DynamicNiagaraVarsMapFX(TMap<UDA_Damage*, FFXArray> MapFX, UStaticMesh* StaticMesh)
 {
-	TMap<UDataAsset*, FFXArray> NewMapFX = MapFX;
-	for (TPair<UDataAsset*, FFXArray>& FXArray : NewMapFX)
+	TMap<UDA_Damage*, FFXArray> NewMapFX = MapFX;
+	for (TPair<UDA_Damage*, FFXArray>& FXArray : NewMapFX)
 	{
 		for (FFX& FX : FXArray.Value.FXs)
 		{

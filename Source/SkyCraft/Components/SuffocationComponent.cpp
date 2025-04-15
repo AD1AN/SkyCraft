@@ -40,14 +40,10 @@ void USuffocationComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 		UHealthComponent* HealthComponent = GetOwner()->FindComponentByClass<UHealthComponent>();
 		if (IsValid(HealthComponent))
 		{
-			// GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Ticking"));
-			FApplyDamageIn DamageIn;
-			DamageIn.BaseDamage = (HealthComponent->MaxHealth * DamagePercent) / 100;
-			DamageIn.DamageGlobalType = EDamageGlobalType::Pure;
-			DamageIn.DamageDataAsset = DamageDataAsset;
-			DamageIn.HitLocation = GetOwner()->GetActorLocation();
-			DamageIn.bShowDamageNumbers = false;
-			HealthComponent->AuthApplyDamage(DamageIn);
+			FDamageInfo DamageInfo;
+			DamageInfo.DA_Damage = DA_Damage;
+			DamageInfo.WorldLocation = GetOwner()->GetActorLocation();
+			HealthComponent->DoDamage(DamageInfo);
 		}
 		else
 		{

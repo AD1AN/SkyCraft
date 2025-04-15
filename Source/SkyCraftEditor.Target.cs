@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// ADIAN Copyrighted
 
 using UnrealBuildTool;
 using System.Collections.Generic;
@@ -15,6 +15,6 @@ public class SkyCraftEditorTarget : TargetRules
 		// Update include order version
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 
-		ExtraModuleNames.AddRange( new string[] { "SkyCraft" } );
+		ExtraModuleNames.AddRange( new string[] { "SkyCraft", "SkyCraftEditor" } );
 	}
 }

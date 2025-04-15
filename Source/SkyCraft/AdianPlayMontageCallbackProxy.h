@@ -9,7 +9,7 @@
 #include "Animation/AnimInstance.h"
 #include "AdianPlayMontageCallbackProxy.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMontagePlayDelegate, FName, NotifyName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAdianMontagePlayDelegate, FName, NotifyName);
 
 UCLASS(MinimalAPI)
 class UAdianPlayMontageCallbackProxy : public UObject
@@ -18,21 +18,21 @@ class UAdianPlayMontageCallbackProxy : public UObject
 
 	// Called when Montage finished playing and wasn't interrupted
 	UPROPERTY(BlueprintAssignable)
-	FOnMontagePlayDelegate OnCompleted;
+	FOnAdianMontagePlayDelegate OnCompleted;
 
 	// Called when Montage starts blending out and is not interrupted
 	UPROPERTY(BlueprintAssignable)
-	FOnMontagePlayDelegate OnBlendOut;
+	FOnAdianMontagePlayDelegate OnBlendOut;
 
 	// Called when Montage has been interrupted (or failed to play)
 	UPROPERTY(BlueprintAssignable)
-	FOnMontagePlayDelegate OnInterrupted;
+	FOnAdianMontagePlayDelegate OnInterrupted;
 
 	UPROPERTY(BlueprintAssignable)
-	FOnMontagePlayDelegate OnNotifyBegin;
+	FOnAdianMontagePlayDelegate OnNotifyBegin;
 
 	UPROPERTY(BlueprintAssignable)
-	FOnMontagePlayDelegate OnNotifyEnd;
+	FOnAdianMontagePlayDelegate OnNotifyEnd;
 
 	// Called to perform the query internally
 	UFUNCTION(BlueprintCallable, meta = (BlueprintInternalUseOnly = "true"))

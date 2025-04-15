@@ -12,6 +12,11 @@
 				"Engine",
 				"NavigationSystem"
 			]
+		},
+		{
+			"Name": "SkyCraftEditor",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit"
 		}
 	],
 	"Plugins": [

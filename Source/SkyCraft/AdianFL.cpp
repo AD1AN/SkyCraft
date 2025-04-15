@@ -1,12 +1,18 @@
 // ADIAN Copyrighted
 
 #include "AdianFL.h"
+
+#include "GameplayTagsManager.h"
+#include "Island.h"
+#include "NiagaraFunctionLibrary.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_StaticMeshCustomPrimitiveData.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/Interface_AssetUserData.h"
+#include "Interfaces/IslandInterface.h"
+#include "Kismet/GameplayStatics.h"
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
 #include "Structs/RelativeBox.h"
 
@@ -234,43 +240,49 @@ FVector UAdianFL::ToLocalSpace(FVector WorldLocation, AActor* ToActor)
 	return ToActor->GetTransform().InverseTransformPosition(WorldLocation);
 }
 
-bool UAdianFL::DoDamage(AActor* Actor, FApplyDamageIn ApplyDamageIn)
+bool UAdianFL::DoDamage(AActor* Actor, FDamageInfo DamageInfo)
 {
 	if (!IsValid(Actor)) return false;
 	UHealthComponent* HealthComponent = Actor->FindComponentByClass<UHealthComponent>();
 	if (!HealthComponent) return false;
+	ensureAlways(DamageInfo.DA_Damage);
+	if (!DamageInfo.DA_Damage) return false;
+
+	HealthComponent->DoDamage(DamageInfo);
 	
-	HealthComponent->AuthApplyDamage(ApplyDamageIn);
-
-	if (ApplyDamageIn.HitMass > 0 && Actor->IsA(ACharacter::StaticClass()))
-	{
-		ACharacter* Character = Cast<ACharacter>(Actor);
-		float CharacterMass = Character->GetCapsuleComponent()->GetBodyInstance()->GetBodyMass();
-		if (CharacterMass <= 0) CharacterMass = 0.01f;
-		
-		float MassRatio = ApplyDamageIn.HitMass / CharacterMass; // How heavy the hit is compared to the character
-
-		// If Character mass > HitMass more than three times, then LaunchCharacter is not applied.
-		if (MassRatio > 0.3333f)
-		{
-			// Adjust launch force dynamically
-			const float BaseForce = 300.0f; // Base launch force
-			const float MinForce = 50.0f;  // Minimum push force
-			const float MaxForce = 2000.0f; // Maximum push force
-
-			// Option 1: Linear Scaling
-			float LaunchForce = FMath::Clamp(BaseForce * MassRatio, MinForce, MaxForce);
-
-			// Option 2: Exponential Scaling (feels more natural for large mass differences)
-			// float LaunchForce = FMath::Clamp(FMath::Pow(MassRatio, 1.5f) * BaseForce, MinForce, MaxForce);
-			
-			FVector LaunchVector;
-			if (ApplyDamageIn.EntityDealer) LaunchVector = FVector(Character->GetActorLocation() - ApplyDamageIn.EntityDealer->GetActorLocation()).GetSafeNormal();
-			else LaunchVector = FVector(Character->GetActorLocation() - ApplyDamageIn.HitLocation).GetSafeNormal();
-			LaunchVector *= LaunchForce;
-			LaunchVector.Z = LaunchForce/2;
-			Character->LaunchCharacter(LaunchVector, true, true);
-		}
-	}
 	return true;
+}
+
+UNiagaraComponent* UAdianFL::SpawnNiagaraIsland(UObject* WorldContextObject, UNiagaraSystem* SystemNiagara, AIsland* Island, FVector WorldLocation, bool bAutoDestroy, bool bAutoActivate, bool bPreCullCheck)
+{
+	UNiagaraComponent* SpawnedNiagara;
+	if (IsValid(Island))
+	{
+		FVector LocalLocation = Island->GetTransform().InverseTransformPosition(WorldLocation);
+		SpawnedNiagara = UNiagaraFunctionLibrary::SpawnSystemAttached(SystemNiagara, Island->GetRootComponent(), NAME_None, LocalLocation, FRotator::ZeroRotator, FVector(1.f), EAttachLocation::KeepRelativeOffset, bAutoDestroy, ENCPoolMethod::None, bAutoActivate, bPreCullCheck);
+	}
+	else SpawnedNiagara = UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObject, SystemNiagara, WorldLocation, FRotator::ZeroRotator, FVector(1.f), bAutoDestroy, bAutoActivate, ENCPoolMethod::None, bPreCullCheck);
+	return SpawnedNiagara;
+}
+
+UAudioComponent* UAdianFL::SpawnSoundIsland(UObject* WorldContextObject, USoundBase* Sound, AIsland* Island, FVector WorldLocation, USoundAttenuation* AttenuationSettings, float Volume, float Pitch, bool bAutoDestroy)
+{
+	UAudioComponent* AudioComponent;
+	if (IsValid(Island))
+	{
+		FVector LocalLocation = Island->GetTransform().InverseTransformPosition(WorldLocation);
+		AudioComponent = UGameplayStatics::SpawnSoundAttached(Sound, Island->GetRootComponent(), NAME_None, LocalLocation, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, false, Volume, Pitch, 0, AttenuationSettings, nullptr, bAutoDestroy);
+	}
+	else  AudioComponent = UGameplayStatics::SpawnSoundAtLocation(WorldContextObject, Sound, WorldLocation, FRotator::ZeroRotator, Volume, Pitch, 0, AttenuationSettings, nullptr, bAutoDestroy);
+	return AudioComponent;
+}
+
+AIsland* UAdianFL::GetIsland(AActor* Actor)
+{
+	AIsland* Island = nullptr;
+	if (IIslandInterface* IslandInterface = Cast<IIslandInterface>(Actor))
+	{
+		Island = IslandInterface->GetIsland();
+	}
+	return Island;
 }

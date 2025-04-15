@@ -381,7 +381,7 @@ FIslandData AIsland::GenerateIsland()
 	const int32 BottomVerticesNum = _ID.BottomVertices.Num();
 	float BottomVertexZ;
 	if (bIslandArchon) BottomVertexZ = -ShapeRadius * 1.3f;
-	else BottomVertexZ = -ShapeRadius * 2.0f + Seed.FRandRange(0, ShapeRadius);
+	else BottomVertexZ = Seed.FRandRange(-ShapeRadius, -ShapeRadius * 2.5f);
 	for (int32 LoopIndex = 1; LoopIndex <= NumLoops; ++LoopIndex)
 	{
 	    float InterpolationFactor = static_cast<float>(LoopIndex) / (NumLoops + 1);
@@ -956,8 +956,9 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 		if (!IslandNPC.NPC_Class) continue;
 
 		const int32 SpawnsByIslandSize = FMath::Lerp(IslandNPC.MaxSpawnPoints/10, IslandNPC.MaxSpawnPoints, IslandSize);
+		int32 SpawnedNPCs = 0;
 		int32 Attempts = 0;
-		while (Attempts < SpawnsByIslandSize)
+		while (Attempts < 30 && SpawnedNPCs < SpawnsByIslandSize)
 		{
 			// Pick a random triangle
 			const int32 TriangleIndex = Seed.RandRange(0, ID.TopTriangles.Num() / 3 - 1) * 3;
@@ -966,13 +967,23 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 			const FVector& V2 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 2]];
 			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 
+			// Avoid Island Edge
+			const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / CellSize);
+			const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / CellSize);
+			if (ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
+			{
+				++Attempts;
+				continue;
+			}
+
 			FTransform NpcTransform(GetActorLocation() + RandomPoint + FVector(0,0,60));
 			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(IslandNPC.NPC_Class, NpcTransform);
 			SpawnedNPC->Island = this;
 			SpawnedNPC->IslandLODIndex = GenerateLODIndex;
 			SpawnedNPC->FinishSpawning(NpcTransform);
 			SpawnedLOD.NPCs.Add(SpawnedNPC);
-			++Attempts;
+			++SpawnedNPCs;
+			Attempts = 0;
 		}
 	}
 }
@@ -1019,6 +1030,7 @@ TArray<ANPC*> AIsland::LoadNPCs(TArray<FSS_NPC>& SS_NPCs, int32 IslandLODIndex)
 		SpawnedNPC->Island = this;
 		SpawnedNPC->IslandLODIndex = IslandLODIndex;
 		SpawnedNPC->FinishSpawning(LoadTransform);
+		SpawnedNPC->SetBase(PMC_Main, NAME_None, false);
 		SpawnedNPC->LoadNPC(SS_NPC);
 		LoadedNPCs.Add(SpawnedNPC);
 	}

@@ -166,10 +166,10 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 			HealthComponent->bInclusiveDamageOnly = aud_hs->bInclusiveDamageOnly;
 			if (HealthComponent->bInclusiveDamageOnly)
 			{
-				HealthComponent->InclusiveDamageDataAssets = aud_hs->InclusiveDamageDataAssets;
+				HealthComponent->InclusiveDamage = aud_hs->InclusiveDamage;
 			}
 			HealthComponent->DefaultTextForNonInclusive = aud_hs->DefaultTextForNonInclusive;
-			HealthComponent->ImmuneToDamageDataAssets = aud_hs->ImmuneToDamageDataAssets;
+			HealthComponent->ImmuneToDamage = aud_hs->ImmuneToDamage;
 
 			UStaticMesh* SizeSM = CurrentSize.SM_Variety[SM_Variety];
 			HealthComponent->DamageFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DamageFXDefault, SizeSM);

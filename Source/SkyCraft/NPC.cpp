@@ -4,6 +4,10 @@
 
 #include "AdianFL.h"
 #include "Island.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SuffocationComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
 #include "SkyCraft/Components/HealthComponent.h"
@@ -15,14 +19,26 @@ ANPC::ANPC()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.TickInterval = 0.1f;
+	
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>("HealthComponent");
+	HealthComponent->DieHandle = EDieHandle::CustomOnDieEvent;
+	HealthComponent->DropDirectionType = EDropDirectionType::RandomDirection;
+	HealthComponent->DropLocationType = EDropLocationType::ActorOrigin;
+	
+	SuffocationComponent = CreateDefaultSubobject<USuffocationComponent>(TEXT("SuffocationComponent"));
+	SuffocationComponent->PrimaryComponentTick.TickInterval = 15;
+	SuffocationComponent->SuffocationType = ESuffocationType::InstantDestroy;
+
+	GetMesh()->SetCollisionProfileName(TEXT("RagdollMesh"));
 }
 
 void ANPC::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (IsNetMode(NM_Client)) return;
+	if (!HasAuthority()) return;
+	SetActorTickEnabled(true);
+	
 	if (!IsValid(Island)) return;
 	
 	UpdateSettings();
@@ -30,16 +46,85 @@ void ANPC::BeginPlay()
 	Island->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
 }
 
+bool ANPC::OnDie_Implementation(const FDamageInfo& DamageInfo)
+{
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetMesh()->AddAngularImpulseInDegrees(FVector(5000,0,0));
+	
+	if (DamageInfo.DA_Damage->HitMass > 0)
+	{
+		
+		float CharacterMass = GetCapsuleComponent()->GetBodyInstance()->GetBodyMass();
+		if (CharacterMass <= 0) CharacterMass = 0.01f;
+		
+		float MassRatio = DamageInfo.DA_Damage->HitMass / CharacterMass; // How heavy the hit is compared to the character
+
+		// If Character mass > HitMass more than three times, then LaunchCharacter is not applied.
+		if (MassRatio > 0.3333f)
+		{
+			// Adjust launch force dynamically
+			const float BaseForce = 900.0f; // Base launch force
+			const float MinForce = 100.0f;  // Minimum push force
+			const float MaxForce = 4000.0f; // Maximum push force
+
+			// Option 1: Linear Scaling
+			float LaunchForce = FMath::Clamp(BaseForce * MassRatio, MinForce, MaxForce);
+
+			// Option 2: Exponential Scaling (feels more natural for large mass differences)
+			// float LaunchForce = FMath::Clamp(FMath::Pow(MassRatio, 1.5f) * BaseForce, MinForce, MaxForce);
+			
+			FVector LaunchVector;
+			if (DamageInfo.EntityDealer) LaunchVector = FVector(GetActorLocation() - DamageInfo.EntityDealer->GetActorLocation()).GetSafeNormal();
+			else LaunchVector = FVector(GetActorLocation() - DamageInfo.WorldLocation).GetSafeNormal();
+			LaunchVector *= LaunchForce;
+			LaunchVector.Z = LaunchForce/2;
+			GetMesh()->AddImpulse(LaunchVector, NAME_None, true);
+		}
+	}
+		
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SetActorTickEnabled(false);
+	GetCharacterMovement()->SetActive(false);
+	GetCharacterMovement()->StopMovementImmediately();
+	GetMesh()->SetAnimationMode(EAnimationMode::AnimationCustomMode);
+	
+	if (!HasAuthority()) return true;
+	
+	FTimerHandle TimerCharacterDeath;
+	GetWorld()->GetTimerManager().SetTimer(TimerCharacterDeath, this, &ANPC::Multicast_DelayedDestroy, 3);
+	return true;
+}
+
+void ANPC::Multicast_DelayedDestroy_Implementation()
+{
+	UAdianFL::SpawnSoundIsland(this, TESTSound, Island, GetActorLocation());
+	UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, TESTNiagaraSystem, Island, GetActorLocation());
+	UNiagaraFunctionLibrary::OverrideSystemUserVariableSkeletalMeshComponent(SpawnedNiagara, "SkeletalMesh", GetMesh());
+	
+	if (!HasAuthority()) return;
+	HealthComponent->DroppingItems();
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ANPC::NextFrameDestroy);
+}
+
+void ANPC::NextFrameDestroy()
+{
+	Destroy();
+}
+
 void ANPC::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor)
 {
 	if (NewBase)
 	{
-		const AActor* BaseOwner = UAdianFL::GetRootActor(NewBase->GetOwner());
+		AActor* BaseOwner = UAdianFL::GetRootActor(NewBase->GetOwner());
 		if (BaseOwner && BaseOwner->IsA(AIsland::StaticClass()))
 		{
-			NewBase = Cast<AIsland>(BaseOwner)->PMC_Main;
+			AIsland* IslandBase = Cast<AIsland>(BaseOwner);
+			NewBase = IslandBase->PMC_Main;
+			if (Island != IslandBase) AddToIsland(IslandBase); 
 		}
 	}
+	
 	UPrimitiveComponent* OldBase = BasedMovement.MovementBase;
 	Super::SetBase(NewBase, BoneName, bNotifyActor);
 	if (OldBase != NewBase)
