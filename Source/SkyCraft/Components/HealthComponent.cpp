@@ -14,6 +14,7 @@
 #include "SkyCraft/PCS.h"
 #include "SkyCraft/RepHelpers.h"
 #include "SkyCraft/Damage.h"
+#include "SkyCraft/EssenceActor.h"
 #include "SkyCraft/Interfaces/HealthInterface.h"
 
 UHealthComponent::UHealthComponent()
@@ -21,12 +22,6 @@ UHealthComponent::UHealthComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	SetIsReplicatedByDefault(true);
-
-	static ConstructorHelpers::FClassFinder<ADamageNumbers> DamageNumbersClassAsset(TEXT("/Game/Blueprints/BP_DamageNumbers"));
-	if (DamageNumbersClassAsset.Succeeded()) DamageNumbersClass = DamageNumbersClassAsset.Class;
-	
-	static ConstructorHelpers::FObjectFinder<USoundAttenuation> AttenuationAsset(TEXT("/Game/Audio/NormalAttenuation.NormalAttenuation"));
-	if (AttenuationAsset.Succeeded()) AttenuationSettings = AttenuationAsset.Object;
 	
 	for (EDamageGlobalType DGT : TEnumRange<EDamageGlobalType>())
 	{
@@ -37,21 +32,17 @@ UHealthComponent::UHealthComponent()
 void UHealthComponent::SpawnDamageNumbers(FDamageInfo DamageInfo, int32 DamageTaken)
 {
 	if (IsNetMode(NM_DedicatedServer)) return;
-	if (!DamageNumbersClass) return;
-
-	UGIS* GIS = Cast<UGIS>(GetWorld()->GetGameInstance());
-	if (!IsValid(GIS)) return;
-	if (!IsValid(GIS->PCS)) return;
+	if (!IsValid(GetGSS()->GIS->PCS)) return;
 	
 	FVector LocalLocation = GetOwner()->GetTransform().InverseTransformPosition(DamageInfo.WorldLocation);
-	if (FVector::Distance(GIS->PCS->PlayerCameraManager->GetCameraLocation(), DamageInfo.WorldLocation) > 2000.0f)
+	if (FVector::Distance(GSS->GIS->PCS->PlayerCameraManager->GetCameraLocation(), DamageInfo.WorldLocation) > 2000.0f)
 	{
 		return;
 	}
 	
 	FTransform DamageTransform;
 	DamageTransform.SetLocation(LocalLocation);
-	ADamageNumbers* SpawnedDamageNumbers = GetWorld()->SpawnActorDeferred<ADamageNumbers>(DamageNumbersClass, DamageTransform);
+	ADamageNumbers* SpawnedDamageNumbers = GetWorld()->SpawnActorDeferred<ADamageNumbers>(GSS->DamageNumbersClass, DamageTransform);
 	SpawnedDamageNumbers->Damage = DamageTaken;
 	SpawnedDamageNumbers->InitialAttachTo = GetOwner();
 	SpawnedDamageNumbers->FinishSpawning(DamageTransform);
@@ -74,7 +65,7 @@ void UHealthComponent::Multicast_OnDamage_Implementation(FDamageInfo DamageInfo,
 	{
 		for (auto& FX : FXArray->FXs)
 		{
-			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, DamageInfo.WorldLocation, AttenuationSettings);
+			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, DamageInfo.WorldLocation, GetGSS()->NormalAttenuationClass);
 			if (FX.Niagara) UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, DamageInfo.WorldLocation);
 		}
 	}
@@ -82,7 +73,7 @@ void UHealthComponent::Multicast_OnDamage_Implementation(FDamageInfo DamageInfo,
 	{
 		for (auto& FX : DamageFXDefault)
 		{
-			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, DamageInfo.WorldLocation, AttenuationSettings);
+			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, DamageInfo.WorldLocation, GetGSS()->NormalAttenuationClass);
 			if (FX.Niagara) UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, DamageInfo.WorldLocation);
 		}
 	}
@@ -98,8 +89,6 @@ void UHealthComponent::Multicast_OnZeroDamage_Implementation(FDamageInfo DamageI
 
 void UHealthComponent::DoDamage(const FDamageInfo& DamageInfo)
 {
-	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
-	
 	ensureAlways(DamageInfo.DA_Damage);
 	if (!DamageInfo.DA_Damage) return;
 
@@ -133,8 +122,14 @@ void UHealthComponent::DoDamage(const FDamageInfo& DamageInfo)
 			Character->LaunchCharacter(LaunchVector, true, true);
 		}
 	}
+
+	int32 DamageTaken = DamageInfo.DA_Damage->BaseDamage;
+
+	if (DamageInfo.DA_Damage->bIsPercentage)
+	{
+		DamageTaken = MaxHealth * DamageTaken / 100;
+	}
 	
-	int32 _MultipliedDamage = DamageInfo.DA_Damage->BaseDamage;
 	if (bInclusiveDamageOnly)
 	{
 		if (!InclusiveDamage.Contains(DamageInfo.DA_Damage))
@@ -154,22 +149,24 @@ void UHealthComponent::DoDamage(const FDamageInfo& DamageInfo)
 	
 	if (float* FoundMD = MultiplyDamageType.Find(DamageInfo.DA_Damage->DamageGlobalType))
 	{
-		_MultipliedDamage = DamageInfo.DA_Damage->BaseDamage * (*FoundMD);
+		DamageTaken = DamageTaken * (*FoundMD);
 	}
 	
-	if (_MultipliedDamage <= 0)
+	if (DamageTaken <= 0)
 	{
 		if (DamageInfo.DA_Damage->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
 		return;
 	}
 	
-	AuthSetHealth(Health - _MultipliedDamage);
-	Multicast_OnDamage(DamageInfo, _MultipliedDamage);
+	AuthSetHealth(Health - DamageTaken);
+	Multicast_OnDamage(DamageInfo, DamageTaken);
 	if (Health <= 0) AuthDie(DamageInfo);
 }
 
-void UHealthComponent::DroppingItems()
+void UHealthComponent::DroppingItems(FVector OverrideLocation)
 {
+	if (!bDropItems) return;
+	
 	for (const FDropItem& DropItem : DropItems)
 	{
 		ensureAlways(DropItem.Item);
@@ -201,6 +198,12 @@ void UHealthComponent::DroppingItems()
 				if (IsValid(Island)) SpawnTransform.SetLocation(UAdianFL::RandomPointInRelativeBox(DropInRelativeBox) + Island->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()));
 				else SpawnTransform.SetLocation(UAdianFL::RandomPointInRelativeBox(DropInRelativeBox) + GetOwner()->GetActorLocation());
 			}
+			else if (DropLocationType == EDropLocationType::OverrideLocation)
+			{
+				if (IsValid(Island)) SpawnTransform.SetLocation(Island->GetTransform().InverseTransformPosition(OverrideLocation));
+				else SpawnTransform.SetLocation(OverrideLocation);
+			}
+			
 			FSlot DropInventorySlot;
 			DropInventorySlot.DA_Item = DropItem.Item;
 			DropInventorySlot.Quantity = FMath::RandRange(DropItem.Min, DropItem.Max);
@@ -212,6 +215,37 @@ void UHealthComponent::DroppingItems()
 	}
 }
 
+AEssenceActor* UHealthComponent::DroppingEssence(ACharacter* Character, FVector OverrideLocation)
+{
+	if (!bDropEssence) return nullptr;
+
+	FTransform EssenceTransform;
+	if (DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ)
+	{
+		EssenceTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0,DropEssenceLocationPlusZ));
+	}
+	else EssenceTransform.SetLocation(OverrideLocation);
+
+	FEssence FinalEssence;
+	if (DropEssenceAmount == EDropEssenceAmount::MinMax)
+	{
+		FinalEssence.R = FMath::RandRange(DropEssenceMinMax.R.Min, DropEssenceMinMax.R.Max);
+		FinalEssence.G = FMath::RandRange(DropEssenceMinMax.G.Min, DropEssenceMinMax.G.Max);
+		FinalEssence.B = FMath::RandRange(DropEssenceMinMax.B.Min, DropEssenceMinMax.B.Max);
+	}
+	else FinalEssence = DropEssenceStatic;
+
+	if (UAdianFL::EssenceTotal(FinalEssence) > 0)
+	{
+		AEssenceActor* EssenceActor = GetWorld()->SpawnActorDeferred<AEssenceActor>(GetGSS()->EssenceActorClass, EssenceTransform);
+		EssenceActor->Essence = FinalEssence;
+		if (Character) EssenceActor->Multicast_SpawnDeathEssence(Character);
+		EssenceActor->FinishSpawning(EssenceTransform);
+		return EssenceActor;
+	}
+	return nullptr;
+}
+
 void UHealthComponent::AuthDie(const FDamageInfo& DamageInfo)
 {
 	if (bDied) return;
@@ -221,7 +255,7 @@ void UHealthComponent::AuthDie(const FDamageInfo& DamageInfo)
 	
 	if (DieHandle == EDieHandle::JustDestroy)
 	{
-		if (bDropItems) DroppingItems();
+		DroppingItems();
 		GetOwner()->Destroy();
 	}
 }
@@ -238,7 +272,7 @@ void UHealthComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 	{
 		for (auto& FX : FXArray->FXs)
 		{
-			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, OriginLocation, AttenuationSettings);
+			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, OriginLocation, GetGSS()->NormalAttenuationClass);
 			if (FX.Niagara) UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, OriginLocation);
 		}
 	}
@@ -246,7 +280,7 @@ void UHealthComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 	{
 		for (auto& FX : DieFXDefault)
 		{
-			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, OriginLocation, AttenuationSettings);
+			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, OriginLocation, GetGSS()->NormalAttenuationClass);
 			if (FX.Niagara) UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, OriginLocation);
 		}
 	}
@@ -256,6 +290,12 @@ float UHealthComponent::HealthRatio()
 {
 	if (MaxHealth == 0) return 0.0f; // Prevent division by zero
 	return static_cast<float>(Health) / static_cast<float>(MaxHealth);
+}
+
+AGSS* UHealthComponent::GetGSS()
+{
+	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
+	return GSS;
 }
 
 void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

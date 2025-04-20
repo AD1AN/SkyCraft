@@ -125,7 +125,8 @@ void ADroppedItem::BeginPlay()
 	if (Slot.DA_Item->StaticMesh.IsValid())
 	{
 		SetupStaticMesh();
-	} else
+	}
+	else
 	{
 		FStreamableManager& StreamableManager = UAssetManager::GetStreamableManager();
 		StreamableManager.RequestAsyncLoad(Slot.DA_Item->StaticMesh.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ADroppedItem::OnMeshLoaded));

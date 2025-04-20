@@ -6,6 +6,7 @@ UENUM(Blueprintable)
 enum class EDropLocationType : uint8
 {
 	ActorOrigin,
-	RandomPointInBox
+	RandomPointInBox,
+	OverrideLocation
 	// RandomPointInLine?
 };

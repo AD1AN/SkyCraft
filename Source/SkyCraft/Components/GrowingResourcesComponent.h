@@ -15,7 +15,7 @@ class SKYCRAFT_API UGrowingResourcesComponent : public UActorComponent
 
 public:
 	UPROPERTY() class AIsland* Island = nullptr;
-	TArray<AResource*> GrowingResources;
+	UPROPERTY() TArray<class AResource*> GrowingResources;
 
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

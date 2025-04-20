@@ -27,13 +27,13 @@
     }
 
 #define REP_PROPERTY_INTERNAL_1(Property) \
-    DOREPLIFETIME_WITH_PARAMS(Self, Property, RepParams)
+    DOREPLIFETIME_WITH_PARAMS_FAST(Self, Property, RepParams)
 
 #define REP_PROPERTY_INTERNAL_2(Property, LocalCondition) \
     { \
         FDoRepLifetimeParams LocalRepParams = RepParams; \
         LocalRepParams.Condition = LocalCondition; \
-        DOREPLIFETIME_WITH_PARAMS(Self, Property, LocalRepParams) \
+        DOREPLIFETIME_WITH_PARAMS_FAST(Self, Property, LocalRepParams) \
     }
 
 #define REP_PROPERTY_INTERNAL_3(Property, LocalCondition, LocalNotify) \
@@ -41,7 +41,7 @@
         FDoRepLifetimeParams LocalRepParams = RepParams; \
         LocalRepParams.Condition = LocalCondition; \
         LocalRepParams.RepNotifyCondition = LocalNotify; \
-        DOREPLIFETIME_WITH_PARAMS(Self, Property, LocalRepParams) \
+        DOREPLIFETIME_WITH_PARAMS_FAST(Self, Property, LocalRepParams) \
     }
 
 #define REP_PROPERTY_INTERNAL_SELECT(_1, _2, _3, Num, ...) Num

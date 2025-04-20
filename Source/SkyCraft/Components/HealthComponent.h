@@ -13,7 +13,9 @@
 #include "SkyCraft/Structs/RelativeBox.h"
 #include "HealthComponent.generated.h"
 
+class AEssenceActor;
 class UDA_Item;
+class AGSS;
 
 UENUM()
 enum class EDieHandle : uint8
@@ -66,33 +68,48 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDA_Damage*, FFXArray> DamageFX;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DieFXDefault;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDA_Damage*, FFXArray> DieFX;
-	UPROPERTY(EditDefaultsOnly) TSubclassOf<class ADamageNumbers> DamageNumbersClass = nullptr;
-	UPROPERTY(EditDefaultsOnly) USoundAttenuation* AttenuationSettings = nullptr;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) EDieHandle DieHandle = EDieHandle::JustDestroy;
+
+	//==================== Drop Items ==================//
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropItems = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems", EditConditionHides))
 	TArray<FDropItem> DropItems;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems", EditConditionHides))
+	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
+	FRelativeBox DropInRelativeBox;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems", EditConditionHides))
+	EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
+	FVector DropDirection = FVector::ZeroVector;
+
+	//==================== Drop Essence ==================//
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropEssence = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence", EditConditionHides))
-	TArray<FEssence> DropEssences;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems || bDropEssence", EditConditionHides))
-	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="(bDropItems || bDropEssence) && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
-	FRelativeBox DropInRelativeBox;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems || bDropEssence", EditConditionHides))
-	EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="(bDropItems || bDropEssence) && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
-	FVector DropDirection = FVector::ZeroVector;
+	EDropEssenceAmount DropEssenceAmount = EDropEssenceAmount::MinMax;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::MinMax", EditConditionHides))
+	FEssenceMinMax DropEssenceMinMax;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::Static", EditConditionHides))
+	FEssence DropEssenceStatic;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence", EditConditionHides))
+	EDropEssenceLocationType DropEssenceLocationType = EDropEssenceLocationType::ActorOriginPlusZ;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence && DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ", EditConditionHides))
+	float DropEssenceLocationPlusZ = 50.0f;
+	
+	
 	
 	void DoDamage(const FDamageInfo& DamageInfo);
-	void DroppingItems();
+	void DroppingItems(FVector OverrideLocation = FVector::ZeroVector);
+	AEssenceActor* DroppingEssence(ACharacter* Character = nullptr, FVector OverrideLocation = FVector::ZeroVector);
 
-	UPROPERTY(VisibleInstanceOnly) class AGSS* GSS = nullptr;
+	UPROPERTY(VisibleInstanceOnly) AGSS* GSS = nullptr;
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure) float HealthRatio();
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void AuthDie(const FDamageInfo& DamageInfo);
-	
+
+	AGSS* GetGSS();
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

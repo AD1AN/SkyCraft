@@ -6,7 +6,6 @@
 #include "Island.h"
 #include "GameFramework/Character.h"
 #include "Components/PrimitiveComponent.h"
-#include "GeometryCollection/GeometryCollectionParticlesData.h"
 #include "Interfaces/IslandInterface.h"
 #include "PlayerNormal.generated.h"
 
@@ -39,13 +38,15 @@ public:
 	// Should not be used in blueprint
 	virtual void BeginPlay() override;
 
-	// Called once only from BeginPlay
+	// Called ONCE from BeginPlay or OnRep_PSS.
 	UFUNCTION(BlueprintImplementableEvent) void CharacterStart();
 	
 	bool bHadBeginPlay = false;
+
+	// Character initiated and PSS is valid but BP_PSS->PlayerLoaded can be true/false.
 	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadWrite, meta=(ExposeOnSpawn)) APSS* PSS;
+	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterStarted);
@@ -60,7 +61,8 @@ public:
 
 	virtual AIsland* GetIsland() override
 	{
-		return Cast<AIsland>(GetMovementBase()->GetOwner());
+		if (GetMovementBase()) return Cast<AIsland>(GetMovementBase()->GetOwner());
+		else return nullptr;
 	}
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

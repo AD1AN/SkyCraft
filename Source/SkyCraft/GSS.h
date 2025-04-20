@@ -21,7 +21,8 @@ public:
 
 	UPROPERTY(BlueprintReadOnly) AGMS* GMS = nullptr;
 	UPROPERTY(BlueprintReadOnly) UGIS* GIS = nullptr;
-	
+
+	//============================ World Settings
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float ChunkSize = 100000;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) int32 ChunkRenderRange = 10;
 
@@ -34,7 +35,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) bool BuildingInfiniteHeight = false;
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) uint8 GroundedMax = 15;
 
-	// -------------------------------------
+	//============================================
 
 	virtual void BeginPlay() override;
 
@@ -45,6 +46,12 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated) APSS* HostPlayer = nullptr;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHostPlayer(APSS* Host);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetTraversalAltitude(FFloatMinMax newTraversalAltitude);
+
+	//============================= Blueprint Classes
+	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class AEssenceActor> EssenceActorClass = nullptr;
+	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class ADamageNumbers> DamageNumbersClass = nullptr;
+	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") USoundAttenuation* NormalAttenuationClass = nullptr;
+	
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedPlayers);
 	UPROPERTY(BlueprintAssignable) FOnConnectedPlayers OnConnectedPlayers;

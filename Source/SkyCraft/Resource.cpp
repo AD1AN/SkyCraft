@@ -176,7 +176,6 @@ void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) c
 			HealthComponent->DamageFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DamageFX, SizeSM);
 			HealthComponent->DieFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DieFXDefault, SizeSM);
 			HealthComponent->DieFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DieFX, SizeSM);
-			HealthComponent->AttenuationSettings = aud_hs->AttenuationSettings;
 			HealthComponent->DieHandle = aud_hs->DieHandle;
 			HealthComponent->bDropItems = aud_hs->bDropItems;
 			if (!aud_hs->bDropItems) continue;

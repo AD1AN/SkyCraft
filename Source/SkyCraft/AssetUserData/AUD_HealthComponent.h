@@ -14,11 +14,7 @@ class UAUD_HealthComponent : public UAssetUserData
 {
 	GENERATED_BODY()
 public:
-	UAUD_HealthComponent()
-	{
-		static ConstructorHelpers::FObjectFinder<USoundAttenuation> AttenuationAsset(TEXT("/Game/Audio/NormalAttenuation.NormalAttenuation"));
-		if (AttenuationAsset.Succeeded()) AttenuationSettings = AttenuationAsset.Object;
-	}
+	UAUD_HealthComponent() {}
 	
 	//If false = ExclusiveDamageDataAssets will be used
 	//If true = InclusiveDamageDataAssets will be used
@@ -39,9 +35,6 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DieFXDefault;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TMap<UDA_Damage*, FFXArray> DieFX;
-
-	UPROPERTY(EditDefaultsOnly)
-	USoundAttenuation* AttenuationSettings = nullptr;
 	
 	UPROPERTY(EditDefaultsOnly)
 	EDieHandle DieHandle = EDieHandle::JustDestroy;

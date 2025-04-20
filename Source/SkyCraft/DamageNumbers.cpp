@@ -1,7 +1,6 @@
 // ADIAN Copyrighted
 
 #include "DamageNumbers.h"
-
 #include "AdianFL.h"
 #include "Island.h"
 
@@ -24,8 +23,14 @@ void ADamageNumbers::BeginPlay()
 
 void ADamageNumbers::InitialActorDestroyed(AActor* Actor)
 {
-	if (AIsland* Island = UAdianFL::GetIsland(GetParentActor())) AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
-	else DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+	if (AIsland* Island = UAdianFL::GetIsland(GetParentActor()))
+	{
+		AttachToActor(Island, FAttachmentTransformRules::KeepWorldTransform);
+	}
+	else
+	{
+		DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	}
 }
 
 void ADamageNumbers::CustomBeginPlay_Implementation()

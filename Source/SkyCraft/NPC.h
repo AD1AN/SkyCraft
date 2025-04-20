@@ -38,9 +38,7 @@ public:
 	UFUNCTION() void ChangedLOD();
 	UFUNCTION() void UpdateSettings();
 
-	UPROPERTY(EditDefaultsOnly) class UNiagaraSystem* TESTNiagaraSystem = nullptr;
-	UPROPERTY(EditDefaultsOnly) class USoundBase* TESTSound = nullptr;
-	UFUNCTION(NetMulticast, Reliable) void Multicast_DelayedDestroy();
+	UFUNCTION() void DelayedDestroy();
 	void NextFrameDestroy();
 
 	virtual AIsland* GetIsland() override

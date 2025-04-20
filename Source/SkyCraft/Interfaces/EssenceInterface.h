@@ -20,6 +20,9 @@ class SKYCRAFT_API IEssenceInterface
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="EssenceInterface")
+	UPARAM(DisplayName="Essence") bool DoesConsumeEssence();
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="EssenceInterface")
 	UPARAM(DisplayName="Essence") FEssence GetEssence();
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, BlueprintAuthorityOnly, Category="EssenceInterface")
@@ -29,5 +32,5 @@ public:
 	UPARAM(DisplayName="AddedEssence") FEssence AddEssence(FEssence AddEssence);
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="EssenceInterface")
-	void EssenceConsumeFX(FEssence Essence);
+	bool OnEssenceConsume(const FEssence& Essence, FVector WorldLocation);
 };

@@ -4,6 +4,7 @@
 
 #include "AdianFL.h"
 #include "Island.h"
+#include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SuffocationComponent.h"
@@ -48,9 +49,15 @@ void ANPC::BeginPlay()
 
 bool ANPC::OnDie_Implementation(const FDamageInfo& DamageInfo)
 {
+	SetActorTickEnabled(false);
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	GetMesh()->SetAnimationMode(EAnimationMode::AnimationCustomMode);
+	
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	GetMesh()->AddAngularImpulseInDegrees(FVector(5000,0,0));
+	
+	if (!HasAuthority()) return true;
 	
 	if (DamageInfo.DA_Damage->HitMass > 0)
 	{
@@ -64,9 +71,9 @@ bool ANPC::OnDie_Implementation(const FDamageInfo& DamageInfo)
 		if (MassRatio > 0.3333f)
 		{
 			// Adjust launch force dynamically
-			const float BaseForce = 900.0f; // Base launch force
+			const float BaseForce = 500.0f; // Base launch force
 			const float MinForce = 100.0f;  // Minimum push force
-			const float MaxForce = 4000.0f; // Maximum push force
+			const float MaxForce = 2200.0f; // Maximum push force
 
 			// Option 1: Linear Scaling
 			float LaunchForce = FMath::Clamp(BaseForce * MassRatio, MinForce, MaxForce);
@@ -79,30 +86,18 @@ bool ANPC::OnDie_Implementation(const FDamageInfo& DamageInfo)
 			else LaunchVector = FVector(GetActorLocation() - DamageInfo.WorldLocation).GetSafeNormal();
 			LaunchVector *= LaunchForce;
 			LaunchVector.Z = LaunchForce/2;
-			GetMesh()->AddImpulse(LaunchVector, NAME_None, true);
+			LaunchCharacter(LaunchVector, true, true);
 		}
 	}
-		
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SetActorTickEnabled(false);
-	GetCharacterMovement()->SetActive(false);
-	GetCharacterMovement()->StopMovementImmediately();
-	GetMesh()->SetAnimationMode(EAnimationMode::AnimationCustomMode);
-	
-	if (!HasAuthority()) return true;
 	
 	FTimerHandle TimerCharacterDeath;
-	GetWorld()->GetTimerManager().SetTimer(TimerCharacterDeath, this, &ANPC::Multicast_DelayedDestroy, 3);
+	GetWorld()->GetTimerManager().SetTimer(TimerCharacterDeath, this, &ANPC::DelayedDestroy, 3);
 	return true;
 }
 
-void ANPC::Multicast_DelayedDestroy_Implementation()
+void ANPC::DelayedDestroy()
 {
-	UAdianFL::SpawnSoundIsland(this, TESTSound, Island, GetActorLocation());
-	UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, TESTNiagaraSystem, Island, GetActorLocation());
-	UNiagaraFunctionLibrary::OverrideSystemUserVariableSkeletalMeshComponent(SpawnedNiagara, "SkeletalMesh", GetMesh());
-	
-	if (!HasAuthority()) return;
+	HealthComponent->DroppingEssence(this);
 	HealthComponent->DroppingItems();
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ANPC::NextFrameDestroy);
 }
