@@ -7,6 +7,7 @@
 #include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/Coords.h"
 #include "SkyCraft/Damage.h"
+#include "EnhancedInput/Public/UserSettings/EnhancedInputUserSettings.h"
 #include "AdianFL.generated.h"
 
 class UNiagaraSystem;

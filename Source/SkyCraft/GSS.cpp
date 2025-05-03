@@ -95,4 +95,5 @@ void AGSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, BuildingInfiniteHeight, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, GroundedMax, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, ConnectedPlayers, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, CheatsEnabled, Params);
 }

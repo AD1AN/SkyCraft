@@ -7,6 +7,7 @@
 #include "Structs/Essence.h"
 #include "EssenceActor.generated.h"
 
+class AGSS;
 class ADeathEssence;
 class UNiagaraSystem;
 class UNiagaraComponent;
@@ -22,6 +23,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere) UNiagaraComponent* NiagaraComponent = nullptr;
 	
 	AEssenceActor();
+
+	UPROPERTY(BlueprintReadOnly) AGSS* GSS = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_Essence, meta=(ExposeOnSpawn)) FEssence Essence;
 	UFUNCTION() void OnRep_Essence();

@@ -22,20 +22,30 @@ public:
 	UPROPERTY(BlueprintReadOnly) AGMS* GMS = nullptr;
 	UPROPERTY(BlueprintReadOnly) UGIS* GIS = nullptr;
 
-	//============================ World Settings
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float ChunkSize = 100000;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) int32 ChunkRenderRange = 10;
-
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax IslandsAltitude = FFloatMinMax(90000, 95000);
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Replicated) FFloatMinMax TraversalAltitude = FFloatMinMax(30000, 100000);
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax Suffocation = FFloatMinMax(80000, 150000);
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float IslandArchonSpawnXY = 75000.0;
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) FFloatMinMax IslandArchonSpawnZ = FFloatMinMax(80000, 95000);
+	//============================ World Rules
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) bool BuildingInfiniteHeight = false;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Replicated) uint8 GroundedMax = 15;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 ChunkRenderRange = 10;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float ChunkSize = 100000;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float IslandsProbability = 0.5f; // From 0 to 1.
 
-	//============================================
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax IslandsAltitude = FFloatMinMax(90000, 95000);
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) FFloatMinMax TraversalAltitude = FFloatMinMax(30000, 100000);
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax Suffocation = FFloatMinMax(80000, 150000);
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float IslandArchonSpawnXY = 75000.0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax IslandArchonSpawnZ = FFloatMinMax(80000, 95000);
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) bool BuildingInfiniteHeight = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) uint8 GroundedMax = 15;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) bool CheatsEnabled = false;
+
+	// Network Settings
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bUseLAN = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowInvites = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowJoinViaPresence = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowJoinViaPresenceFriendsOnly = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bShouldAdvertise = true;
+	
+	//=========================== World Rules END
 
 	virtual void BeginPlay() override;
 

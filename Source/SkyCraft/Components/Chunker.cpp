@@ -22,7 +22,8 @@ void UChunker::BeginPlay()
 {
 	Super::BeginPlay();
 	if (!GetOwner()->HasAuthority()) return;
-	GSS = GetOwner()->GetWorld()->GetGameState<AGSS>();
+	GSS = GetWorld()->GetGameState<AGSS>();
+	
 #if WITH_EDITOR
 	UGIS* GIS = GetOwner()->GetGameInstance<UGIS>();
 	if (GIS->bTestChunkIslandRenderRange)
@@ -30,6 +31,7 @@ void UChunker::BeginPlay()
 		GSS->ChunkRenderRange = GIS->TestChunkIslandRenderRange;
 	}
 #endif
+	
 	SetComponentTickInterval(FMath::RandRange(0.9f, 1.1f));
 	SetComponentTickEnabled(true);
 	UpdateChunks();
@@ -116,7 +118,7 @@ void UChunker::SpawnChunks()
 						GSS->GMS->SpawnedChunkIslands.Add(SpawnedChunk);
 						GSS->GMS->SpawnedChunkIslandsCoords.Add(ChunkCoords);
 						
-						if (ChunkSeed.FRand() > 0.5f) // Decide if there's Island in this chunk.
+						if (ChunkSeed.FRand() <= GSS->IslandsProbability) // Decide if there's Island in this chunk.
 						{
 							UDA_IslandBiome* DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(ChunkSeed);
 							float IslandSize = ChunkSeed.FRandRange(DA_IslandBiome->IslandSize.Min, DA_IslandBiome->IslandSize.Max);

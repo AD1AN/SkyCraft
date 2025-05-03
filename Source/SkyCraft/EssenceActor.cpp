@@ -3,9 +3,9 @@
 #include "EssenceActor.h"
 #include "AdianFL.h"
 #include "DeathEssence.h"
+#include "GSS.h"
 #include "Island.h"
 #include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "RepHelpers.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/EssenceInterface.h"
@@ -82,7 +82,9 @@ void AEssenceActor::Multicast_SpawnDeathEssence_Implementation(ACharacter* Chara
 {
 	if (!Character) return;
 
-	UAdianFL::SpawnSoundIsland(this, DeathSound, UAdianFL::GetIsland(Character), GetActorLocation());
+	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
+	
+	UAdianFL::SpawnSoundIsland(this, DeathSound, UAdianFL::GetIsland(Character), GetActorLocation(), GSS->NormalAttenuationClass);
 	
 	FTransform SpawnTransform;
 	AIsland* Island = UAdianFL::GetIsland(Character);

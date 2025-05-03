@@ -1,20 +1,18 @@
 // ADIAN Copyrighted
 
 #include "AdianFL.h"
-
-#include "GameplayTagsManager.h"
 #include "Island.h"
 #include "NiagaraFunctionLibrary.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_StaticMeshCustomPrimitiveData.h"
-#include "Components/CapsuleComponent.h"
 #include "Components/HealthComponent.h"
-#include "GameFramework/Character.h"
 #include "Interfaces/Interface_AssetUserData.h"
 #include "Interfaces/IslandInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
 #include "Structs/RelativeBox.h"
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInput/Public/PlayerMappableKeySettings.h"
 
 FUniformSubtractOut UAdianFL::UniformSubtract(FEssence Essence, int32 TotalToSubtract)
 {

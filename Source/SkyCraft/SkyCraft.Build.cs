@@ -21,7 +21,8 @@ public class SkyCraft : ModuleRules
 			"ProceduralMeshComponent",
 			"Slate",
 			"SlateCore",
-			"NavigationSystem"
+			"NavigationSystem",
+			"EnhancedInput"
 		});
 		
 		if (Target.bBuildEditor)

@@ -25,4 +25,6 @@ public:
 	UPROPERTY(EditDefaultsOnly) bool bTestChunkIslandRenderRange = false;
 	UPROPERTY(EditDefaultsOnly) int32 TestChunkIslandRenderRange = 10;
 #endif
+
+	virtual void Init() override;
 };
