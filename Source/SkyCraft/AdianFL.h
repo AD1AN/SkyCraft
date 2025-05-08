@@ -62,6 +62,16 @@ public:
 		Result.B = A.B + B.B;
 		return Result;
 	}
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL", meta=(CompactNodeTitle="*", Keywords="*, Multiply"))
+	static FEssence MultiplyEssence(const FEssence A, float Scalar)
+	{
+		FEssence Result;
+		Result.R = A.R * Scalar;
+		Result.G = A.G * Scalar;
+		Result.B = A.B * Scalar;
+		return Result;
+	}
 
 	UFUNCTION(BlueprintCallable, Category="AdianFL")
 	static UPARAM(DisplayName="Out") FUniformSubtractOut UniformSubtract(FEssence Essence, int32 TotalSubtract);

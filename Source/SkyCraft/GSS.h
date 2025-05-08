@@ -23,6 +23,7 @@ public:
 	UPROPERTY(BlueprintReadOnly) UGIS* GIS = nullptr;
 
 	//============================ World Rules
+	// Default values also needs to be changed in Blueprint WorldSave!
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 ChunkRenderRange = 10;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float ChunkSize = 100000;
@@ -33,6 +34,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax Suffocation = FFloatMinMax(80000, 150000);
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float IslandArchonSpawnXY = 75000.0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax IslandArchonSpawnZ = FFloatMinMax(80000, 95000);
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float SkyEssenceDensity = 1.0f;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) bool BuildingInfiniteHeight = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) uint8 GroundedMax = 15;
