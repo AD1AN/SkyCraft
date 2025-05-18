@@ -21,5 +21,5 @@ public:
 
 private:
 	virtual void BeginPlay() override;
-	UFUNCTION() void InitialActorDestroyed(AActor* Actor);
+	UFUNCTION() void InitialActorDestroyed(AActor* DestroyActor);
 };

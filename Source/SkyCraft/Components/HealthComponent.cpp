@@ -34,14 +34,13 @@ void UHealthComponent::SpawnDamageNumbers(FDamageInfo DamageInfo, int32 DamageTa
 	if (IsNetMode(NM_DedicatedServer)) return;
 	if (!IsValid(GetGSS()->GIS->PCS)) return;
 	
-	FVector LocalLocation = GetOwner()->GetTransform().InverseTransformPosition(DamageInfo.WorldLocation);
-	if (FVector::Distance(GSS->GIS->PCS->PlayerCameraManager->GetCameraLocation(), DamageInfo.WorldLocation) > 2000.0f)
+	if (FVector::Distance(GSS->GIS->PCS->PlayerCameraManager->GetCameraLocation(), DamageInfo.WorldLocation) > 8000.0f)
 	{
 		return;
 	}
 	
 	FTransform DamageTransform;
-	DamageTransform.SetLocation(LocalLocation);
+	DamageTransform.SetLocation(DamageInfo.WorldLocation);
 	ADamageNumbers* SpawnedDamageNumbers = GetWorld()->SpawnActorDeferred<ADamageNumbers>(GSS->DamageNumbersClass, DamageTransform);
 	SpawnedDamageNumbers->Damage = DamageTaken;
 	SpawnedDamageNumbers->InitialAttachTo = GetOwner();
@@ -104,9 +103,9 @@ void UHealthComponent::DoDamage(const FDamageInfo& DamageInfo)
 		if (MassRatio > 0.3333f)
 		{
 			// Adjust launch force dynamically
-			const float BaseForce = 300.0f; // Base launch force
-			const float MinForce = 50.0f;  // Minimum push force
-			const float MaxForce = 2000.0f; // Maximum push force
+			const float BaseForce = 300.0f;
+			const float MinForce = 50.0f;
+			const float MaxForce = 2000.0f;
 
 			// Option 1: Linear Scaling
 			float LaunchForce = FMath::Clamp(BaseForce * MassRatio, MinForce, MaxForce);
@@ -123,7 +122,16 @@ void UHealthComponent::DoDamage(const FDamageInfo& DamageInfo)
 		}
 	}
 
-	int32 DamageTaken = DamageInfo.DA_Damage->BaseDamage;
+	int32 DamageTaken;
+
+	if (DamageInfo.DA_Damage->bIsLinearDamage)
+	{
+		DamageTaken = FMath::Lerp(DamageInfo.DA_Damage->BaseDamage, DamageInfo.DA_Damage->MaxLinearDamage, DamageInfo.LinearDamage);
+	}
+	else
+	{
+		DamageTaken = DamageInfo.DA_Damage->BaseDamage;
+	}
 
 	if (DamageInfo.DA_Damage->bIsPercentage)
 	{

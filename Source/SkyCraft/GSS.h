@@ -22,7 +22,7 @@ public:
 	UPROPERTY(BlueprintReadOnly) AGMS* GMS = nullptr;
 	UPROPERTY(BlueprintReadOnly) UGIS* GIS = nullptr;
 
-	//============================ World Rules
+	//============================ World Settings
 	// Default values also needs to be changed in Blueprint WorldSave!
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 ChunkRenderRange = 10;
@@ -48,7 +48,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowJoinViaPresenceFriendsOnly = true;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bShouldAdvertise = true;
 	
-	//=========================== World Rules END
+	//=========================== World Settings END
 
 	virtual void BeginPlay() override;
 

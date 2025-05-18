@@ -15,15 +15,16 @@ void ADamageNumbers::BeginPlay()
 	Super::BeginPlay();
 	if (IsValid(InitialAttachTo))
 	{
+		SetActorLocation(InitialAttachTo->GetTransform().InverseTransformPosition(GetActorLocation()));
 		AttachToActor(InitialAttachTo, FAttachmentTransformRules::KeepRelativeTransform);
 		InitialAttachTo->OnDestroyed.AddDynamic(this, &ADamageNumbers::InitialActorDestroyed);
 	}
 	CustomBeginPlay();
 }
 
-void ADamageNumbers::InitialActorDestroyed(AActor* Actor)
+void ADamageNumbers::InitialActorDestroyed(AActor* DestroyActor)
 {
-	if (AIsland* Island = UAdianFL::GetIsland(GetParentActor()))
+	if (AIsland* Island = UAdianFL::GetIsland(DestroyActor))
 	{
 		AttachToActor(Island, FAttachmentTransformRules::KeepWorldTransform);
 	}

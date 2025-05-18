@@ -8,6 +8,7 @@
 #include "Structs/SS_Island.h"
 #include "GMS.generated.h"
 
+class AResource;
 class AGSS;
 class UDA_IslandBiome;
 class AChunkIsland;
@@ -48,5 +49,5 @@ public:
 
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
-	UFUNCTION(BlueprintCallable) void SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD = -1);
+	UFUNCTION(BlueprintCallable) AResource* SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD = -1);
 };

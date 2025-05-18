@@ -29,14 +29,14 @@ APlayerController* AGMS::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const 
 	return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 }
 
-void AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD)
+AResource* AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD)
 {
 	ensureAlways(Island);
-	if (!Island) return;
+	if (!Island) return nullptr;
 	ensureAlways(DA_Resource);
-	if (!DA_Resource) return;
+	if (!DA_Resource) return nullptr;
 	ensureAlways(DA_Resource->Size.IsValidIndex(ResourceSize));
-	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
+	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return nullptr;
 
 	FTransform ResTransform(LocalLocation);
 	ResTransform.SetRotation(LocalRotation.Quaternion());
@@ -50,6 +50,7 @@ void AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalR
 	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
 	SpawnedRes->FinishSpawning(ResTransform);
 	Island->SpawnedLODs[IslandLOD].Resources.Add(SpawnedRes);
+	return SpawnedRes;
 }
 
 ANavMeshBoundsVolume* AGMS::NMBV_Use(AActor* ActorAttach, FVector Scale)
