@@ -2,15 +2,13 @@
 
 #include "Resource.h"
 #include "AdianFL.h"
+#include "GMS.h"
+#include "GSS.h"
 #include "Island.h"
-#include "RepHelpers.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"
 #include "SkyCraft/Components/HealthComponent.h"
 #include "SkyCraft/Components/InteractComponent.h"
-#include "AssetUserData/AUD_AnalyzeEntity.h"
-#include "AssetUserData/AUD_OverrideScale.h"
 #include "AssetUserData/AUD_SkyTags.h"
-#include "AssetUserData/AUD_HealthComponent.h"
 #include "Components/GrowingResourcesComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -35,22 +33,31 @@ AResource::AResource()
 	InteractComponent->bInteractable = false;
 }
 
+void AResource::OnSpawnLogic_Implementation() {}
+
 void AResource::BeginPlay()
 {
 	Super::BeginPlay();
 	ensureAlways(DA_Resource);
 	if (!DA_Resource) return;
 	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
-
 	CurrentSize = DA_Resource->Size[ResourceSize];
-	StaticMeshComponent->SetStaticMesh(CurrentSize.SM_Variety[SM_Variety]);
-	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
+
+	ensureAlways(CurrentSize.StaticMeshes.IsValidIndex(SM_Variety));
+	FStaticMeshBase* StaticMeshBase = CurrentSize.StaticMeshes[SM_Variety].GetMutablePtr<FStaticMeshBase>();
+	if (CurrentSize.StaticMeshes.IsValidIndex(SM_Variety) && StaticMeshBase)
+	{
+		StaticMeshBase->ImplementStaticMesh(StaticMeshComponent);
+		UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
+	}
 	StaticMeshComponent->SetCullDistance(CurrentSize.CullDistance);
 	SetNetCullDistanceSquared(FMath::Square(CurrentSize.CullDistance));
 	if (DA_Resource->OverlapCollision) StaticMeshComponent->SetCollisionProfileName(TEXT("ResourceOverlap"));
-	
-	ImplementAssetUserData(DA_Resource->AssetUserData);
-	ImplementAssetUserData(CurrentSize.AssetUserData);
+
+	HealthComponent->Config = DA_Resource->HealthComponentConfig;
+
+	ImplementModifiers(DA_Resource->Modifiers);
+	ImplementModifiers(CurrentSize.Modifiers);
 	
 	if (!DA_Resource->InteractKeys.IsEmpty())
 	{
@@ -61,10 +68,10 @@ void AResource::BeginPlay()
 	
 	StaticMeshComponent->GetAssetUserData<UAUD_SkyTags>()->DA_SkyTags.Append(DA_Resource->SkyTags);
 	
-	HealthComponent->MaxHealth = CurrentSize.Health;
+	HealthComponent->Config.MaxHealth = CurrentSize.Health;
 	if (!bLoaded) HealthComponent->Health = CurrentSize.Health;
 	
-	HealthComponent->DropItems = CurrentSize.DropItems;
+	HealthComponent->Config.DropItems = CurrentSize.DropItems;
 	
 	if (HasAuthority())
 	{
@@ -99,7 +106,7 @@ void AResource::GrowUp()
 	SpawnedRes->Island = Island;
 	SpawnedRes->DA_Resource = DA_Resource;
 	SpawnedRes->ResourceSize = NewResourceSize;
-	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
+	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].StaticMeshes.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].StaticMeshes.Num()-1);
 	SpawnedRes->Growing = Growing;
 	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
 	SpawnedRes->FinishSpawning(ResTransform);
@@ -120,7 +127,7 @@ void AResource::GrowInto(UDA_Resource* NewResource)
 	SpawnedRes->Island = Island;
 	SpawnedRes->DA_Resource = NewResource;
 	SpawnedRes->ResourceSize = 0;
-	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
+	SpawnedRes->SM_Variety = (DA_Resource->Size[ResourceSize].StaticMeshes.IsEmpty()) ? 0 : FMath::RandRange(0, DA_Resource->Size[ResourceSize].StaticMeshes.Num()-1);
 	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
 	SpawnedRes->FinishSpawning(ResTransform);
 	Island->SpawnedLODs[INDEX_NONE].Resources.Add(SpawnedRes);
@@ -142,48 +149,67 @@ void AResource::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& Interru
 {
 }
 
-void AResource::ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) const
+bool AResource::OnDie_Implementation(const FDamageInfo& DamageInfo)
 {
-	for (UAssetUserData* AUD : AssetUserDatas)
+	if (!HasAuthority()) return true;
+	
+	for (auto& SpawnResource : DA_Resource->SpawnResources)
 	{
-		ensureAlways(AUD);
-		if (!AUD) return;
-		
-		if (AUD->IsA<UAUD_OverrideScale>())
-		{
-			UAUD_OverrideScale* aud_os = Cast<UAUD_OverrideScale>(AUD);
-			StaticMeshComponent->SetRelativeScale3D(aud_os->NewScale);
-			continue;
-		}
-		if (AUD->IsA<UAUD_AnalyzeEntity>())
-		{
-			StaticMeshComponent->AddAssetUserData(AUD);
-			continue;
-		}
-		if (AUD->IsA<UAUD_HealthComponent>())
-		{
-			UAUD_HealthComponent* aud_hs = Cast<UAUD_HealthComponent>(AUD);
-			HealthComponent->bInclusiveDamageOnly = aud_hs->bInclusiveDamageOnly;
-			if (HealthComponent->bInclusiveDamageOnly)
-			{
-				HealthComponent->InclusiveDamage = aud_hs->InclusiveDamage;
-			}
-			HealthComponent->DefaultTextForNonInclusive = aud_hs->DefaultTextForNonInclusive;
-			HealthComponent->ImmuneToDamage = aud_hs->ImmuneToDamage;
+		if (!SpawnResource.DA_Resource) return true;
+		ensureAlways(SpawnResource.DA_Resource);
 
-			UStaticMesh* SizeSM = CurrentSize.SM_Variety[SM_Variety];
-			HealthComponent->DamageFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DamageFXDefault, SizeSM);
-			HealthComponent->DamageFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DamageFX, SizeSM);
-			HealthComponent->DieFXDefault = aud_hs->DynamicNiagaraVarsArrayFX(aud_hs->DieFXDefault, SizeSM);
-			HealthComponent->DieFX = aud_hs->DynamicNiagaraVarsMapFX(aud_hs->DieFX, SizeSM);
-			HealthComponent->DieHandle = aud_hs->DieHandle;
-			HealthComponent->bDropItems = aud_hs->bDropItems;
-			if (!aud_hs->bDropItems) continue;
-			HealthComponent->DropLocationType = aud_hs->DropLocationType;
-			HealthComponent->DropInRelativeBox = aud_hs->DropInRelativeBox;
-			HealthComponent->DropDirectionType = aud_hs->DropDirectionType;
-			HealthComponent->DropDirection = aud_hs->DropDirection;
-			continue;
+		FVector SpawnLocation = RootComponent->GetRelativeLocation();
+		if (SpawnResource.OffsetLocations.IsValidIndex(ResourceSize))
+		{
+			SpawnLocation = Island->GetActorTransform().InverseTransformPosition(GetActorTransform().TransformPositionNoScale(SpawnResource.OffsetLocations[ResourceSize]));
+		}
+		else if (!SpawnResource.OffsetLocations.IsEmpty())
+		{
+			SpawnLocation = Island->GetActorTransform().InverseTransformPosition(GetActorTransform().TransformPositionNoScale(SpawnResource.OffsetLocations.Last()));
+		}
+
+		FRotator SpawnRotation = RootComponent->GetRelativeRotation();
+		if (SpawnResource.OffsetRotations.IsValidIndex(ResourceSize))
+		{
+			SpawnRotation = (Island->GetActorQuat().Inverse() * (GetActorRotation().Quaternion() * SpawnResource.OffsetRotations[ResourceSize].Quaternion())).Rotator();
+		}
+		else if (!SpawnResource.OffsetRotations.IsEmpty())
+		{
+			SpawnRotation = (Island->GetActorQuat().Inverse() * (GetActorRotation().Quaternion() * SpawnResource.OffsetRotations.Last().Quaternion())).Rotator();
+		}
+		
+		uint8 SpawnResourceSize = 0;
+		switch (SpawnResource.HandleResourceSize)
+		{
+		case EHandleResourceSize::Copy:
+			SpawnResourceSize = ResourceSize;
+			break;
+
+		case EHandleResourceSize::CopyMinus:
+			SpawnResourceSize = ResourceSize - SpawnResource.ResourceSizeVariable;
+			break;
+
+		case EHandleResourceSize::CopyPlus:
+			SpawnResourceSize = ResourceSize + SpawnResource.ResourceSizeVariable;
+			break;
+
+		case EHandleResourceSize::Static:
+			SpawnResourceSize = SpawnResource.ResourceSizeVariable;
+			break;
+		}
+		AResource* SpawnedResource = Island->GSS->GMS->SpawnResource(Island, SpawnLocation, SpawnRotation, SpawnResource.DA_Resource, SpawnResourceSize, false, 0);
+		SpawnedResource->OnSpawnLogic();
+	}
+	return true;
+}
+
+void AResource::ImplementModifiers(TArray<TInstancedStruct<FResourceModifier>>& InModifiers)
+{
+	for (auto& Modifier : InModifiers)
+	{
+		if (FResourceModifier* mod = Modifier.GetMutablePtr<FResourceModifier>())
+		{
+			mod->Implement(this);
 		}
 	}
 }

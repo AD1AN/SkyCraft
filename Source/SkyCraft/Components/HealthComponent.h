@@ -24,6 +24,104 @@ enum class EDieHandle : uint8
 	CustomOnDieEvent
 };
 
+UENUM()
+enum class ESoundDieLocation : uint8
+{
+	ActorOrigin,
+	RelativeLocation,
+	InCenterOfMass
+};
+
+USTRUCT(BlueprintType)
+struct FHealthComponentConfig
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin="1", UIMin="1"))
+	int32 MaxHealth = 404; // MaxHealth should never be 0 or less!
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bInclusiveDamageOnly = false;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
+	TArray<UDA_Damage*> InclusiveDamage;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
+	FText DefaultTextForNonInclusive;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TMap<UDA_Damage*, FText> ImmuneToDamage;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TMap<EDamageGlobalType, float> MultiplyDamageType;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	EDieHandle DieHandle = EDieHandle::JustDestroy;
+
+	//======================= Effect ====================//
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Sound & Niagara | Vars: {bHaveNiagaraVars}"))
+	TArray<FFX> DamageFXDefault;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<UDA_Damage*, FFXArray> DamageFX;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Sound & Niagara | Vars: {bHaveNiagaraVars}"))
+	TArray<FFX> DieFXDefault;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TMap<UDA_Damage*, FFXArray> DieFX;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	bool bOverrideSoundSettings = false;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bOverrideSoundSettings", EditConditionHides))
+	USoundAttenuation* OverrideSoundAttenuation = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bOverrideSoundSettings", EditConditionHides))
+	ESoundDieLocation SoundDieLocation = ESoundDieLocation::ActorOrigin;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bOverrideSoundSettings && SoundDieLocation == ESoundDieLocation::RelativeLocation", EditConditionHides))
+	FVector SoundDieRelativeLocation = FVector::ZeroVector;
+
+	//==================== Drop Items ==================//
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bDropItems = false;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides, TitleProperty="Repeats: {RepeatDrop}(-{RandomMinusRepeats}) | Quantity: {Min}~{Max}"))
+	TArray<FDropItem> DropItems;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
+	FRelativeBox DropInRelativeBox;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	EDropDirectionType DropDirectionType = EDropDirectionType::RandomDirection;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
+	FVector DropDirection = FVector::ZeroVector;
+
+	//==================== Drop Essence ==================//
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bDropEssence = false;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence", EditConditionHides))
+	EDropEssenceAmount DropEssenceAmount = EDropEssenceAmount::MinMax;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::MinMax", EditConditionHides))
+	FEssenceMinMax DropEssenceMinMax;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::Static", EditConditionHides))
+	FEssence DropEssenceStatic;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence", EditConditionHides))
+	EDropEssenceLocationType DropEssenceLocationType = EDropEssenceLocationType::ActorOriginPlusZ;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence && DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ", EditConditionHides))
+	float DropEssenceLocationPlusZ = 50.0f;
+};
+
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent), DisplayName="HealthComponent")
 class SKYCRAFT_API UHealthComponent : public UActorComponent
 {
@@ -53,50 +151,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetHealth(int32 NewHealth);
 	UFUNCTION() void OnRep_Health() const { OnHealth.Broadcast(); }
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, ReplicatedUsing=OnRep_Health) int32 Health = 404;
-	// MaxHealth should never be 0 or less!
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated, meta=(ClampMin="1", UIMin="1")) int32 MaxHealth = 404;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) int32 Armor = 0;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bInclusiveDamageOnly = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
-	TArray<UDA_Damage*> InclusiveDamage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
-	FText DefaultTextForNonInclusive;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) TMap<UDA_Damage*, FText> ImmuneToDamage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) TMap<EDamageGlobalType, float> MultiplyDamageType;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DamageFXDefault;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDA_Damage*, FFXArray> DamageFX;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TArray<FFX> DieFXDefault;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) TMap<UDA_Damage*, FFXArray> DieFX;
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) EDieHandle DieHandle = EDieHandle::JustDestroy;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Health) int32 Health = 403;
 
-	//==================== Drop Items ==================//
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropItems = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems", EditConditionHides))
-	TArray<FDropItem> DropItems;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems", EditConditionHides))
-	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
-	FRelativeBox DropInRelativeBox;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems", EditConditionHides))
-	EDropDirectionType DropDirectionType = EDropDirectionType::NoDirection;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
-	FVector DropDirection = FVector::ZeroVector;
-
-	//==================== Drop Essence ==================//
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bDropEssence = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence", EditConditionHides))
-	EDropEssenceAmount DropEssenceAmount = EDropEssenceAmount::MinMax;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::MinMax", EditConditionHides))
-	FEssenceMinMax DropEssenceMinMax;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::Static", EditConditionHides))
-	FEssence DropEssenceStatic;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence", EditConditionHides))
-	EDropEssenceLocationType DropEssenceLocationType = EDropEssenceLocationType::ActorOriginPlusZ;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bDropEssence && DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ", EditConditionHides))
-	float DropEssenceLocationPlusZ = 50.0f;
-	
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(ShowOnlyInnerProperties)) FHealthComponentConfig Config;
 	
 	void DoDamage(const FDamageInfo& DamageInfo);
 	void DroppingItems(FVector OverrideLocation = FVector::ZeroVector);

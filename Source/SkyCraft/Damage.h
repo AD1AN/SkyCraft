@@ -53,11 +53,11 @@ class SKYCRAFT_API UDA_Damage : public UDataAsset
 
 public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 BaseDamage = 0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bIsLinearDamage", EditConditionHides)) int32 MaxLinearDamage = 0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bIsPercentage = false;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bIsLinearDamage = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bIsLinearDamage", EditConditionHides)) int32 MaxLinearDamage = 0;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bIsLinearDamage", EditConditionHides)) float MaxLinearHitMass = 0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float HitMass = 0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, meta=(EditCondition="bIsLinearDamage", EditConditionHides)) float MaxLinearHitMass = 0;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) EDamageGlobalType DamageGlobalType = EDamageGlobalType::Pure;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bShowDamageNumbers = true;
 };

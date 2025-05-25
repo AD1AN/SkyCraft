@@ -15,8 +15,8 @@ APlayerNormal::APlayerNormal(const FObjectInitializer& ObjectInitializer) : Supe
 	PrimaryActorTick.bCanEverTick = true;
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>("HealthComponent");
 	HealthComponent->Health = 1000;
-	HealthComponent->MaxHealth = HealthComponent->Health;
-	HealthComponent->DieHandle = EDieHandle::CustomOnDieEvent;
+	HealthComponent->Config.MaxHealth = HealthComponent->Health;
+	HealthComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
 	
 	HealthRegenComponent = CreateDefaultSubobject<UHealthRegenComponent>("HealthRegenComponent");
 	
@@ -61,7 +61,7 @@ void APlayerNormal::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, 
 
 void APlayerNormal::OnHunger()
 {
-	if (HealthComponent->Health >= HealthComponent->MaxHealth) return;
+	if (HealthComponent->Health >= HealthComponent->Config.MaxHealth) return;
 	if (HungerComponent->Hunger < HungerComponent->MaxHunger/2)
 	{
 		if (!HealthRegenComponent->IsComponentTickEnabled()) HealthRegenComponent->SetComponentTickEnabled(true);

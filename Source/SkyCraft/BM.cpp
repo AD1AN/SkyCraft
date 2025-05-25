@@ -31,7 +31,7 @@ ABM::ABM()
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshComponent");
 	SetRootComponent(StaticMeshComponent);
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>("HealthComponent");
-	HealthComponent->DieHandle = EDieHandle::CustomOnDieEvent;
+	HealthComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
 }
 
 void ABM::BeginPlay()

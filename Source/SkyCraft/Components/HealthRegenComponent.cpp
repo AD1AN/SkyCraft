@@ -61,6 +61,6 @@ void UHealthRegenComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 	}
 	else
 	{
-		HealthComponent->Health = FMath::Clamp(HealthComponent->Health + HealthStaticNumber, 0, HealthComponent->MaxHealth);	
+		HealthComponent->Health = FMath::Clamp(HealthComponent->Health + HealthStaticNumber, 0, HealthComponent->Config.MaxHealth);	
 	}
 }

@@ -30,12 +30,12 @@ public:
 
 	UFUNCTION(BlueprintCallable) void TextChange(FText NewText, int32 IndexInteractKey);
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Replicated) bool bInteractable = true;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated) bool bInteractable = true;
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, BlueprintAuthorityOnly) void SetInteractable(bool isInteractable);
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) TArray<FInteractKeySettings> InteractKeys;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) TArray<FCurrentProlonged> CurrentProlonged;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector InteractLocation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(TitleProperty="{InteractKey} | {Text}")) TArray<FInteractKeySettings> InteractKeys;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<FCurrentProlonged> CurrentProlonged;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) FVector InteractLocation;
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	

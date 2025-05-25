@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interfaces/HealthInterface.h"
 #include "Interfaces/Interact_CPP.h"
 #include "Interfaces/IslandInterface.h"
-#include "SkyCraft/Structs/ResourceSize.h"
+#include "Structs/ResourceSize.h"
 #include "Resource.generated.h"
 
 class UDA_Resource;
@@ -15,7 +16,7 @@ class UHealthComponent;
 class AIsland;
 
 UCLASS(Blueprintable)
-class SKYCRAFT_API AResource : public AActor, public IInteract_CPP, public IIslandInterface
+class SKYCRAFT_API AResource : public AActor, public IInteract_CPP, public IIslandInterface, public IHealthInterface
 {
 	GENERATED_BODY()
 
@@ -35,6 +36,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float CurrentGrowTime = 0.0f;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FResourceSize CurrentSize;
 
+	UFUNCTION(BlueprintNativeEvent) void OnSpawnLogic();
+	
 	UFUNCTION(BlueprintCallable) virtual void BeginPlay() override;
 	void GrowUp();
 	void GrowInto(UDA_Resource* NewResource);
@@ -42,13 +45,15 @@ public:
 	virtual void ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;
 	virtual void ServerInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) override;
 	virtual void ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& InterruptOut) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual AIsland* GetIsland() override
 	{
 		return Island;
 	}
 
+	virtual bool OnDie_Implementation(const FDamageInfo& DamageInfo) override;
+
 private:
-	UFUNCTION() void ImplementAssetUserData(TArray<UAssetUserData*> AssetUserDatas) const;
+	UFUNCTION() void ImplementModifiers(TArray<TInstancedStruct<FResourceModifier>>& InModifiers);
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

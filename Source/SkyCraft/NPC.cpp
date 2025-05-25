@@ -22,9 +22,9 @@ ANPC::ANPC()
 	PrimaryActorTick.TickInterval = 0.1f;
 	
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>("HealthComponent");
-	HealthComponent->DieHandle = EDieHandle::CustomOnDieEvent;
-	HealthComponent->DropDirectionType = EDropDirectionType::RandomDirection;
-	HealthComponent->DropLocationType = EDropLocationType::ActorOrigin;
+	HealthComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
+	HealthComponent->Config.DropDirectionType = EDropDirectionType::RandomDirection;
+	HealthComponent->Config.DropLocationType = EDropLocationType::ActorOrigin;
 	
 	SuffocationComponent = CreateDefaultSubobject<USuffocationComponent>(TEXT("SuffocationComponent"));
 	SuffocationComponent->PrimaryComponentTick.TickInterval = 15;

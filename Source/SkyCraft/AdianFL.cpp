@@ -11,8 +11,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
 #include "Structs/RelativeBox.h"
-#include "EnhancedInputSubsystems.h"
-#include "EnhancedInput/Public/PlayerMappableKeySettings.h"
 
 FUniformSubtractOut UAdianFL::UniformSubtract(FEssence Essence, int32 TotalToSubtract)
 {
@@ -251,15 +249,15 @@ bool UAdianFL::DoDamage(AActor* Actor, FDamageInfo DamageInfo)
 	return true;
 }
 
-UNiagaraComponent* UAdianFL::SpawnNiagaraIsland(UObject* WorldContextObject, UNiagaraSystem* SystemNiagara, AIsland* Island, FVector WorldLocation, bool bAutoDestroy, bool bAutoActivate, bool bPreCullCheck)
+UNiagaraComponent* UAdianFL::SpawnNiagaraIsland(UObject* WorldContextObject, UNiagaraSystem* SystemNiagara, AIsland* Island, FVector WorldLocation, FRotator Rotation, FVector Scale, bool bAutoDestroy, bool bAutoActivate, bool bPreCullCheck)
 {
 	UNiagaraComponent* SpawnedNiagara;
 	if (IsValid(Island))
 	{
 		FVector LocalLocation = Island->GetTransform().InverseTransformPosition(WorldLocation);
-		SpawnedNiagara = UNiagaraFunctionLibrary::SpawnSystemAttached(SystemNiagara, Island->GetRootComponent(), NAME_None, LocalLocation, FRotator::ZeroRotator, FVector(1.f), EAttachLocation::KeepRelativeOffset, bAutoDestroy, ENCPoolMethod::None, bAutoActivate, bPreCullCheck);
+		SpawnedNiagara = UNiagaraFunctionLibrary::SpawnSystemAttached(SystemNiagara, Island->GetRootComponent(), NAME_None, LocalLocation, Rotation, Scale, EAttachLocation::KeepRelativeOffset, bAutoDestroy, ENCPoolMethod::None, bAutoActivate, bPreCullCheck);
 	}
-	else SpawnedNiagara = UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObject, SystemNiagara, WorldLocation, FRotator::ZeroRotator, FVector(1.f), bAutoDestroy, bAutoActivate, ENCPoolMethod::None, bPreCullCheck);
+	else SpawnedNiagara = UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObject, SystemNiagara, WorldLocation, Rotation, Scale, bAutoDestroy, bAutoActivate, ENCPoolMethod::None, bPreCullCheck);
 	return SpawnedNiagara;
 }
 
@@ -283,4 +281,33 @@ AIsland* UAdianFL::GetIsland(AActor* Actor)
 		Island = IslandInterface->GetIsland();
 	}
 	return Island;
+}
+
+float UAdianFL::NormalizeToRangeClamped(float Value, float RangeMin, float RangeMax)
+{
+	if (RangeMin == RangeMax)
+	{
+		if (Value < RangeMin)
+		{
+			return 0.0f;
+		}
+		else
+		{
+			return 1.0f;
+		}
+	}
+
+	if (RangeMin > RangeMax)
+	{
+		Swap(RangeMin, RangeMax);
+	}
+
+	float Normalized = (Value - RangeMin) / (RangeMax - RangeMin);
+	return FMath::Clamp(Normalized, 0.0f, 1.0f);
+}
+
+FVector_NetQuantize UAdianFL::Conv_VectorToQuantize(FVector InVec)
+{
+	const FVector_NetQuantize Result = InVec;
+	return Result;
 }

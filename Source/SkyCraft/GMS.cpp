@@ -45,10 +45,18 @@ AResource* AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator 
 	SpawnedRes->Island = Island;
 	SpawnedRes->DA_Resource = DA_Resource;
 	SpawnedRes->ResourceSize = ResourceSize;
-	if (!DA_Resource->Size[ResourceSize].SM_Variety.IsEmpty()) SpawnedRes->SM_Variety = FMath::RandRange(0, DA_Resource->Size[ResourceSize].SM_Variety.Num()-1);
+	if (!DA_Resource->Size[ResourceSize].StaticMeshes.IsEmpty()) SpawnedRes->SM_Variety = FMath::RandRange(0, DA_Resource->Size[ResourceSize].StaticMeshes.Num()-1);
 	SpawnedRes->Growing = Growing;
-	SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
 	SpawnedRes->FinishSpawning(ResTransform);
+	if (SpawnedRes->GetRootComponent()->IsSimulatingPhysics())
+	{
+		FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::KeepRelative, true);
+		SpawnedRes->AttachToComponent(Island->AttachSimulatedBodies, AttachmentTransformRules);
+	}
+	else
+	{
+		SpawnedRes->AttachToActor(Island, FAttachmentTransformRules::KeepRelativeTransform);
+	}
 	Island->SpawnedLODs[IslandLOD].Resources.Add(SpawnedRes);
 	return SpawnedRes;
 }

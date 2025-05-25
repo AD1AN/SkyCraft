@@ -20,6 +20,8 @@ ADroppedItem::ADroppedItem()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	bReplicates = true;
 	SetNetCullDistanceSquared(37500000.0f);
+
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	SetRootComponent(SphereComponent);
@@ -74,9 +76,9 @@ void ADroppedItem::BeginPlay()
 		FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::KeepRelative, true);
 		AttachToComponent(AttachedToIsland->AttachSimulatedBodies, AttachmentTransformRules);
 	}
-	if (IsNetMode(NM_Client)) SphereComponent->SetSimulatePhysics(false);
+	if (!HasAuthority()) SphereComponent->SetSimulatePhysics(false);
 	
-	if (!IsNetMode(NM_Client))
+	if (HasAuthority())
 	{
 		SphereComponent->SetNotifyRigidBodyCollision(true);
 		
@@ -142,25 +144,26 @@ void ADroppedItem::EnableCollision()
 
 void ADroppedItem::Tick(float DeltaSeconds)
 {
-	if (PlayerPickedUp)
+	if (!IsValid(PlayerPickedUp))
 	{
-		if (!IsValid(PlayerPickedUp)) FailPickUp();
-	
-		RelativeDistanceInterpolation = FMath::FInterpTo(RelativeDistanceInterpolation, 1.0f,DeltaSeconds,2);
-		const FVector RelativeDistance = PlayerPickedUp->GetActorLocation() - GetActorLocation();
-		SetActorLocation(GetActorLocation() + (RelativeDistance * RelativeDistanceInterpolation));
-		if (FVector::Distance(GetActorLocation(), PlayerPickedUp->GetActorLocation()) <= 25.0f)
+		FailPickUp();
+		return;
+	}
+
+	RelativeDistanceInterpolation = FMath::FInterpTo(RelativeDistanceInterpolation, 1.0f,DeltaSeconds,2);
+	const FVector RelativeDistance = PlayerPickedUp->GetActorLocation() - GetActorLocation();
+	SetActorLocation(GetActorLocation() + (RelativeDistance * RelativeDistanceInterpolation));
+	if (FVector::Distance(GetActorLocation(), PlayerPickedUp->GetActorLocation()) <= 25.0f)
+	{
+		UInventory* PlayerInventory = PlayerPickedUp->FindComponentByTag<UInventory>("Inventory");
+		if (IsValid(PlayerInventory))
 		{
-			UInventory* PlayerInventory = PlayerPickedUp->FindComponentByTag<UInventory>("Inventory");
-			if (IsValid(PlayerInventory))
-			{
-				if (PlayerInventory->InsertSlot(Slot)) Destroy();
-				else FailPickUp();
-			}
-			else
-			{
-				FailPickUp();
-			}
+			if (PlayerInventory->InsertSlot(Slot)) Destroy();
+			else FailPickUp();
+		}
+		else
+		{
+			FailPickUp();
 		}
 	}
 }

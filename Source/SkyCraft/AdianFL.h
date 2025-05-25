@@ -7,7 +7,6 @@
 #include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/Coords.h"
 #include "SkyCraft/Damage.h"
-#include "EnhancedInput/Public/UserSettings/EnhancedInputUserSettings.h"
 #include "AdianFL.generated.h"
 
 class UNiagaraSystem;
@@ -147,6 +146,8 @@ public:
 	UNiagaraSystem* SystemNiagara,
 	AIsland* Island,
 	FVector WorldLocation,
+	FRotator Rotation = FRotator::ZeroRotator,
+	FVector Scale = FVector(1.0f),
 	bool bAutoDestroy = true,
 	bool bAutoActivate = true,
 	bool bPreCullCheck = true);
@@ -170,4 +171,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="AdianFL")
 	static AIsland* GetIsland(AActor* Actor);
+
+	// Returns clamped 0 to 1 result.
+	UFUNCTION(BlueprintPure, Category="AdianFL")
+	static float NormalizeToRangeClamped(float Value, float RangeMin, float RangeMax);
+	
+	UFUNCTION(BlueprintPure, meta=(DisplayName = "To Quantize (Vector)", CompactNodeTitle = "->", BlueprintAutocast), Category="AdianFL")
+	static FVector_NetQuantize Conv_VectorToQuantize(FVector InVec);
 };
