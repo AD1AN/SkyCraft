@@ -6,6 +6,7 @@
 #include "AdianFL.h"
 #include "Island.h"
 #include "GameFramework/Actor.h"
+#include "Interfaces/HealthInterface.h"
 #include "Interfaces/IslandInterface.h"
 #include "SkyCraft/Structs/BuildingParameters.h"
 #include "BM.generated.h"
@@ -24,17 +25,17 @@ struct FArrayMaterials
 };
 
 UCLASS()
-class SKYCRAFT_API ABM : public AActor, public IIslandInterface
+class SKYCRAFT_API ABM : public AActor, public IIslandInterface, public IHealthInterface
 {
 	GENERATED_BODY()
 	
 public:
 	ABM();
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) UStaticMeshComponent* StaticMeshComponent = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) UHealthComponent* HealthComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) UHealthComponent* HealthComponent = nullptr;
 	
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly) UDA_Building* DA_Building = nullptr;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) class ABS* CurrentBS = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) UDA_Building* DA_Building = nullptr;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) class ABS* CurrentBS = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite) int32 ID = 0;
 	UPROPERTY(BlueprintReadWrite) TArray<ABM*> Supports;
@@ -55,7 +56,6 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void Dismantled();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void DismantledEffects();
 
-	UFUNCTION() void OnDie();
 	UFUNCTION(BlueprintCallable) void Dismantle(UInventory* CauserInventory);
 	void RecursiveDismantle(TArray<ABM*>& FlaggedDismantle);
 	void UpdateGrounded(uint8 NewGrounded, TArray<ABM*>& FlaggedDismantle);
@@ -67,8 +67,13 @@ public:
 	virtual AIsland* GetIsland() override
 	{
 		// I don't want to create replicated Island variable. Just get it from parent chain.
-		return Cast<AIsland>(UAdianFL::GetRootActor(this));
+		AActor* lol = UAdianFL::GetRootActor(this);
+		bool gg = IsValid(lol);
+		AIsland* island = Cast<AIsland>(lol);
+		return island;
 	}
+
+	virtual bool OnDie_Implementation(const FDamageInfo& DamageInfo) override;
 
 private:
 	void PlayEffects(bool Builded);

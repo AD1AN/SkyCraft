@@ -17,6 +17,7 @@ class SKYCRAFT_API AChunkIsland : public AActor
 	GENERATED_BODY()
 	
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) USceneComponent* Root;
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(VisibleInstanceOnly) class UBoxComponent* BoxComponent = nullptr;
 	UPROPERTY(VisibleInstanceOnly) class UTextRenderComponent* TextRenderComponent = nullptr;

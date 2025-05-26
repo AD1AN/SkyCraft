@@ -9,7 +9,8 @@ enum class ENiagaraVarType : uint8
 	Integer,
 	Vector,
 	Color,
-	StaticMesh
+	StaticMesh, // Using specified static mesh.
+	CurrentStaticMesh // Searches for first encountered StaticMeshComponent and uses its mesh.
 };
 
 USTRUCT(BlueprintType)

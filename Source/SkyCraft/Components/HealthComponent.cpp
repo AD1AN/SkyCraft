@@ -264,7 +264,11 @@ void UHealthComponent::Multicast_OnDamage_Implementation(FDamageInfo DamageInfo,
 		for (auto& FX : FXArray->FXs)
 		{
 			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, DamageInfo.WorldLocation, SoundAttenuation);
-			if (FX.Niagara) UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, DamageInfo.WorldLocation);
+			if (FX.Niagara)
+			{
+				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, DamageInfo.WorldLocation);
+				if (FX.bHaveNiagaraVars) ImplementNiagaraVars(FX, SpawnedNiagara);
+			}
 		}
 	}
 	else
@@ -272,7 +276,11 @@ void UHealthComponent::Multicast_OnDamage_Implementation(FDamageInfo DamageInfo,
 		for (auto& FX : Config.DamageFXDefault)
 		{
 			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, DamageInfo.WorldLocation, SoundAttenuation);
-			if (FX.Niagara) UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, DamageInfo.WorldLocation);
+			if (FX.Niagara)
+			{
+				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, DamageInfo.WorldLocation);
+				if (FX.bHaveNiagaraVars) ImplementNiagaraVars(FX, SpawnedNiagara);
+			}
 		}
 	}
 	
@@ -318,7 +326,11 @@ void UHealthComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 		for (auto& FX : FXArray->FXs)
 		{
 			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, SoundLocation, SoundAttenuation);
-			if (FX.Niagara) UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, NiagaraLocation);
+			if (FX.Niagara)
+			{
+				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, NiagaraLocation);
+				if (FX.bHaveNiagaraVars) ImplementNiagaraVars(FX, SpawnedNiagara);
+			}
 		}
 	}
 	else
@@ -329,25 +341,7 @@ void UHealthComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 			if (FX.Niagara)
 			{
 				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, NiagaraLocation, GetOwner()->GetActorRotation(), GetOwner()->GetActorScale());
-				// This is a hack, only implemented here for default death. Works only with DefaultMeshOnly parameter.
-				if (FX.bHaveNiagaraVars)
-				{
-					for (auto& NiagaraVariable : FX.NiagaraVars)
-					{
-						if (NiagaraVariable.Type == ENiagaraVarType::StaticMesh)
-						{
-							if (NiagaraVariable.StaticMesh) UNiagaraFunctionLibrary::OverrideSystemUserVariableStaticMesh(SpawnedNiagara, NiagaraVariable.Name.ToString(), NiagaraVariable.StaticMesh);
-						}
-						else if (NiagaraVariable.Type == ENiagaraVarType::Float)
-						{
-							SpawnedNiagara->SetVariableFloat(NiagaraVariable.Name, NiagaraVariable.Float);
-						}
-						else if (NiagaraVariable.Type == ENiagaraVarType::Integer)
-						{
-							SpawnedNiagara->SetVariableInt(NiagaraVariable.Name, NiagaraVariable.Integer);
-						}
-					}
-				}
+				if (FX.bHaveNiagaraVars) ImplementNiagaraVars(FX, SpawnedNiagara);
 			}
 		}
 	}
@@ -363,6 +357,33 @@ AGSS* UHealthComponent::GetGSS()
 {
 	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
 	return GSS;
+}
+
+void UHealthComponent::ImplementNiagaraVars(FFX& FX, UNiagaraComponent* NiagaraComponent)
+{
+	for (auto& NiagaraVariable : FX.NiagaraVars)
+	{
+		if (NiagaraVariable.Type == ENiagaraVarType::CurrentStaticMesh)
+		{
+			if (UStaticMeshComponent* StaticMeshComponent = GetOwner()->FindComponentByClass<UStaticMeshComponent>())
+			{
+				if (StaticMeshComponent->GetStaticMesh()) UNiagaraFunctionLibrary::OverrideSystemUserVariableStaticMesh(NiagaraComponent, NiagaraVariable.Name.ToString(), StaticMeshComponent->GetStaticMesh());	
+			}
+		}
+		else if (NiagaraVariable.Type == ENiagaraVarType::Float)
+		{
+			NiagaraComponent->SetVariableFloat(NiagaraVariable.Name, NiagaraVariable.Float);
+		}
+		else if (NiagaraVariable.Type == ENiagaraVarType::Integer)
+		{
+			NiagaraComponent->SetVariableInt(NiagaraVariable.Name, NiagaraVariable.Integer);
+		}
+		else if (NiagaraVariable.Type == ENiagaraVarType::StaticMesh)
+		{
+			// Works only with DefaultMeshOnly parameter.
+			if (NiagaraVariable.StaticMesh) UNiagaraFunctionLibrary::OverrideSystemUserVariableStaticMesh(NiagaraComponent, NiagaraVariable.Name.ToString(), NiagaraVariable.StaticMesh);
+		}
+	}
 }
 
 void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

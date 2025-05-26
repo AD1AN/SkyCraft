@@ -305,9 +305,3 @@ float UAdianFL::NormalizeToRangeClamped(float Value, float RangeMin, float Range
 	float Normalized = (Value - RangeMin) / (RangeMax - RangeMin);
 	return FMath::Clamp(Normalized, 0.0f, 1.0f);
 }
-
-FVector_NetQuantize UAdianFL::Conv_VectorToQuantize(FVector InVec)
-{
-	const FVector_NetQuantize Result = InVec;
-	return Result;
-}

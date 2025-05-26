@@ -6,12 +6,14 @@
 #include "Engine/DataAsset.h"
 #include "SkyCraft/Resource.h"
 #include "SkyCraft/Components/HealthComponent.h"
+#include "SkyCraft/Structs/HealthConfigModifier.h"
 #include "SkyCraft/Structs/InteractKeySettings.h"
 #include "SkyCraft/Structs/ResourceModifier.h"
 #include "SkyCraft/Structs/ResourceSize.h"
 #include "DA_Resource.generated.h"
 
 class UDA_SkyTag;
+class UDA_HealthConfig;
 
 UENUM(BlueprintType)
 enum class EHandleResourceSize : uint8
@@ -50,7 +52,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Health"), Category="Resource Sizes") TArray<FResourceSize> Size;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSubclassOf<AResource> OverrideResourceClass = AResource::StaticClass();
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FResourceModifier>> Modifiers;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FResourceModifier>> ResourceModifiers;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<UDA_SkyTag*> SkyTags;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 SpacingNeighbours = 0;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) float BodyRadius = 50.0f;
@@ -60,7 +62,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{InteractKey} | {Text}")) TArray<FInteractKeySettings> InteractKeys;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool OverlapCollision = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(ShowOnlyInnerProperties), Category="Health Component Config") FHealthComponentConfig HealthComponentConfig;
-	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health Config") EHealthConfigUse HealthConfigUse = EHealthConfigUse::DataAsset;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="HealthConfigUse == EHealthConfigUse::DataAsset", EditConditionHides), Category="Health Config") UDA_HealthConfig* DA_HealthConfig = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct, EditCondition="HealthConfigUse == EHealthConfigUse::DataAsset", EditConditionHides), Category="Health Config") TArray<TInstancedStruct<FHealthConfigModifier>> HealthConfigModifiers;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="HealthConfigUse == EHealthConfigUse::Defined", EditConditionHides), Category="Health Config") FHealthConfig DefinedHealthConfig;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="DA_Resource"), Category="On Destroy") TArray<FSpawnResource> SpawnResources;
 };

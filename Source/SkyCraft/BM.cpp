@@ -10,10 +10,10 @@
 #include "RepHelpers.h"
 #include "Components/Inventory.h"
 #include "DataAssets/DA_Building.h"
+#include "DataAssets/DA_HealthConfig.h"
 #include "Kismet/GameplayStatics.h"
 #include "SkyCraft/Components/HealthComponent.h"
 #include "Net/UnrealNetwork.h"
-#include "Net/Core/PushModel/PushModel.h"
 
 ABM::ABM()
 {
@@ -37,15 +37,33 @@ ABM::ABM()
 void ABM::BeginPlay()
 {
 	Super::BeginPlay();
-	if (HasAuthority())
+	// This code duplicated in Resource::BeginPlay
+	if (DA_Building->HealthConfigUse == EHealthConfigUse::DataAsset)
 	{
-		HealthComponent->OnDie.AddDynamic(this, &ABM::OnDie);
+		if (DA_Building->DA_HealthConfig)
+		{
+			FHealthConfig TempHealthConfig = DA_Building->DA_HealthConfig->HealthConfig;
+			for (auto& Modifier : DA_Building->HealthConfigModifiers)
+			{
+				if (FHealthConfigModifier* mod = Modifier.GetMutablePtr<FHealthConfigModifier>())
+				{
+					mod->Implement(TempHealthConfig);
+				}
+			}
+			HealthComponent->Config = TempHealthConfig;
+			HealthComponent->Config.MaxHealth = DA_Building->BuildingHealth;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("DA_Building: %s not contains DA_HealthConfig! Using DefinedHealthConfig!"), *DA_Building->GetName());
+			HealthComponent->Config = DA_Building->DefinedHealthConfig;
+		}
 	}
-}
-
-void ABM::OnDie()
-{
-	Dismantle(nullptr);
+	else
+	{
+		HealthComponent->Config = DA_Building->DefinedHealthConfig;
+	}
+	HealthComponent->Health = HealthComponent->Config.MaxHealth;
 }
 
 FBuildingParameters ABM::SaveBuildingParameters_Implementation()
@@ -238,13 +256,19 @@ TArray<int32> ABM::ConvertToIDs(TArray<ABM*>& Buildings)
 	return IDs;
 }
 
+bool ABM::OnDie_Implementation(const FDamageInfo& DamageInfo)
+{
+	if (HasAuthority()) Dismantle(nullptr);
+	return true;
+}
+
 void ABM::PlayEffects(bool Builded)
 {
 	ensureAlways(DA_Building);
 	if (!DA_Building) return;
 
-	UNiagaraSystem* PlayNiagara = nullptr;
-	USoundBase* PlaySound = nullptr;
+	UNiagaraSystem* PlayNiagara;
+	USoundBase* PlaySound;
 	FSoundSettings PlaySoundSettings;
 	
 	if (Builded)

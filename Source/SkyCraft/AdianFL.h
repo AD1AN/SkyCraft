@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/HealthComponent.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/Coords.h"
@@ -177,5 +178,21 @@ public:
 	static float NormalizeToRangeClamped(float Value, float RangeMin, float RangeMax);
 	
 	UFUNCTION(BlueprintPure, meta=(DisplayName = "To Quantize (Vector)", CompactNodeTitle = "->", BlueprintAutocast), Category="AdianFL")
-	static FVector_NetQuantize Conv_VectorToQuantize(FVector InVec);
+	static FVector_NetQuantize Conv_VectorToQuantize(const FVector& InVec)
+	{
+		const FVector_NetQuantize Result = InVec;
+		return Result;
+	}
+
+	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "MaxHealth", BlueprintAutocast), Category="AdianFL")
+	static int32 GetMaxHealth(const FHealthConfig& InHealthComponentConfig)
+	{
+		return InHealthComponentConfig.MaxHealth;
+	}
+
+	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "MaxHealth"), Category="AdianFL")
+	static int32 GetMaxHealthComponent(const UHealthComponent* InHealthComponent)
+	{
+		return InHealthComponent ? InHealthComponent->Config.MaxHealth : 1;
+	}
 };

@@ -10,6 +10,7 @@
 #include "SkyCraft/Components/InteractComponent.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "Components/GrowingResourcesComponent.h"
+#include "DataAssets/DA_HealthConfig.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
@@ -54,10 +55,34 @@ void AResource::BeginPlay()
 	SetNetCullDistanceSquared(FMath::Square(CurrentSize.CullDistance));
 	if (DA_Resource->OverlapCollision) StaticMeshComponent->SetCollisionProfileName(TEXT("ResourceOverlap"));
 
-	HealthComponent->Config = DA_Resource->HealthComponentConfig;
+	// This code duplicated in BM::BeginPlay
+	if (DA_Resource->HealthConfigUse == EHealthConfigUse::DataAsset)
+	{
+		if (DA_Resource->DA_HealthConfig)
+		{
+			FHealthConfig TempHealthConfig = DA_Resource->DA_HealthConfig->HealthConfig;
+			for (auto& Modifier : DA_Resource->HealthConfigModifiers)
+			{
+				if (FHealthConfigModifier* mod = Modifier.GetMutablePtr<FHealthConfigModifier>())
+				{
+					mod->Implement(TempHealthConfig);
+				}
+			}
+			HealthComponent->Config = TempHealthConfig;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("DA_Resource: %s not contains DA_HealthConfig! Using DefinedHealthConfig!"), *DA_Resource->GetName());
+			HealthComponent->Config = DA_Resource->DefinedHealthConfig;
+		}
+	}
+	else
+	{
+		HealthComponent->Config = DA_Resource->DefinedHealthConfig;
+	}
 
-	ImplementModifiers(DA_Resource->Modifiers);
-	ImplementModifiers(CurrentSize.Modifiers);
+	ImplementModifiers(DA_Resource->ResourceModifiers);
+	ImplementModifiers(CurrentSize.ResourceModifiers);
 	
 	if (!DA_Resource->InteractKeys.IsEmpty())
 	{

@@ -16,6 +16,7 @@
 class AEssenceActor;
 class UDA_Item;
 class AGSS;
+class UNiagaraComponent;
 
 UENUM()
 enum class EDieHandle : uint8
@@ -32,8 +33,15 @@ enum class ESoundDieLocation : uint8
 	InCenterOfMass
 };
 
+UENUM(BlueprintType)
+enum class EHealthConfigUse : uint8
+{
+	DataAsset,
+	Defined
+};
+
 USTRUCT(BlueprintType)
-struct FHealthComponentConfig
+struct FHealthConfig
 {
 	GENERATED_BODY()
 
@@ -153,7 +161,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Health) int32 Health = 403;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(ShowOnlyInnerProperties)) FHealthComponentConfig Config;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(ShowOnlyInnerProperties)) FHealthConfig Config;
 	
 	void DoDamage(const FDamageInfo& DamageInfo);
 	void DroppingItems(FVector OverrideLocation = FVector::ZeroVector);
@@ -168,5 +176,7 @@ public:
 
 	AGSS* GetGSS();
 
+private:
+	void ImplementNiagaraVars(FFX& FX, UNiagaraComponent* NiagaraComponent);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

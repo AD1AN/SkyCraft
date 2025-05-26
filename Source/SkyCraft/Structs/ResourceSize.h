@@ -42,7 +42,7 @@ struct FResourceSize
 {
 	GENERATED_BODY()
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 Health = 100;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FResourceModifier>> Modifiers;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FResourceModifier>> ResourceModifiers;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Repeats: {RepeatDrop}(-{RandomMinusRepeats}) | Quantity: {Min}~{Max}")) TArray<FDropItem> DropItems;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<TInstancedStruct<FStaticMeshBase>> StaticMeshes;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) float CullDistance = 150000.0f;

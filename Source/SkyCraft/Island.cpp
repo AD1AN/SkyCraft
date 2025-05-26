@@ -1049,11 +1049,11 @@ void AIsland::LoadBuildings()
 		BuildingTransform.SetLocation(SS_Building.Location);
 		BuildingTransform.SetRotation(SS_Building.Rotation.Quaternion());
 		ABM* SpawnedBuilding = GetWorld()->SpawnActorDeferred<ABM>(SS_Building.BM_Class, BuildingTransform);
-		SpawnedBuilding->HealthComponent->Health = SS_Building.Health;
 		SpawnedBuilding->Grounded = SS_Building.Grounded;
 		SpawnedBuilding->ID = SS_Building.ID;
 		SpawnedBuilding->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
 		SpawnedBuilding->FinishSpawning(BuildingTransform);
+		SpawnedBuilding->HealthComponent->Health = SS_Building.Health;
 		SpawnedBuilding->LoadBuildingParameters(SS_Building.Parameters);
 		BuildingsMap.Add(SS_Building.ID, SpawnedBuilding);
 	}

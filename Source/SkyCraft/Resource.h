@@ -8,6 +8,8 @@
 #include "Interfaces/Interact_CPP.h"
 #include "Interfaces/IslandInterface.h"
 #include "Structs/ResourceSize.h"
+#include "StructUtils/InstancedStruct.h"
+#include "SkyCraft/Structs/ResourceModifier.h"
 #include "Resource.generated.h"
 
 class UDA_Resource;
@@ -21,20 +23,20 @@ class SKYCRAFT_API AResource : public AActor, public IInteract_CPP, public IIsla
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) UStaticMeshComponent* StaticMeshComponent = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) UHealthComponent* HealthComponent = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UInteractComponent* InteractComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) UHealthComponent* HealthComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) class UInteractComponent* InteractComponent = nullptr;
 	
 	AResource();
 	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bLoaded = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) AIsland* Island = nullptr; // Auth
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) UDA_Resource* DA_Resource = nullptr;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) uint8 ResourceSize = 0;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) uint8 SM_Variety;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool Growing = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) float CurrentGrowTime = 0.0f;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) FResourceSize CurrentSize;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bLoaded = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) AIsland* Island = nullptr; // Auth
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) UDA_Resource* DA_Resource = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) uint8 ResourceSize = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) uint8 SM_Variety;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool Growing = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float CurrentGrowTime = 0.0f;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) FResourceSize CurrentSize;
 
 	UFUNCTION(BlueprintNativeEvent) void OnSpawnLogic();
 	
