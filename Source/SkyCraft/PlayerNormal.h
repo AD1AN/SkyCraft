@@ -17,9 +17,15 @@ class SKYCRAFT_API APlayerNormal : public ACharacter, public IIslandInterface
 	GENERATED_BODY()
 public:
 	
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UHealthComponent* HealthComponent = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UHealthRegenComponent* HealthRegenComponent = nullptr;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere) class UHungerComponent* HungerComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) class UHealthComponent* HealthComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) class UHealthRegenComponent* HealthRegenComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) class UHungerComponent* HungerComponent = nullptr;
+	
+	APlayerNormal(const FObjectInitializer& ObjectInitializer);
+
+	// The island under feet. Changes on SetBase().
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Island) AIsland* Island = nullptr;
+	UFUNCTION() void OnRep_Island();
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHandsFull);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnHandsFull OnHandsFull;
@@ -33,8 +39,6 @@ public:
 	UPROPERTY(BlueprintReadOnly) bool bAnimLoopUpperBody = false;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnimLoopUpperBody(UAnimSequenceBase* Sequence);
 	
-	APlayerNormal(const FObjectInitializer& ObjectInitializer);
-
 	// Should not be used in blueprint
 	virtual void BeginPlay() override;
 

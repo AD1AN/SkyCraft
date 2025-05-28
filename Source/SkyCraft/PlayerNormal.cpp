@@ -23,6 +23,10 @@ APlayerNormal::APlayerNormal(const FObjectInitializer& ObjectInitializer) : Supe
 	HungerComponent = CreateDefaultSubobject<UHungerComponent>("HungerComponent");
 }
 
+void APlayerNormal::OnRep_Island()
+{
+}
+
 void APlayerNormal::BeginPlay()
 {
 	Super::BeginPlay();
@@ -42,19 +46,21 @@ void APlayerNormal::OnRep_PSS_Implementation()
 
 void APlayerNormal::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor)
 {
+	AIsland* IslandActor = nullptr;
 	if (NewBase)
 	{
-		const UClass* Island = AIsland::StaticClass();
-		const AActor* BaseOwner = UAdianFL::GetRootActor(NewBase->GetOwner());
-		if (BaseOwner && BaseOwner->IsA(Island))
+		AActor* NewBaseRoot = UAdianFL::GetRootActor(NewBase->GetOwner());
+		if (NewBaseRoot && NewBaseRoot->IsA(AIsland::StaticClass()))
 		{
-			NewBase = Cast<AIsland>(BaseOwner)->PMC_Main;
+			IslandActor = Cast<AIsland>(NewBaseRoot);
+			NewBase = IslandActor->PMC_Main;
 		}
 	}
 	UPrimitiveComponent* OldBase = BasedMovement.MovementBase;
 	Super::SetBase(NewBase, BoneName, bNotifyActor);
-	if (OldBase != NewBase)
+	if (NewBase != OldBase)
 	{
+		Island = IslandActor;
 		OnNewBase.Broadcast();
 	}
 }

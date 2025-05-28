@@ -1051,7 +1051,7 @@ void AIsland::LoadBuildings()
 		ABM* SpawnedBuilding = GetWorld()->SpawnActorDeferred<ABM>(SS_Building.BM_Class, BuildingTransform);
 		SpawnedBuilding->Grounded = SS_Building.Grounded;
 		SpawnedBuilding->ID = SS_Building.ID;
-		SpawnedBuilding->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+		SpawnedBuilding->AttachIsland = this;
 		SpawnedBuilding->FinishSpawning(BuildingTransform);
 		SpawnedBuilding->HealthComponent->Health = SS_Building.Health;
 		SpawnedBuilding->LoadBuildingParameters(SS_Building.Parameters);

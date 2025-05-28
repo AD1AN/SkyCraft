@@ -111,10 +111,10 @@ void ANPC::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNot
 {
 	if (NewBase)
 	{
-		AActor* BaseOwner = UAdianFL::GetRootActor(NewBase->GetOwner());
-		if (BaseOwner && BaseOwner->IsA(AIsland::StaticClass()))
+		AActor* NewBaseRoot = UAdianFL::GetRootActor(NewBase->GetOwner());
+		if (NewBaseRoot && NewBaseRoot->IsA(AIsland::StaticClass()))
 		{
-			AIsland* IslandBase = Cast<AIsland>(BaseOwner);
+			AIsland* IslandBase = Cast<AIsland>(NewBaseRoot);
 			NewBase = IslandBase->PMC_Main;
 			if (Island != IslandBase) AddToIsland(IslandBase); 
 		}

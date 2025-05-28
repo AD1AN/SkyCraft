@@ -292,7 +292,24 @@ void UHealthComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 {
 	if (GetOwner()->Implements<UHealthInterface>()) IHealthInterface::Execute_OnDie(GetOwner(), DamageInfo);
 	OnDie.Broadcast();
+	
+	PlayDieEffects(DamageInfo);
+}
 
+float UHealthComponent::HealthRatio()
+{
+	if (Config.MaxHealth == 0) return 0.0f; // Prevent division by zero
+	return static_cast<float>(Health) / static_cast<float>(Config.MaxHealth);
+}
+
+AGSS* UHealthComponent::GetGSS()
+{
+	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
+	return GSS;
+}
+
+void UHealthComponent::PlayDieEffects(FDamageInfo DamageInfo)
+{
 	if (IsNetMode(NM_DedicatedServer)) return;
 	
 	AIsland* Island = UAdianFL::GetIsland(GetOwner());
@@ -303,18 +320,18 @@ void UHealthComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 	{
 		switch (Config.SoundDieLocation)
 		{
-			case ESoundDieLocation::ActorOrigin:
-				// Do nothing. Location is already defined.
-			break;
-			case ESoundDieLocation::RelativeLocation:
-				SoundLocation = GetOwner()->GetActorTransform().TransformPosition(Config.SoundDieRelativeLocation);
-			break;
-			case ESoundDieLocation::InCenterOfMass:
-				if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent()))
-				{
-					SoundLocation = PrimitiveComponent->GetCenterOfMass();
-				}
+		case ESoundDieLocation::ActorOrigin:
+			// Do nothing. Location is already defined.
 				break;
+		case ESoundDieLocation::RelativeLocation:
+			SoundLocation = GetOwner()->GetActorTransform().TransformPosition(Config.SoundDieRelativeLocation);
+			break;
+		case ESoundDieLocation::InCenterOfMass:
+			if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent()))
+			{
+				SoundLocation = PrimitiveComponent->GetCenterOfMass();
+			}
+			break;
 		}
 	}
 
@@ -345,18 +362,6 @@ void UHealthComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 			}
 		}
 	}
-}
-
-float UHealthComponent::HealthRatio()
-{
-	if (Config.MaxHealth == 0) return 0.0f; // Prevent division by zero
-	return static_cast<float>(Health) / static_cast<float>(Config.MaxHealth);
-}
-
-AGSS* UHealthComponent::GetGSS()
-{
-	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
-	return GSS;
 }
 
 void UHealthComponent::ImplementNiagaraVars(FFX& FX, UNiagaraComponent* NiagaraComponent)

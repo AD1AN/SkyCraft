@@ -52,12 +52,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct, EditCondition="HealthConfigUse == EHealthConfigUse::DataAsset", EditConditionHides), Category="Health Config") TArray<TInstancedStruct<FHealthConfigModifier>> HealthConfigModifiers;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="HealthConfigUse == EHealthConfigUse::Defined", EditConditionHides), Category="Health Config") FHealthConfig DefinedHealthConfig;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects|Builded") UNiagaraSystem* NiagaraBuilded = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects|Builded") USoundBase* SoundBuilded = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects|Builded") FSoundSettings SoundSettingsBuilded;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects|Dismantle") UNiagaraSystem* NiagaraDismantle = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects|Dismantle") USoundBase* SoundDismantle = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects|Dismantle") FSoundSettings SoundSettingsDismantle;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") UNiagaraSystem* NiagaraBuild = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") USoundBase* SoundBuild = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") FSoundSettings SoundSettingsBuild;
 };

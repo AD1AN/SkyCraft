@@ -64,6 +64,9 @@ void ABM::BeginPlay()
 		HealthComponent->Config = DA_Building->DefinedHealthConfig;
 	}
 	HealthComponent->Health = HealthComponent->Config.MaxHealth;
+	
+	if (HasAuthority()) AttachToActor(AttachIsland, FAttachmentTransformRules::KeepRelativeTransform);
+	else AttachIsland = Cast<AIsland>(UAdianFL::GetRootActor(this));
 }
 
 FBuildingParameters ABM::SaveBuildingParameters_Implementation()
@@ -154,12 +157,10 @@ void ABM::Dismantle(UInventory* CauserInventory)
 				{
 					FTransform SpawnTransform;
 					ADroppedItem* DroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
-					AActor* RootActor = UAdianFL::GetRootActor(DismantleBM);
-					AIsland* Island = Cast<AIsland>(RootActor);
-					if (IsValid(Island))
+					if (IsValid(DismantleBM->AttachIsland))
 					{
-						DroppedItem->AttachedToIsland = Island;
-						SpawnTransform.SetLocation(Island->GetTransform().InverseTransformPosition(DismantleBM->GetActorLocation()));
+						DroppedItem->AttachedToIsland = DismantleBM->AttachIsland;
+						SpawnTransform.SetLocation(DismantleBM->AttachIsland->GetTransform().InverseTransformPosition(DismantleBM->GetActorLocation()));
 					}
 					else
 					{
@@ -264,28 +265,22 @@ bool ABM::OnDie_Implementation(const FDamageInfo& DamageInfo)
 
 void ABM::PlayEffects(bool Builded)
 {
+	if (IsNetMode(NM_DedicatedServer)) return;
 	ensureAlways(DA_Building);
 	if (!DA_Building) return;
 
-	UNiagaraSystem* PlayNiagara;
-	USoundBase* PlaySound;
-	FSoundSettings PlaySoundSettings;
-	
+	AGSS* GSS = GetWorld()->GetGameState<AGSS>();
+
 	if (Builded)
 	{
-		PlayNiagara = DA_Building->NiagaraBuilded;
-		PlaySound = DA_Building->SoundBuilded;
-		PlaySoundSettings = DA_Building->SoundSettingsBuilded;
+		FSoundSettings SoundSettings = DA_Building->SoundSettingsBuild;
+		if (DA_Building->NiagaraBuild) UNiagaraFunctionLibrary::SpawnSystemAttached(DA_Building->NiagaraBuild, GetRootComponent(), NAME_None, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
+		if (DA_Building->SoundBuild) UGameplayStatics::SpawnSoundAttached(DA_Building->SoundBuild, GetRootComponent(), NAME_None, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, false, FMath::FRandRange(SoundSettings.VolumeMultiplier.Min, SoundSettings.VolumeMultiplier.Max), FMath::FRandRange(SoundSettings.PitchMultiplier.Min, SoundSettings.PitchMultiplier.Max), 0, GSS->NormalAttenuationClass);
 	}
 	else
 	{
-		PlayNiagara = DA_Building->NiagaraDismantle;
-		PlaySound = DA_Building->SoundDismantle;
-		PlaySoundSettings = DA_Building->SoundSettingsDismantle;
+		HealthComponent->PlayDieEffects(FDamageInfo{});
 	}
-	
-	if (PlayNiagara) UNiagaraFunctionLibrary::SpawnSystemAttached(PlayNiagara, GetRootComponent(), NAME_None, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true);
-	if (PlaySound) UGameplayStatics::SpawnSoundAttached(PlaySound, GetRootComponent(), NAME_None, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, false, FMath::FRandRange(PlaySoundSettings.VolumeMultiplier.Min, PlaySoundSettings.VolumeMultiplier.Max), FMath::FRandRange(PlaySoundSettings.PitchMultiplier.Min, PlaySoundSettings.PitchMultiplier.Max));
 }
 
 void ABM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

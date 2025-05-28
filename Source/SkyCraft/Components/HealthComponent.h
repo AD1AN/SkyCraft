@@ -176,6 +176,8 @@ public:
 
 	AGSS* GetGSS();
 
+	void PlayDieEffects(FDamageInfo DamageInfo);
+
 private:
 	void ImplementNiagaraVars(FFX& FX, UNiagaraComponent* NiagaraComponent);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

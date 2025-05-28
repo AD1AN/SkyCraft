@@ -36,6 +36,7 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) UDA_Building* DA_Building = nullptr;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) class ABS* CurrentBS = nullptr;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, meta=(ExposeOnSpawn)) AIsland* AttachIsland = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite) int32 ID = 0;
 	UPROPERTY(BlueprintReadWrite) TArray<ABM*> Supports;
@@ -66,11 +67,7 @@ public:
 
 	virtual AIsland* GetIsland() override
 	{
-		// I don't want to create replicated Island variable. Just get it from parent chain.
-		AActor* lol = UAdianFL::GetRootActor(this);
-		bool gg = IsValid(lol);
-		AIsland* island = Cast<AIsland>(lol);
-		return island;
+		return AttachIsland;
 	}
 
 	virtual bool OnDie_Implementation(const FDamageInfo& DamageInfo) override;
