@@ -141,18 +141,10 @@ public:
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamage, FDamageInfo, DamageInfo);
 	UPROPERTY(BlueprintAssignable) FOnDamage OnDamage;
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnDamage(FDamageInfo DamageInfo, int32 DamageTaken);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_OnZeroDamage(FDamageInfo DamageInfo);
-
 	void SpawnDamageNumbers(FDamageInfo DamageInfo, int32 DamageTaken);
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie); UPROPERTY(BlueprintAssignable) FOnDie OnDie;
 	UPROPERTY(BlueprintReadOnly) bool bDied = false;
-
-	UFUNCTION(NetMulticast, Reliable) void Multicast_OnDie(FDamageInfo DamageInfo);
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealth); UPROPERTY(BlueprintAssignable) FOnHealth OnHealth;
 	
@@ -160,8 +152,8 @@ public:
 	UFUNCTION() void OnRep_Health() const { OnHealth.Broadcast(); }
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Health) int32 Health = 403;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(ShowOnlyInnerProperties)) FHealthConfig Config;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool bConfigHandledByCode = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ShowOnlyInnerProperties, EditCondition="!bConfigHandledByCode")) FHealthConfig Config;
 	
 	void DoDamage(const FDamageInfo& DamageInfo);
 	void DroppingItems(FVector OverrideLocation = FVector::ZeroVector);
@@ -177,8 +169,12 @@ public:
 	AGSS* GetGSS();
 
 	void PlayDieEffects(FDamageInfo DamageInfo);
-
+	
 private:
+	UFUNCTION(NetMulticast, Reliable) void Multicast_OnDamage(FDamageInfo DamageInfo, int32 DamageTaken);
+	UFUNCTION(NetMulticast, Reliable) void Multicast_OnZeroDamage(FDamageInfo DamageInfo);
+	UFUNCTION(NetMulticast, Reliable) void Multicast_OnDie(FDamageInfo DamageInfo);
+	
 	void ImplementNiagaraVars(FFX& FX, UNiagaraComponent* NiagaraComponent);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

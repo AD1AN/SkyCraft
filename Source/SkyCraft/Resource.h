@@ -15,6 +15,7 @@
 class UDA_Resource;
 class UAnalyzeActorSystem;
 class UHealthComponent;
+class UInteractComponent;
 class AIsland;
 
 UCLASS(Blueprintable)
@@ -23,19 +24,19 @@ class SKYCRAFT_API AResource : public AActor, public IInteract_CPP, public IIsla
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) UHealthComponent* HealthComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) class UInteractComponent* InteractComponent = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UHealthComponent* HealthComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UInteractComponent* InteractComponent;
 	
 	AResource();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bLoaded = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) AIsland* Island = nullptr; // Auth
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) UDA_Resource* DA_Resource = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) uint8 ResourceSize = 0;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated) uint8 SM_Variety;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool Growing = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite) float CurrentGrowTime = 0.0f;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) bool bLoaded = false;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) AIsland* Island = nullptr; // Auth
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) UDA_Resource* DA_Resource = nullptr;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) uint8 ResourceSize = 0;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) uint8 SM_Variety;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) bool Growing = false;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) float CurrentGrowTime = 0.0f;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) FResourceSize CurrentSize;
 
 	UFUNCTION(BlueprintNativeEvent) void OnSpawnLogic();
