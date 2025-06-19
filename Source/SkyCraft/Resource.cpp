@@ -56,6 +56,7 @@ void AResource::BeginPlay()
 	if (DA_Resource->OverlapCollision) StaticMeshComponent->SetCollisionProfileName(TEXT("ResourceOverlap"));
 
 	// This code duplicated in BM::BeginPlay
+	// Implementing main HealthConfigModifiers.
 	if (DA_Resource->HealthConfigUse == EHealthConfigUse::DataAsset)
 	{
 		if (DA_Resource->DA_HealthConfig)
@@ -79,6 +80,15 @@ void AResource::BeginPlay()
 	else
 	{
 		HealthComponent->Config = DA_Resource->DefinedHealthConfig;
+	}
+
+	// Implementing CurrentSize.HealthConfigModifiers after main.
+	for (auto& Modifier : CurrentSize.HealthConfigModifiers)
+	{
+		if (FHealthConfigModifier* mod = Modifier.GetMutablePtr<FHealthConfigModifier>())
+		{
+			mod->Implement(HealthComponent->Config);
+		}
 	}
 
 	ImplementModifiers(DA_Resource->ResourceModifiers);
@@ -177,6 +187,7 @@ void AResource::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& Interru
 bool AResource::OnDie_Implementation(const FDamageInfo& DamageInfo)
 {
 	if (!HasAuthority()) return true;
+	if (!CurrentSize.bSpawnOnDestroy) return true;
 	
 	for (auto& SpawnResource : DA_Resource->SpawnResources)
 	{

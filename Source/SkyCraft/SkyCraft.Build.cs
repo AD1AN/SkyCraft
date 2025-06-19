@@ -22,7 +22,8 @@ public class SkyCraft : ModuleRules
 			"Slate",
 			"SlateCore",
 			"NavigationSystem",
-			"EnhancedInput"
+			"EnhancedInput",
+			"GameplayAbilities"
 		});
 		
 		if (Target.bBuildEditor)

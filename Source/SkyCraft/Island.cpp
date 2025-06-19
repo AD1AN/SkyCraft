@@ -1145,7 +1145,7 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 	for (auto& IslandLOD : SS_Island.IslandLODs)
 	{
 		bool isSaved = false;
-		for (auto SavedLOD : SS_IslandLODs)
+		for (auto& SavedLOD : SS_IslandLODs)
 		{
 			if (IslandLOD.LOD == SavedLOD.LOD)
 			{
