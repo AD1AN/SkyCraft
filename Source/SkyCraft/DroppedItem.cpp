@@ -4,7 +4,7 @@
 #include "AdianFL.h"
 #include "Island.h"
 #include "NiagaraComponent.h"
-#include "Components/Inventory.h"
+#include "Components/InventoryComponent.h"
 #include "Components/SphereComponent.h"
 #include "SkyCraft/Components/InteractComponent.h"
 #include "SkyCraft/Components/SuffocationComponent.h"
@@ -155,7 +155,7 @@ void ADroppedItem::Tick(float DeltaSeconds)
 	SetActorLocation(GetActorLocation() + (RelativeDistance * RelativeDistanceInterpolation));
 	if (FVector::Distance(GetActorLocation(), PlayerPickedUp->GetActorLocation()) <= 25.0f)
 	{
-		UInventory* PlayerInventory = PlayerPickedUp->FindComponentByTag<UInventory>("Inventory");
+		UInventoryComponent* PlayerInventory = PlayerPickedUp->FindComponentByTag<UInventoryComponent>("Inventory");
 		if (IsValid(PlayerInventory))
 		{
 			if (PlayerInventory->InsertSlot(Slot)) Destroy();
@@ -269,7 +269,7 @@ void ADroppedItem::ClientInterrupt(FInterruptIn InterruptIn, FInterruptOut& Inte
 
 void ADroppedItem::ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut)
 {
-	UInventory* PlayerInventory = InteractIn.Pawn->FindComponentByTag<UInventory>("Inventory");
+	UInventoryComponent* PlayerInventory = InteractIn.Pawn->FindComponentByTag<UInventoryComponent>("Inventory");
 	if (!IsValid(PlayerInventory)) return;
 	if (PlayerInventory->InsertSlot(Slot))
 	{

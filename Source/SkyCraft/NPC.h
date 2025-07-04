@@ -1,24 +1,27 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Damage.h"
 #include "GameFramework/Character.h"
-#include "Interfaces/HealthInterface.h"
+#include "Interfaces/EntityInterface.h"
 #include "Interfaces/IslandInterface.h"
 #include "NPC.generated.h"
 
-class UHealthComponent;
+class UEntityComponent;
+class USuffocationComponent;
 class AIsland;
 struct FSS_NPC;
 
 UCLASS()
-class SKYCRAFT_API ANPC : public ACharacter, public IHealthInterface, public IIslandInterface
+class SKYCRAFT_API ANPC : public ACharacter, public IEntityInterface, public IIslandInterface
 {
 	GENERATED_BODY()
 public:
-	ANPC();
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) UHealthComponent* HealthComponent = nullptr;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) class USuffocationComponent* SuffocationComponent = nullptr;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) TObjectPtr<UEntityComponent> EntityComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<USuffocationComponent> SuffocationComponent;
 
+	ANPC();
+	
 	UPROPERTY(BlueprintReadWrite, Replicated) AIsland* Island = nullptr;
 	UPROPERTY(BlueprintReadOnly) int32 IslandLODIndex = 0;
 
@@ -46,7 +49,7 @@ public:
 		return Island;
 	}
 
-	virtual bool OnDie_Implementation(const FDamageInfo& DamageInfo) override;
+	virtual void InitialOnDie(const FDamageInfo& DamageInfo) override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

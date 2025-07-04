@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "Interfaces/HealthInterface.h"
+#include "AdianActor.h"
+#include "Interfaces/EntityInterface.h"
 #include "Interfaces/Interact_CPP.h"
 #include "Interfaces/IslandInterface.h"
 #include "Structs/ResourceSize.h"
@@ -14,25 +14,25 @@
 
 class UDA_Resource;
 class UAnalyzeActorSystem;
-class UHealthComponent;
+class UEntityComponent;
 class UInteractComponent;
 class AIsland;
 
 UCLASS(Blueprintable)
-class SKYCRAFT_API AResource : public AActor, public IInteract_CPP, public IIslandInterface, public IHealthInterface
+class SKYCRAFT_API AResource : public AAdianActor, public IInteract_CPP, public IIslandInterface, public IEntityInterface
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UHealthComponent* HealthComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UInteractComponent* InteractComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UEntityComponent> EntityComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UInteractComponent> InteractComponent;
 	
 	AResource();
 	
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) bool bLoaded = false;
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) AIsland* Island = nullptr; // Auth
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) UDA_Resource* DA_Resource = nullptr;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TObjectPtr<AIsland> Island = nullptr; // Auth
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) TObjectPtr<UDA_Resource> DA_Resource = nullptr;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) uint8 ResourceSize = 0;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) uint8 SM_Variety;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) bool Growing = false;
@@ -40,8 +40,8 @@ public:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) FResourceSize CurrentSize;
 
 	UFUNCTION(BlueprintNativeEvent) void OnSpawnLogic();
-	
-	UFUNCTION(BlueprintCallable) virtual void BeginPlay() override;
+
+	virtual void ActorBeginPlay_Implementation() override;
 	void GrowUp();
 	void GrowInto(UDA_Resource* NewResource);
 	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;

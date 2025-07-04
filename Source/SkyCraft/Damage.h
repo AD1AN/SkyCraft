@@ -9,28 +9,28 @@
 UENUM(BlueprintType)
 enum class EDamageGlobalType : uint8
 {
-	Slash,
-	Thrust,
-	Strike,
+	Physical,
 	Fire,
 	Cold,
+	Poison,
+	Essence,
+	Velocity,
+	Pure
+
+	
 	// Krazot,   // R                  : Like a mini shockwave.
 	// Zelis,    // G                : Skin melts away.
 	// Sinid,    // B                 : Skin petrifies and dies off.	          { Contact damage
 	// Sias,     // Yellow = R+G   : Mini shockwave/melts away.                { Контактный урон
 	// Tianit,   // Cyan   = G+B  : Melts away/petrifies.
 	// Fiolis,   // Purple = R+B    : Mini shockwave/petrifies.
-	Poison,
-	Psychic,
-	PositiveLightning,
-	NegativeLightning,
-	PositiveEssence,
-	NegativeEssence,
-	Velocity,
-	Void,
-	Pure
+	// PositiveLightning,
+	// NegativeLightning,
+	// PositiveEssence,
+	// NegativeEssence,
+	// Void,
 };
-ENUM_RANGE_BY_FIRST_AND_LAST(EDamageGlobalType, EDamageGlobalType::Slash, EDamageGlobalType::Pure);
+ENUM_RANGE_BY_FIRST_AND_LAST(EDamageGlobalType, EDamageGlobalType::Physical, EDamageGlobalType::Pure);
 
 USTRUCT(BlueprintType)
 struct FDamageGlobalTypeNegate
@@ -38,7 +38,7 @@ struct FDamageGlobalTypeNegate
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EDamageGlobalType DamageGlobalType = EDamageGlobalType::Slash;
+	EDamageGlobalType DamageGlobalType = EDamageGlobalType::Physical;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Negate = 0.0f;

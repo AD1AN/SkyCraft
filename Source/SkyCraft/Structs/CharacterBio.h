@@ -11,7 +11,7 @@ struct FCharacterBio
 	FName CharacterName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool Gender = true;
+	bool Gender = true; // True = Male, False = Female
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	uint8 HairStyle = 0;

@@ -5,8 +5,8 @@
 UENUM(BlueprintType)
 enum class EEquipmentType : uint8
 {
-	EQHead,
-	EQOutfit,
-	EQHands,
-	EQFeet
+	Head,
+	Outfit,
+	Hands,
+	Feet
 };

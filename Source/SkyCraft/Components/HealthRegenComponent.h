@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "HealthRegenComponent.generated.h"
 
-class UHealthComponent;
+class UEntityComponent;
 
 UENUM()
 enum ERegenTickEnable
@@ -31,7 +31,7 @@ class SKYCRAFT_API UHealthRegenComponent : public UActorComponent
 	UHealthRegenComponent();
 	
 public:
-	UPROPERTY() UHealthComponent* HealthComponent = nullptr;
+	UPROPERTY() UEntityComponent* EntityComponent = nullptr;
 
 	UPROPERTY(EditAnywhere) bool bManualBeginPlay = true;
 	UPROPERTY(EditAnywhere) TEnumAsByte<ERegenTickEnable> RegenTickEnable = Manually;
@@ -41,7 +41,7 @@ public:
 	UPROPERTY(EditAnywhere) int32 HealthStaticNumber = 5;
 	UPROPERTY(EditAnywhere) int32 HealthPercentage = 1; // todo
 
-	void ManualBeginPlay(UHealthComponent* SetHealthComponent);
+	void ManualBeginPlay(UEntityComponent* SetEntityComponent);
 	virtual void BeginPlay() override;
 
 	void TryTickEnable();

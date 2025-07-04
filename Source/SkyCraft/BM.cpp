@@ -8,11 +8,10 @@
 #include "Island.h"
 #include "NiagaraFunctionLibrary.h"
 #include "RepHelpers.h"
-#include "Components/Inventory.h"
+#include "Components/InventoryComponent.h"
 #include "DataAssets/DA_Building.h"
-#include "DataAssets/DA_HealthConfig.h"
+#include "DataAssets/DA_EntityConfig.h"
 #include "Kismet/GameplayStatics.h"
-#include "SkyCraft/Components/HealthComponent.h"
 #include "Net/UnrealNetwork.h"
 
 ABM::ABM()
@@ -30,40 +29,40 @@ ABM::ABM()
 	
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshComponent");
 	SetRootComponent(StaticMeshComponent);
-	HealthComponent = CreateDefaultSubobject<UHealthComponent>("HealthComponent");
-	HealthComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
+	EntityComponent = CreateDefaultSubobject<UEntityComponent>("EntityComponent");
+	EntityComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
 }
 
 void ABM::BeginPlay()
 {
 	Super::BeginPlay();
 	// This code duplicated in Resource::BeginPlay
-	if (DA_Building->HealthConfigUse == EHealthConfigUse::DataAsset)
+	if (DA_Building->EntityConfigUse == EEntityConfigUse::DataAsset)
 	{
-		if (DA_Building->DA_HealthConfig)
+		if (DA_Building->DA_EntityConfig)
 		{
-			FHealthConfig TempHealthConfig = DA_Building->DA_HealthConfig->HealthConfig;
-			for (auto& Modifier : DA_Building->HealthConfigModifiers)
+			FEntityConfig TempHealthConfig = DA_Building->DA_EntityConfig->EntityConfig;
+			for (auto& Modifier : DA_Building->EntityConfigModifiers)
 			{
-				if (FHealthConfigModifier* mod = Modifier.GetMutablePtr<FHealthConfigModifier>())
+				if (FEntityConfigModifier* mod = Modifier.GetMutablePtr<FEntityConfigModifier>())
 				{
 					mod->Implement(TempHealthConfig);
 				}
 			}
-			HealthComponent->Config = TempHealthConfig;
-			HealthComponent->Config.MaxHealth = DA_Building->BuildingHealth;
+			EntityComponent->Config = TempHealthConfig;
+			EntityComponent->Config.HealthMax = DA_Building->BuildingHealth;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("DA_Building: %s not contains DA_HealthConfig! Using DefinedHealthConfig!"), *DA_Building->GetName());
-			HealthComponent->Config = DA_Building->DefinedHealthConfig;
+			UE_LOG(LogTemp, Error, TEXT("DA_Building: %s not contains DA_EntityConfig! Using DefinedEntityConfig!"), *DA_Building->GetName());
+			EntityComponent->Config = DA_Building->DefinedEntityConfig;
 		}
 	}
 	else
 	{
-		HealthComponent->Config = DA_Building->DefinedHealthConfig;
+		EntityComponent->Config = DA_Building->DefinedEntityConfig;
 	}
-	HealthComponent->Health = HealthComponent->Config.MaxHealth;
+	EntityComponent->SetHealth(EntityComponent->Config.HealthMax);
 	
 	if (HasAuthority()) AttachToActor(AttachIsland, FAttachmentTransformRules::KeepRelativeTransform);
 	else AttachIsland = Cast<AIsland>(UAdianFL::GetRootActor(this));
@@ -114,7 +113,7 @@ void ABM::DismantledEffects_Implementation()
 	PlayEffects(false);
 }
 
-void ABM::Dismantle(UInventory* CauserInventory)
+void ABM::Dismantle(UInventoryComponent* CauserInventory)
 {
 	TArray<ABM*> FlaggedDismantle;
 	TArray<ABM*> CheckedDepends;
@@ -279,7 +278,7 @@ void ABM::PlayEffects(bool Builded)
 	}
 	else
 	{
-		HealthComponent->PlayDieEffects(FDamageInfo{});
+		EntityComponent->PlayDieEffects(FDamageInfo{});
 	}
 }
 

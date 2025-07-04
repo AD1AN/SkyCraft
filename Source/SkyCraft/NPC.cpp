@@ -4,14 +4,12 @@
 
 #include "AdianFL.h"
 #include "Island.h"
-#include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SuffocationComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
-#include "SkyCraft/Components/HealthComponent.h"
+#include "SkyCraft/Components/EntityComponent.h"
 #include "SkyCraft/Structs/SS_Island.h"
 
 
@@ -21,10 +19,10 @@ ANPC::ANPC()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.TickInterval = 0.1f;
 	
-	HealthComponent = CreateDefaultSubobject<UHealthComponent>("HealthComponent");
-	HealthComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
-	HealthComponent->Config.DropDirectionType = EDropDirectionType::RandomDirection;
-	HealthComponent->Config.DropLocationType = EDropLocationType::ActorOrigin;
+	EntityComponent = CreateDefaultSubobject<UEntityComponent>("EntityComponent");
+	EntityComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
+	EntityComponent->Config.DropDirectionType = EDropDirectionType::RandomDirection;
+	EntityComponent->Config.DropLocationType = EDropLocationType::ActorOrigin;
 	
 	SuffocationComponent = CreateDefaultSubobject<USuffocationComponent>(TEXT("SuffocationComponent"));
 	SuffocationComponent->PrimaryComponentTick.TickInterval = 15;
@@ -47,7 +45,7 @@ void ANPC::BeginPlay()
 	Island->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
 }
 
-bool ANPC::OnDie_Implementation(const FDamageInfo& DamageInfo)
+void ANPC::InitialOnDie(const FDamageInfo& DamageInfo)
 {
 	SetActorTickEnabled(false);
 	GetCharacterMovement()->StopMovementImmediately();
@@ -57,7 +55,7 @@ bool ANPC::OnDie_Implementation(const FDamageInfo& DamageInfo)
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	
-	if (!HasAuthority()) return true;
+	if (!HasAuthority()) return;
 	
 	if (DamageInfo.DA_Damage->HitMass > 0)
 	{
@@ -92,13 +90,12 @@ bool ANPC::OnDie_Implementation(const FDamageInfo& DamageInfo)
 	
 	FTimerHandle TimerCharacterDeath;
 	GetWorld()->GetTimerManager().SetTimer(TimerCharacterDeath, this, &ANPC::DelayedDestroy, 3);
-	return true;
 }
 
 void ANPC::DelayedDestroy()
 {
-	HealthComponent->DroppingEssence(this);
-	HealthComponent->DroppingItems();
+	EntityComponent->DroppingEssence(this);
+	EntityComponent->DroppingItems();
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ANPC::NextFrameDestroy);
 }
 
@@ -172,7 +169,7 @@ void ANPC::AddToIsland(AIsland* NewIsland)
 
 bool ANPC::LoadNPC_Implementation(const FSS_NPC& SS_NPC)
 {
-	HealthComponent->Health = SS_NPC.Health;
+	EntityComponent->SetHealth(SS_NPC.Health);
 	return true;
 }
 
@@ -180,7 +177,7 @@ FSS_NPC ANPC::SaveNPC_Implementation()
 {
 	FSS_NPC SS_NPC;
 	SS_NPC.NPC_Class = GetClass();
-	SS_NPC.Health = HealthComponent->Health;
+	SS_NPC.Health = EntityComponent->GetHealth();
 	SS_NPC.Transform = GetTransform();
 	
 	return SS_NPC;

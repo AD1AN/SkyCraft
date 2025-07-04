@@ -3,31 +3,54 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AdianActor.h"
 #include "Island.h"
 #include "GameFramework/Character.h"
 #include "Components/PrimitiveComponent.h"
 #include "Interfaces/IslandInterface.h"
+#include "Structs/CharacterBio.h"
 #include "PlayerNormal.generated.h"
 
+class UInventoryComponent;
+class UEntityComponent;
+class UHealthComponent;
+class UHealthRegenComponent;
+class UHungerComponent;
+class UDA_AbilitySet;
+class UGameplayEffect;
+class UAbilitySet;
+class UAbilitySystemComponent;
+class UCharacterAttributeSet;
 class APSS;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHandsFull);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterStarted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
+
 UCLASS()
-class SKYCRAFT_API APlayerNormal : public ACharacter, public IIslandInterface
+class SKYCRAFT_API APlayerNormal : public AAdianCharacter, public IIslandInterface
 {
 	GENERATED_BODY()
 public:
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) class UHealthComponent* HealthComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) class UHealthRegenComponent* HealthRegenComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) class UHungerComponent* HungerComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UEntityComponent> EntityComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UHealthRegenComponent> HealthRegenComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UHungerComponent> HungerComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UInventoryComponent> InventoryComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UInventoryComponent> EquipmentInventoryComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Head;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Outfit;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Hands;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Feet;
 	
 	APlayerNormal(const FObjectInitializer& ObjectInitializer);
 
-	// The island under feet. Changes on SetBase().
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Island) AIsland* Island = nullptr;
+	UPROPERTY(Replicated, BlueprintReadWrite, meta=(ExposeOnSpawn)) FCharacterBio CharacterBio;
+	
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Island)
+	AIsland* Island = nullptr; // The island under feet. Changes on SetBase().
 	UFUNCTION() void OnRep_Island();
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHandsFull);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnHandsFull OnHandsFull;
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_HandsFull) bool HandsFull = false;
 	UFUNCTION() void OnRep_HandsFull();
@@ -39,24 +62,30 @@ public:
 	UPROPERTY(BlueprintReadOnly) bool bAnimLoopUpperBody = false;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnimLoopUpperBody(UAnimSequenceBase* Sequence);
 	
-	// Should not be used in blueprint
-	virtual void BeginPlay() override;
-
-	// Called ONCE from BeginPlay or OnRep_PSS.
-	UFUNCTION(BlueprintImplementableEvent) void CharacterStart();
-	
-	bool bHadBeginPlay = false;
-
-	// Character initiated and PSS is valid but BP_PSS->PlayerLoaded can be true/false.
-	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
+	virtual void ActorBeginPlay_Implementation() override;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterStarted);
+	bool bCharacterStarting = false;
+
+	// Called ONCE from ActorBeginPlay or OnRep_PSS.
+	UFUNCTION(BlueprintImplementableEvent) void CharacterStart();
+
+	// Character Initiated and PSS is valid, but BP_PSS->PlayerLoaded can be true/false.
+	// PSS is important and should be replicated.
+	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
+
+	UFUNCTION() void UpdateEquipmentSlot(int32 SlotIndex, UDA_Item* OldItem);
+	void InitialUpdateEquipmentSlots();
+	void OnMeshLoaded(TSoftObjectPtr<USkeletalMesh> MeshAsset, int32 SlotIndex);
+	void AddEquipmentStats(UDA_Item* NewItem);
+	void RemoveEquipmentStats(UDA_Item* OldItem);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure) USkeletalMeshComponent* GetEquipmentMeshComponent(int32 SlotIndex);
+	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCharacterStarted OnCharacterStarted;
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
 	UPROPERTY(BlueprintAssignable) FOnNewBase OnNewBase;
 	virtual void SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor) override;
 	
@@ -69,5 +98,6 @@ public:
 		else return nullptr;
 	}
 
+private:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

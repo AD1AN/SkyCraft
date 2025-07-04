@@ -11,7 +11,7 @@ struct FApplyDurabilityIn
 {
 	GENERATED_BODY()
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) class UDA_Durability* DA_Durability = nullptr;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) class UInventory* Inventory = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) class UInventoryComponent* Inventory = nullptr;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 SlotIndex = 0;
 };
 

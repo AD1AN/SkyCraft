@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/HealthComponent.h"
+#include "Components/EntityComponent.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/Coords.h"
@@ -184,15 +184,51 @@ public:
 		return Result;
 	}
 
-	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "MaxHealth", BlueprintAutocast), Category="AdianFL")
-	static int32 GetMaxHealth(const FHealthConfig& InHealthComponentConfig)
+	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "HealthMax", BlueprintAutocast), Category="AdianFL")
+	static int32 GetMaxHealth(const FEntityConfig& InHealthComponentConfig)
 	{
-		return InHealthComponentConfig.MaxHealth;
+		return InHealthComponentConfig.HealthMax;
 	}
 
-	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "MaxHealth"), Category="AdianFL")
-	static int32 GetMaxHealthComponent(const UHealthComponent* InHealthComponent)
+	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "HealthMax"), Category="AdianFL")
+	static int32 GetMaxHealthComponent(const UEntityComponent* InEntityComponent)
 	{
-		return InHealthComponent ? InHealthComponent->Config.MaxHealth : 1;
+		return InEntityComponent ? InEntityComponent->HealthMax : 403;
+	}
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static void GetStat(FEntityStatsModifier Stats, EEntityStat FindStat, bool& bContains, int32& StatValue)
+	{
+		switch (FindStat)
+		{
+		case EEntityStat::HealthMax:
+			bContains = Stats.HealthMax != 0;
+			StatValue = Stats.HealthMax;
+			return;
+		case EEntityStat::Strength:
+			bContains = Stats.Strength != 0;
+			StatValue = Stats.Strength;
+			return;
+		case EEntityStat::PhysicalResistance:
+			bContains = Stats.PhysicalResistance != 0;
+			StatValue = Stats.PhysicalResistance;
+			return;
+		case EEntityStat::FireResistance:
+			bContains = Stats.FireResistance != 0;
+			StatValue = Stats.FireResistance;
+			return;
+		case EEntityStat::ColdResistance:
+			bContains = Stats.ColdResistance != 0;
+			StatValue = Stats.ColdResistance;
+			return;
+		case EEntityStat::PoisonResistance:
+			bContains = Stats.PoisonResistance != 0;
+			StatValue = Stats.PoisonResistance;
+			return;
+		default:
+			bContains = false;
+			StatValue = 0;
+			break;
+		}
 	}
 };

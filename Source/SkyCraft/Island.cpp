@@ -10,7 +10,7 @@
 #include "NPC.h"
 #include "AI/NavigationSystemBase.h"
 #include "Components/GrowingResourcesComponent.h"
-#include "Components/HealthComponent.h"
+#include "Components/EntityComponent.h"
 #include "Components/TerrainChunk.h"
 #include "DataAssets/DA_Foliage.h"
 #include "DataAssets/DA_IslandBiome.h"
@@ -1003,7 +1003,7 @@ TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
 		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
 		SpawnedRes->bLoaded = true;
 		SpawnedRes->Island = this;
-		SpawnedRes->HealthComponent->Health = SS_Resource.Health;
+		SpawnedRes->EntityComponent->LoadHealth(SS_Resource.Health);
 		SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
 		SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
 		SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
@@ -1053,7 +1053,7 @@ void AIsland::LoadBuildings()
 		SpawnedBuilding->ID = SS_Building.ID;
 		SpawnedBuilding->AttachIsland = this;
 		SpawnedBuilding->FinishSpawning(BuildingTransform);
-		SpawnedBuilding->HealthComponent->Health = SS_Building.Health;
+		SpawnedBuilding->EntityComponent->LoadHealth(SS_Building.Health);
 		SpawnedBuilding->LoadBuildingParameters(SS_Building.Parameters);
 		BuildingsMap.Add(SS_Building.ID, SpawnedBuilding);
 	}
@@ -1125,7 +1125,7 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 			SS_Resource.DA_Resource = Res->DA_Resource;
 			SS_Resource.ResourceSize = Res->ResourceSize;
 			SS_Resource.SM_Variety = Res->SM_Variety;
-			SS_Resource.Health = Res->HealthComponent->Health;
+			SS_Resource.Health = Res->EntityComponent->GetHealth();
 			SS_Resource.Growing = Res->Growing;
 			SS_Resource.CurrentGrowTime = Res->CurrentGrowTime;
 			SS_IslandLOD.Resources.Add(SS_Resource);
@@ -1173,7 +1173,7 @@ TArray<FSS_Building> AIsland::SaveBuildings()
 		SS_Building.BM_Class = Building->GetClass();
 		SS_Building.Location = Building->GetRootComponent()->GetRelativeLocation();
 		SS_Building.Rotation = Building->GetRootComponent()->GetRelativeRotation();
-		SS_Building.Health = Building->HealthComponent->Health;
+		SS_Building.Health = Building->EntityComponent->GetHealth();
 		SS_Building.Grounded = Building->Grounded;
 		SS_Building.Supports = Building->ConvertToIDs(Building->Supports);
 		SS_Building.Depends = Building->ConvertToIDs(Building->Depends);

@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "SkyCraft/Structs/FloatMinMax.h"
-#include "SkyCraft/Components/HealthComponent.h"
-#include "SkyCraft/Structs/HealthConfigModifier.h"
+#include "SkyCraft/Components/EntityComponent.h"
+#include "SkyCraft/Structs/EntityConfigModifier.h"
 #include "SkyCraft/Structs/Slot.h"
 #include "StructUtils/InstancedStruct.h"
 #include "DA_Building.generated.h"
 
-class UDA_HealthConfig;
+class UDA_EntityConfig;
 class UNiagaraSystem;
 enum class EBuildingType : uint8;
 class ABS;
@@ -34,7 +34,7 @@ class SKYCRAFT_API UDA_Building : public UDataAsset
 	GENERATED_BODY()
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) FText Name;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) UTexture2D* Icon = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UTexture2D> Icon = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TSubclassOf<ABM> BM_Class;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TSubclassOf<ABS> BS_Class;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TArray<FSlot> RequiredItems;
@@ -46,13 +46,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="BuildingType==EBuildingType::Snap", EditConditionHides)) bool bShowSnapBoxes;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="BuildingType==EBuildingType::Snap", EditConditionHides)) bool bDependBySnapBox;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Health Config") EHealthConfigUse HealthConfigUse = EHealthConfigUse::DataAsset;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="HealthConfigUse == EHealthConfigUse::DataAsset", EditConditionHides), Category="Health Config") int32 BuildingHealth = 402;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="HealthConfigUse == EHealthConfigUse::DataAsset", EditConditionHides), Category="Health Config") UDA_HealthConfig* DA_HealthConfig = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct, EditCondition="HealthConfigUse == EHealthConfigUse::DataAsset", EditConditionHides), Category="Health Config") TArray<TInstancedStruct<FHealthConfigModifier>> HealthConfigModifiers;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="HealthConfigUse == EHealthConfigUse::Defined", EditConditionHides), Category="Health Config") FHealthConfig DefinedHealthConfig;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Config") EEntityConfigUse EntityConfigUse = EEntityConfigUse::DataAsset;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") int32 BuildingHealth = 402;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") TObjectPtr<UDA_EntityConfig> DA_EntityConfig = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct, EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") TArray<TInstancedStruct<FEntityConfigModifier>> EntityConfigModifiers;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::Defined", EditConditionHides), Category="Entity Config") FEntityConfig DefinedEntityConfig;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") UNiagaraSystem* NiagaraBuild = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") USoundBase* SoundBuild = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") TObjectPtr<UNiagaraSystem> NiagaraBuild = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") TObjectPtr<USoundBase> SoundBuild = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") FSoundSettings SoundSettingsBuild;
 };

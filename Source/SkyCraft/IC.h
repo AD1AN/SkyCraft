@@ -19,7 +19,7 @@ public:
 	AIC();
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_PlayerNormal, meta=(ExposeOnSpawn)) APlayerNormal* PlayerNormal = nullptr;
 	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) bool Main = true;
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) class UInventory* Inventory = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) class UInventoryComponent* Inventory = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 SlotIndex;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FItemComponentParameters ItemComponentParameters;
 	UPROPERTY(BlueprintReadWrite, Replicated) bool CanLMB = true;

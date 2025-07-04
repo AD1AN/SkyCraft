@@ -2,8 +2,7 @@
 
 
 #include "HealthRegenComponent.h"
-
-#include "HealthComponent.h"
+#include "EntityComponent.h"
 
 UHealthRegenComponent::UHealthRegenComponent()
 {
@@ -12,13 +11,13 @@ UHealthRegenComponent::UHealthRegenComponent()
 	PrimaryComponentTick.TickInterval = 3.0f;
 }
 
-void UHealthRegenComponent::ManualBeginPlay(UHealthComponent* SetHealthComponent)
+void UHealthRegenComponent::ManualBeginPlay(UEntityComponent* SetEntityComponent)
 {
-	ensureAlways(bManualBeginPlay);
+	ensure(bManualBeginPlay);
 	if (!bManualBeginPlay) return;
-	ensureAlways(SetHealthComponent);
-	if (!SetHealthComponent) return;
-	HealthComponent = SetHealthComponent;
+	ensure(SetEntityComponent);
+	if (!SetEntityComponent) return;
+	EntityComponent = SetEntityComponent;
 	
 	TryTickEnable();
 }
@@ -27,9 +26,9 @@ void UHealthRegenComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	if (bManualBeginPlay) return;
-	HealthComponent = GetOwner()->GetComponentByClass<UHealthComponent>();
-	ensureAlways(HealthComponent);
-	if (!HealthComponent) return;
+	EntityComponent = GetOwner()->GetComponentByClass<UEntityComponent>();
+	ensure(EntityComponent);
+	if (!EntityComponent) return;
 
 	TryTickEnable();
 }
@@ -49,8 +48,8 @@ void UHealthRegenComponent::TryTickEnable()
 void UHealthRegenComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	ensureAlways(HealthComponent);
-	if (!HealthComponent)
+	ensureAlways(EntityComponent);
+	if (!EntityComponent)
 	{
 		SetComponentTickEnabled(false);
 		return;
@@ -61,6 +60,6 @@ void UHealthRegenComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 	}
 	else
 	{
-		HealthComponent->Health = FMath::Clamp(HealthComponent->Health + HealthStaticNumber, 0, HealthComponent->Config.MaxHealth);	
+		EntityComponent->SetHealth(EntityComponent->GetHealth() + HealthStaticNumber);	
 	}
 }

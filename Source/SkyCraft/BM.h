@@ -6,15 +6,16 @@
 #include "AdianFL.h"
 #include "Island.h"
 #include "GameFramework/Actor.h"
-#include "Interfaces/HealthInterface.h"
+#include "Interfaces/EntityInterface.h"
 #include "Interfaces/IslandInterface.h"
 #include "SkyCraft/Structs/BuildingParameters.h"
 #include "BM.generated.h"
 
-class UInventory;
+class UInventoryComponent;
 class UNiagaraSystem;
-class UHealthComponent;
+class UEntityComponent;
 class UDA_Building;
+class ABS;
 
 USTRUCT(BlueprintType)
 struct FArrayMaterials
@@ -25,17 +26,17 @@ struct FArrayMaterials
 };
 
 UCLASS()
-class SKYCRAFT_API ABM : public AActor, public IIslandInterface, public IHealthInterface
+class SKYCRAFT_API ABM : public AActor, public IIslandInterface, public IEntityInterface
 {
 	GENERATED_BODY()
 	
 public:
 	ABM();
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) UStaticMeshComponent* StaticMeshComponent = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) UHealthComponent* HealthComponent = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UEntityComponent> EntityComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMeshComponent> StaticMeshComponent;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) UDA_Building* DA_Building = nullptr;
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) class ABS* CurrentBS = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TObjectPtr<UDA_Building> DA_Building = nullptr;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TObjectPtr<ABS> CurrentBS = nullptr;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, meta=(ExposeOnSpawn)) AIsland* AttachIsland = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite) int32 ID = 0;
@@ -57,7 +58,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void Dismantled();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent) void DismantledEffects();
 
-	UFUNCTION(BlueprintCallable) void Dismantle(UInventory* CauserInventory);
+	UFUNCTION(BlueprintCallable) void Dismantle(UInventoryComponent* CauserInventory);
 	void RecursiveDismantle(TArray<ABM*>& FlaggedDismantle);
 	void UpdateGrounded(uint8 NewGrounded, TArray<ABM*>& FlaggedDismantle);
 	bool IsSupported(TArray<ABM*>& CheckedDepends);

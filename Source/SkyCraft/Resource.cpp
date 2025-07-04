@@ -6,11 +6,11 @@
 #include "GSS.h"
 #include "Island.h"
 #include "SkyCraft/DataAssets/DA_Resource.h"
-#include "SkyCraft/Components/HealthComponent.h"
+#include "SkyCraft/Components/EntityComponent.h"
 #include "SkyCraft/Components/InteractComponent.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "Components/GrowingResourcesComponent.h"
-#include "DataAssets/DA_HealthConfig.h"
+#include "DataAssets/DA_EntityConfig.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
@@ -28,7 +28,7 @@ AResource::AResource()
 	UAUD_SkyTags* SkyTags = CreateDefaultSubobject<UAUD_SkyTags>(TEXT("AUD_SkyTags"));
 	StaticMeshComponent->AddAssetUserData(SkyTags);
 	
-	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+	EntityComponent = CreateDefaultSubobject<UEntityComponent>(TEXT("EntityComponent"));
 	
 	InteractComponent = CreateDefaultSubobject<UInteractComponent>(TEXT("InteractComponent"));
 	InteractComponent->bInteractable = false;
@@ -36,9 +36,9 @@ AResource::AResource()
 
 void AResource::OnSpawnLogic_Implementation() {}
 
-void AResource::BeginPlay()
+void AResource::ActorBeginPlay_Implementation()
 {
-	Super::BeginPlay();
+	Super::ActorBeginPlay_Implementation();
 	ensureAlways(DA_Resource);
 	if (!DA_Resource) return;
 	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
@@ -56,38 +56,38 @@ void AResource::BeginPlay()
 	if (DA_Resource->OverlapCollision) StaticMeshComponent->SetCollisionProfileName(TEXT("ResourceOverlap"));
 
 	// This code duplicated in BM::BeginPlay
-	// Implementing main HealthConfigModifiers.
-	if (DA_Resource->HealthConfigUse == EHealthConfigUse::DataAsset)
+	// Implementing main EntityConfigModifiers.
+	if (DA_Resource->EntityConfigUse == EEntityConfigUse::DataAsset)
 	{
-		if (DA_Resource->DA_HealthConfig)
+		if (DA_Resource->DA_EntityConfig)
 		{
-			FHealthConfig TempHealthConfig = DA_Resource->DA_HealthConfig->HealthConfig;
-			for (auto& Modifier : DA_Resource->HealthConfigModifiers)
+			FEntityConfig TempEntityConfig = DA_Resource->DA_EntityConfig->EntityConfig;
+			for (auto& Modifier : DA_Resource->EntityConfigModifiers)
 			{
-				if (FHealthConfigModifier* mod = Modifier.GetMutablePtr<FHealthConfigModifier>())
+				if (FEntityConfigModifier* mod = Modifier.GetMutablePtr<FEntityConfigModifier>())
 				{
-					mod->Implement(TempHealthConfig);
+					mod->Implement(TempEntityConfig);
 				}
 			}
-			HealthComponent->Config = TempHealthConfig;
+			EntityComponent->Config = TempEntityConfig;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("DA_Resource: %s not contains DA_HealthConfig! Using DefinedHealthConfig!"), *DA_Resource->GetName());
-			HealthComponent->Config = DA_Resource->DefinedHealthConfig;
+			UE_LOG(LogTemp, Error, TEXT("DA_Resource: %s not contains DA_EntityConfig! Using DefinedEntityConfig!"), *DA_Resource->GetName());
+			EntityComponent->Config = DA_Resource->DefinedEntityConfig;
 		}
 	}
 	else
 	{
-		HealthComponent->Config = DA_Resource->DefinedHealthConfig;
+		EntityComponent->Config = DA_Resource->DefinedEntityConfig;
 	}
 
-	// Implementing CurrentSize.HealthConfigModifiers after main.
-	for (auto& Modifier : CurrentSize.HealthConfigModifiers)
+	// Implementing CurrentSize.EntityConfigModifiers after main.
+	for (auto& Modifier : CurrentSize.EntityConfigModifiers)
 	{
-		if (FHealthConfigModifier* mod = Modifier.GetMutablePtr<FHealthConfigModifier>())
+		if (FEntityConfigModifier* mod = Modifier.GetMutablePtr<FEntityConfigModifier>())
 		{
-			mod->Implement(HealthComponent->Config);
+			mod->Implement(EntityComponent->Config);
 		}
 	}
 
@@ -103,10 +103,8 @@ void AResource::BeginPlay()
 	
 	StaticMeshComponent->GetAssetUserData<UAUD_SkyTags>()->DA_SkyTags.Append(DA_Resource->SkyTags);
 	
-	HealthComponent->Config.MaxHealth = CurrentSize.Health;
-	if (!bLoaded) HealthComponent->Health = CurrentSize.Health;
-	
-	HealthComponent->Config.DropItems = CurrentSize.DropItems;
+	EntityComponent->Config.HealthMax = CurrentSize.Health;
+	EntityComponent->Config.DropItems = CurrentSize.DropItems;
 	
 	if (HasAuthority())
 	{

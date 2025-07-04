@@ -1,7 +1,8 @@
 // ADIAN Copyrighted
 
 #include "SuffocationComponent.h"
-#include "HealthComponent.h"
+
+#include "EntityComponent.h"
 #include "SkyCraft/GSS.h"
 
 USuffocationComponent::USuffocationComponent()
@@ -37,13 +38,13 @@ void USuffocationComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 			return;
 		}
 		
-		UHealthComponent* HealthComponent = GetOwner()->FindComponentByClass<UHealthComponent>();
-		if (IsValid(HealthComponent))
+		UEntityComponent* EntityComponent = GetOwner()->FindComponentByClass<UEntityComponent>();
+		if (IsValid(EntityComponent))
 		{
 			FDamageInfo DamageInfo;
 			DamageInfo.DA_Damage = DA_Damage;
 			DamageInfo.WorldLocation = GetOwner()->GetActorLocation();
-			HealthComponent->DoDamage(DamageInfo);
+			EntityComponent->DoDamage(DamageInfo);
 		}
 		else
 		{

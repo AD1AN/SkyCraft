@@ -5,7 +5,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_StaticMeshCustomPrimitiveData.h"
-#include "Components/HealthComponent.h"
+#include "Components/EntityComponent.h"
 #include "Interfaces/Interface_AssetUserData.h"
 #include "Interfaces/IslandInterface.h"
 #include "Kismet/GameplayStatics.h"
@@ -239,12 +239,12 @@ FVector UAdianFL::ToLocalSpace(FVector WorldLocation, AActor* ToActor)
 bool UAdianFL::DoDamage(AActor* Actor, FDamageInfo DamageInfo)
 {
 	if (!IsValid(Actor)) return false;
-	UHealthComponent* HealthComponent = Actor->FindComponentByClass<UHealthComponent>();
-	if (!HealthComponent) return false;
+	UEntityComponent* EntityComponent = Actor->FindComponentByClass<UEntityComponent>();
+	if (!EntityComponent) return false;
 	ensureAlways(DamageInfo.DA_Damage);
 	if (!DamageInfo.DA_Damage) return false;
 
-	HealthComponent->DoDamage(DamageInfo);
+	EntityComponent->DoDamage(DamageInfo);
 	
 	return true;
 }
