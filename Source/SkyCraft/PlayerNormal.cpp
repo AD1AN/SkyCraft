@@ -4,6 +4,7 @@
 
 #include "AdianFL.h"
 #include "Island.h"
+#include "PSS.h"
 #include "Components/EntityComponent.h"
 #include "Components/HealthRegenComponent.h"
 #include "Components/HungerComponent.h"
@@ -79,7 +80,12 @@ void APlayerNormal::OnRep_Island()
 void APlayerNormal::ActorBeginPlay_Implementation()
 {
 	Super::ActorBeginPlay_Implementation();
-	if (HasAuthority()) EntityComponent->HealthMax = EntityComponent->Config.HealthMax; // Because of InitialUpdateEquipmentSlots().
+	if (HasAuthority())
+	{
+		EntityComponent->HealthMax = EntityComponent->Config.HealthMax; // Because of InitialUpdateEquipmentSlots().
+		InitialUpdateEquipmentSlots();
+		EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
+	}
 	
 	CharacterStart();
 }
@@ -87,6 +93,9 @@ void APlayerNormal::ActorBeginPlay_Implementation()
 void APlayerNormal::OnRep_PSS_Implementation()
 {
 	CharacterStart();
+	
+	InitialUpdateEquipmentSlots();
+	EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
 }
 
 void APlayerNormal::CharacterStart_Implementation()
@@ -95,9 +104,6 @@ void APlayerNormal::CharacterStart_Implementation()
 	
 	HealthRegenComponent->ManualBeginPlay(EntityComponent);
 	HungerComponent->OnHunger.AddDynamic(this, &APlayerNormal::OnHunger);
-	
-	InitialUpdateEquipmentSlots();
-	EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
 }
 
 void APlayerNormal::InitialUpdateEquipmentSlots()
@@ -112,7 +118,7 @@ void APlayerNormal::InitialUpdateEquipmentSlots()
 		{
 			AddEquipmentStats(DA_Item);
 			
-			TSoftObjectPtr<USkeletalMesh> MeshAsset = (CharacterBio.Gender) ? DA_Item->EQ_Male : DA_Item->EQ_Female;
+			TSoftObjectPtr<USkeletalMesh> MeshAsset = (PSS->CharacterBio.Gender) ? DA_Item->EQ_Male : DA_Item->EQ_Female;
 
 			if (MeshAsset.IsNull())
 			{
@@ -142,7 +148,7 @@ void APlayerNormal::UpdateEquipmentSlot(int32 SlotIndex, UDA_Item* OldItem)
 		
 		USkeletalMesh* SkeletalMesh;
 		
-		if (CharacterBio.Gender) SkeletalMesh = NewItem->EQ_Male.LoadSynchronous();
+		if (PSS->CharacterBio.Gender) SkeletalMesh = NewItem->EQ_Male.LoadSynchronous();
 		else SkeletalMesh = NewItem->EQ_Female.LoadSynchronous();
 		
 		if (SkeletalMesh)
@@ -272,7 +278,6 @@ void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, Essence, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, CharacterBio, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PSS, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, HandsFull, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, AnimLoopUpperBody, Params);

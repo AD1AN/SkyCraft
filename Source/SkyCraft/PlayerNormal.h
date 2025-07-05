@@ -46,7 +46,6 @@ public:
 	
 	APlayerNormal(const FObjectInitializer& ObjectInitializer);
 
-	UPROPERTY(Replicated, BlueprintReadWrite, meta=(ExposeOnSpawn)) FCharacterBio CharacterBio;
 	UPROPERTY(ReplicatedUsing=OnRep_Essence, BlueprintReadWrite) FEssence Essence;
 	UFUNCTION() void OnRep_Essence() {}
 

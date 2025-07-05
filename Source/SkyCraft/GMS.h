@@ -46,11 +46,11 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent) void StartWorld();
 	bool bWorldStarted = false;
-
+	
+	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
+	
 	// Key: Hashed Coords
 	UPROPERTY(BlueprintReadWrite) TMap<int32, FSS_Island> SavedIslands;
-
-	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
 	UFUNCTION(BlueprintCallable) AResource* SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD = -1);
 	UFUNCTION(BlueprintCallable) APlayerNormal* SpawnPlayerNormal(FVector Location, FRotator Rotation, AActor* InOwner, APSS* PSS, FEssence Essence, TArray<FSlot> InitialInventory, TArray<FSlot> InitialEquipment);
