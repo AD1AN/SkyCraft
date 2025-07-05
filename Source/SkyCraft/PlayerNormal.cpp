@@ -79,23 +79,25 @@ void APlayerNormal::OnRep_Island()
 void APlayerNormal::ActorBeginPlay_Implementation()
 {
 	Super::ActorBeginPlay_Implementation();
-	EntityComponent->HealthMax = EntityComponent->Config.HealthMax; // Because of InitialUpdateEquipmentSlots().
+	if (HasAuthority()) EntityComponent->HealthMax = EntityComponent->Config.HealthMax; // Because of InitialUpdateEquipmentSlots().
 	
-	HealthRegenComponent->ManualBeginPlay(EntityComponent);
-	HungerComponent->OnHunger.AddDynamic(this, &APlayerNormal::OnHunger);
-	
-	if (bCharacterStarting) return;
-	bCharacterStarting = true;
 	CharacterStart();
-	InitialUpdateEquipmentSlots();
-	EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
 }
 
 void APlayerNormal::OnRep_PSS_Implementation()
 {
-	if (bCharacterStarting) return;
-	bCharacterStarting = true;
 	CharacterStart();
+}
+
+void APlayerNormal::CharacterStart_Implementation()
+{
+	if (bCharacterStarted) return;
+	
+	HealthRegenComponent->ManualBeginPlay(EntityComponent);
+	HungerComponent->OnHunger.AddDynamic(this, &APlayerNormal::OnHunger);
+	
+	InitialUpdateEquipmentSlots();
+	EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
 }
 
 void APlayerNormal::InitialUpdateEquipmentSlots()
@@ -204,7 +206,7 @@ void APlayerNormal::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, 
 
 void APlayerNormal::OnHunger()
 {
-	if (EntityComponent->GetHealth() >= EntityComponent->Config.HealthMax) return;
+	if (EntityComponent->GetHealth() >= EntityComponent->HealthMax) return;
 	if (HungerComponent->Hunger < HungerComponent->MaxHunger/2)
 	{
 		if (!HealthRegenComponent->IsComponentTickEnabled()) HealthRegenComponent->SetComponentTickEnabled(true);
@@ -269,6 +271,7 @@ void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, Essence, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, CharacterBio, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PSS, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, HandsFull, Params);

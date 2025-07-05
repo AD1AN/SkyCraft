@@ -596,4 +596,10 @@ void UEntityComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, Health, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, HealthMax, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, Strength, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, PhysicalResistance, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, FireResistance, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, ColdResistance, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, PoisonResistance, Params);
 }

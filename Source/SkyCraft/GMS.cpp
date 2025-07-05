@@ -5,9 +5,11 @@
 #include "GSS.h"
 #include "Island.h"
 #include "NavigationSystem.h"
+#include "PlayerNormal.h"
 #include "Resource.h"
 #include "Components/BrushComponent.h"
 #include "DataAssets/DA_Resource.h"
+#include "SkyCraft/Components/InventoryComponent.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
 
 AGMS::AGMS(){}
@@ -59,6 +61,25 @@ AResource* AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator 
 	}
 	Island->SpawnedLODs[IslandLOD].Resources.Add(SpawnedRes);
 	return SpawnedRes;
+}
+
+APlayerNormal* AGMS::SpawnPlayerNormal(FVector Location, FRotator Rotation, AActor* InOwner, APSS* PSS, FEssence Essence, TArray<FSlot> InitialInventory, TArray<FSlot> InitialEquipment)
+{
+	ensureAlways(GSS);
+	if (!GSS) return nullptr;
+	ensureAlways(GSS->PlayerNormalClass);
+	if (!GSS->PlayerNormalClass) return nullptr;
+
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(Location);
+	SpawnTransform.SetRotation(Rotation.Quaternion());
+	APlayerNormal* SpawnedPlayer = GetWorld()->SpawnActorDeferred<APlayerNormal>(GSS->PlayerNormalClass, SpawnTransform, InOwner, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	SpawnedPlayer->PSS = PSS;
+	SpawnedPlayer->Essence = Essence;
+	if (!InitialInventory.IsEmpty()) SpawnedPlayer->InventoryComponent->Slots = InitialInventory;
+	if (!InitialEquipment.IsEmpty()) SpawnedPlayer->EquipmentInventoryComponent->Slots = InitialEquipment;
+	SpawnedPlayer->FinishSpawning(SpawnTransform);
+	return SpawnedPlayer;
 }
 
 ANavMeshBoundsVolume* AGMS::NMBV_Use(AActor* ActorAttach, FVector Scale)

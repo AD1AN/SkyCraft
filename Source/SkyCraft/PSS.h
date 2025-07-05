@@ -6,8 +6,12 @@
 #include "Enums/Casta.h"
 #include "Enums/PlayerForm.h"
 #include "GameFramework/PlayerState.h"
+#include "Structs/CharacterBio.h"
 #include "PSS.generated.h"
 
+class UDA_Craft;
+class UDA_Item;
+class UDA_AnalyzeEntity;
 class AIslandArchon;
 
 UCLASS()
@@ -15,10 +19,13 @@ class SKYCRAFT_API APSS : public APlayerState
 {
 	GENERATED_BODY()
 	
-public:	
+public:
 	APSS();
+
 	UPROPERTY(Replicated, BlueprintReadOnly) FString SteamID = "";
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetSteamID(FString NewSteamID);
+	
+	UPROPERTY(Replicated, BlueprintReadWrite) FCharacterBio CharacterBio;
 
 	UPROPERTY(Replicated, BlueprintReadOnly) ECasta Casta = ECasta::Archon;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetCasta(ECasta NewCasta);

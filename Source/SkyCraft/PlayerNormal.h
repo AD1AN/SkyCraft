@@ -9,6 +9,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "Interfaces/IslandInterface.h"
 #include "Structs/CharacterBio.h"
+#include "Structs/Essence.h"
 #include "PlayerNormal.generated.h"
 
 class UInventoryComponent;
@@ -46,7 +47,9 @@ public:
 	APlayerNormal(const FObjectInitializer& ObjectInitializer);
 
 	UPROPERTY(Replicated, BlueprintReadWrite, meta=(ExposeOnSpawn)) FCharacterBio CharacterBio;
-	
+	UPROPERTY(ReplicatedUsing=OnRep_Essence, BlueprintReadWrite) FEssence Essence;
+	UFUNCTION() void OnRep_Essence() {}
+
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Island)
 	AIsland* Island = nullptr; // The island under feet. Changes on SetBase().
 	UFUNCTION() void OnRep_Island();
@@ -66,11 +69,9 @@ public:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
-	
-	bool bCharacterStarting = false;
 
 	// Called ONCE from ActorBeginPlay or OnRep_PSS.
-	UFUNCTION(BlueprintImplementableEvent) void CharacterStart();
+	UFUNCTION(BlueprintNativeEvent) void CharacterStart();
 
 	// Character Initiated and PSS is valid, but BP_PSS->PlayerLoaded can be true/false.
 	// PSS is important and should be replicated.

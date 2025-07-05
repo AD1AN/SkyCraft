@@ -155,8 +155,9 @@ void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
-
+	
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, SteamID, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, CharacterBio, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Casta, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, IslandArchon, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerForm, Params);
