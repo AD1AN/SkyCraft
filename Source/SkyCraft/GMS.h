@@ -6,6 +6,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Structs/Coords.h"
 #include "Structs/SS_Island.h"
+#include "Structs/SS_Player.h"
 #include "GMS.generated.h"
 
 class APSS;
@@ -32,6 +33,8 @@ public:
 	UPROPERTY(BlueprintReadOnly) TArray<ANavMeshBoundsVolume*> Unused_NMBV;
 	UFUNCTION(BlueprintCallable) ANavMeshBoundsVolume* NMBV_Use(AActor* ActorAttach, FVector Scale = FVector(200,200,50));
 	UFUNCTION(BlueprintCallable) void NMBV_Unuse(ANavMeshBoundsVolume* NMBV);
+
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) TMap<FString, FSS_Player> SavedPlayers; // Key: SteamID
 
 	UPROPERTY(BlueprintReadOnly) TArray<AChunkIsland*> SpawnedChunkIslands;
 	UPROPERTY(BlueprintReadOnly) TArray<FCoords> SpawnedChunkIslandsCoords;

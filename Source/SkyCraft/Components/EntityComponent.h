@@ -186,7 +186,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHealth(int32 NewHealth);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void LoadHealth(int32 NewHealth);
 
-	//========================== Stats =============================//
+	// ~Begin Stats
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_Health) int32 Health = 0; // Should be 0 by default!
 	UFUNCTION() void OnRep_Health(int32 OldValue) const { OnHealth.Broadcast(); OnStatsChanged.Broadcast(); }
@@ -194,9 +194,6 @@ private:
 public:
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_HealthMax) int32 HealthMax = 0; // Should be 0 by default!
 	UFUNCTION() void OnRep_HealthMax(int32 OldValue) const { /*OnStatsChanged.Broadcast();*/ }
-	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_Strength) int32 Strength = 0;
-	UFUNCTION() void OnRep_Strength(int32 OldValue) const { /*OnStatsChanged.Broadcast();*/ }
 	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_PhysicalResistance) int32 PhysicalResistance = 0;
 	UFUNCTION() void OnRep_PhysicalResistance(int32 OldValue) const { /*OnStatsChanged.Broadcast();*/ }
@@ -211,7 +208,7 @@ public:
 	UFUNCTION() void OnRep_PoisonResistance(int32 OldValue) const { /*OnStatsChanged.Broadcast();*/ }
 
 	TArray<const FEntityStatsModifier*> StatsModifiers;
-	//========================== Stats =============================//
+	// ~End Stats
 	
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Replicated) TArray<FEntityEffect> InfiniteEffects;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Replicated) TArray<FEntityEffect> DurationEffects;

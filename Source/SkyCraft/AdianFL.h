@@ -205,10 +205,6 @@ public:
 			bContains = Stats.HealthMax != 0;
 			StatValue = Stats.HealthMax;
 			return;
-		case EEntityStat::Strength:
-			bContains = Stats.Strength != 0;
-			StatValue = Stats.Strength;
-			return;
 		case EEntityStat::PhysicalResistance:
 			bContains = Stats.PhysicalResistance != 0;
 			StatValue = Stats.PhysicalResistance;

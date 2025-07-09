@@ -40,21 +40,20 @@ FUniformSubtractOut UAdianFL::UniformSubtract(FEssence Essence, int32 TotalToSub
         // Distribute the remaining difference
         for (int32 i = 0; i < Difference; ++i)
         {
-            // Find the largest remaining value to subtract from
             if (Essence.R > 0 && (Essence.R >= Essence.G && Essence.R >= Essence.B))
             {
-                Out.SubtractedEssence.R += 1;  // Increment the subtraction value for R
-                Essence.R -= 1;  // Update the new value for R
+                Out.SubtractedEssence.R += 1;
+                Essence.R -= 1;
             }
             else if (Essence.G > 0 && (Essence.G >= Essence.R && Essence.G >= Essence.B))
             {
-                Out.SubtractedEssence.G += 1;  // Increment the subtraction value for G
-                Essence.G -= 1;  // Update the new value for G
+                Out.SubtractedEssence.G += 1;
+                Essence.G -= 1;
             }
             else if (Essence.B > 0)
             {
-                Out.SubtractedEssence.B += 1;  // Increment the subtraction value for B
-                Essence.B -= 1;  // Update the new value for B
+                Out.SubtractedEssence.B += 1;
+                Essence.B -= 1;
             }
         }
     }

@@ -6,7 +6,9 @@
 #include "UObject/Interface.h"
 #include "PlayerFormInterface.generated.h"
 
-UINTERFACE(MinimalAPI)
+class UInventoryComponent;
+
+UINTERFACE(MinimalAPI, NotBlueprintable)
 class UPlayerFormInterface : public UInterface
 {
 	GENERATED_BODY()
@@ -17,6 +19,9 @@ class SKYCRAFT_API IPlayerFormInterface
 	GENERATED_BODY()
 	
 public:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="PlayerFormInterface")
-	UPARAM(DisplayName="isPF") bool isPlayerForm();
+	UFUNCTION(BlueprintCallable)
+	virtual UPARAM(DisplayName="isPF") bool isPlayerForm() const { return false; }
+	
+	UFUNCTION(BlueprintCallable)
+	virtual UPARAM(DisplayName="Inventory") UInventoryComponent* GetPlayerInventory() { return nullptr; }
 };

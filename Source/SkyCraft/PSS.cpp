@@ -1,15 +1,27 @@
 // ADIAN Copyrighted
 
 #include "PSS.h"
+
+#include "PlayerNormal.h"
+#include "PlayerSpirit.h"
 #include "Net/UnrealNetwork.h"
 #include "SkyCraft/Components/InteractComponent.h"
 #include "Interfaces/Interact_CPP.h"
 #include "Net/Core/PushModel/PushModel.h"
+#include "SkyCraft/GSS.h"
 
 APSS::APSS()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+	SetNetUpdateFrequency(100.0f);
+	NetPriority = 1.5f;
+}
+
+void APSS::BeginPlay()
+{
+	Super::BeginPlay();
+	GSS = GetWorld()->GetGameState<AGSS>();
 }
 
 void APSS::AuthSetSteamID(FString NewSteamID)
@@ -91,6 +103,23 @@ void APSS::Client_InterruptActor_Implementation(AActor* InterruptActor, EInterru
 	}
 }
 
+bool APSS::StatLevelUp(EStatLevel StatLevel)
+{
+	// switch (StatLevel)
+	// {
+	// case EStatLevel::Strength:
+	// 	int32 RequireEssence = GSS->EssenceRequireForLevel * StrengthLevel;
+	// 	return true;
+	// default: return false;
+	// }
+	return false;
+}
+
+APawn* APSS::GetControlledPawn()
+{
+	return GetPlayerController()->GetPawn();
+}
+
 void APSS::OnRep_AnalyzedEntities() const
 {
 	OnAnalyzedEntities.Broadcast();
@@ -148,6 +177,24 @@ void APSS::AuthSetLearnedCraftItems(TArray<UDA_Craft*> New)
 	OnRep_LearnedCraftItems();
 }
 
+APawn* APSS::GetPlayerForm()
+{
+	APlayerNormal* PlayerNormal;
+	APlayerSpirit* PlayerSpirit;
+	switch (PlayerForm)
+	{
+		case EPlayerForm::Normal:
+			PlayerNormal = Cast<APlayerNormal>(GetPlayerController()->GetPawn());
+			ensureAlways(PlayerNormal);
+			return PlayerNormal;
+		case EPlayerForm::Spirit:
+			PlayerSpirit = Cast<APlayerSpirit>(GetPlayerController()->GetPawn());
+			ensureAlways(PlayerSpirit);
+			return PlayerSpirit;
+			default: return nullptr;
+	}
+}
+
 void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -161,6 +208,14 @@ void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Casta, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, IslandArchon, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerForm, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Essence, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Strength, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceCapacity, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceControl, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, StrengthLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, StaminaLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceCapacityLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceControlLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, AnalyzedEntities, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, AnalyzedItems, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, LearnedCraftItems, Params);

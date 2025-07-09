@@ -8,7 +8,6 @@ UENUM(BlueprintType)
 enum class EEntityStat : uint8
 {
 	HealthMax,
-	Strength,
 	PhysicalResistance,
 	FireResistance,
 	ColdResistance,
@@ -21,7 +20,6 @@ struct FEntityStatsModifier
 	GENERATED_BODY()
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 HealthMax = 0;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 Strength = 0;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 PhysicalResistance = 0;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 FireResistance = 0;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 ColdResistance = 0;

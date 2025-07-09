@@ -89,11 +89,16 @@ void AGSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
-	DOREPLIFETIME_CONDITION(AGSS, WorldSeed, COND_InitialOnly);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, WorldSeed, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, TraversalAltitude, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, HostPlayer, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, BuildingInfiniteHeight, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, GroundedMax, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, ConnectedPlayers, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, CheatsEnabled, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceRequireForLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, StrengthPerLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, StaminaPerLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceCapacityPerLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceControlPerLevel, Params);
 }

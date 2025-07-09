@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "Components/PrimitiveComponent.h"
 #include "Interfaces/IslandInterface.h"
+#include "Interfaces/PlayerFormInterface.h"
 #include "Structs/CharacterBio.h"
 #include "Structs/Essence.h"
 #include "PlayerNormal.generated.h"
@@ -29,7 +30,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterStarted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
 
 UCLASS()
-class SKYCRAFT_API APlayerNormal : public AAdianCharacter, public IIslandInterface
+class SKYCRAFT_API APlayerNormal : public AAdianCharacter, public IPlayerFormInterface, public IIslandInterface
 {
 	GENERATED_BODY()
 public:
@@ -99,5 +100,10 @@ public:
 	}
 
 private:
+	// ~Begin IPlayerFormInterface
+	virtual bool isPlayerForm() const override { return true; }
+	virtual UInventoryComponent* GetPlayerInventory() override { return InventoryComponent.Get(); }
+	// ~End IPlayerFormInterface
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

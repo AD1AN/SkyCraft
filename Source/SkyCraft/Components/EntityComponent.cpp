@@ -156,7 +156,6 @@ void UEntityComponent::AddStatsModifier(const FEntityStatsModifier* NewStats)
 	StatsModifiers.Add(NewStats);
 	
 	HealthMax += NewStats->HealthMax;
-	Strength += NewStats->Strength;
 	PhysicalResistance += NewStats->PhysicalResistance;
 	FireResistance += NewStats->FireResistance;
 	ColdResistance += NewStats->ColdResistance;
@@ -171,7 +170,6 @@ void UEntityComponent::RemoveStatsModifier(const FEntityStatsModifier* OldStats)
 	if (StatsModifiers.RemoveSingle(OldStats) > 0)
 	{
 		HealthMax -= OldStats->HealthMax;
-		Strength -= OldStats->Strength;
 		PhysicalResistance -= OldStats->PhysicalResistance;
 		FireResistance -= OldStats->FireResistance;
 		ColdResistance -= OldStats->ColdResistance;
@@ -597,7 +595,6 @@ void UEntityComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, Health, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, HealthMax, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, Strength, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, PhysicalResistance, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, FireResistance, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(UEntityComponent, ColdResistance, Params);

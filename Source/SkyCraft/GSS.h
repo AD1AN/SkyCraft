@@ -16,19 +16,23 @@ class SKYCRAFT_API AGSS : public AGameStateBase
 {
 	GENERATED_BODY()
 	
-public:	
+public:
 	AGSS();
 
 	UPROPERTY(BlueprintReadOnly) AGMS* GMS = nullptr;
 	UPROPERTY(BlueprintReadOnly) UGIS* GIS = nullptr;
 
-	//============================ World Settings
+	// ~BEGIN: World Settings
 	// Default values also needs to be changed in Blueprint WorldSave!
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bUseLAN = false;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowInvites = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowJoinViaPresence = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowJoinViaPresenceFriendsOnly = true;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bShouldAdvertise = true;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 ChunkRenderRange = 10;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float ChunkSize = 100000;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float IslandsProbability = 0.5f; // From 0 to 1.
-
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax IslandsAltitude = FFloatMinMax(90000, 95000);
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) FFloatMinMax TraversalAltitude = FFloatMinMax(30000, 100000);
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax Suffocation = FFloatMinMax(80000, 150000);
@@ -41,14 +45,12 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) uint8 GroundedMax = 15;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) bool CheatsEnabled = false;
 
-	// Network Settings
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bUseLAN = false;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowInvites = true;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowJoinViaPresence = true;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bAllowJoinViaPresenceFriendsOnly = true;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) bool bShouldAdvertise = true;
-	
-	//=========================== World Settings END
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceRequireForLevel = 1000;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StrengthPerLevel = 1;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StaminaPerLevel = 1;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceCapacityPerLevel = 1;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceControlPerLevel = 1;
+	// ~END: World Settings
 
 	virtual void BeginPlay() override;
 
