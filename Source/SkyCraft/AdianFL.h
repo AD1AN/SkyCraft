@@ -10,6 +10,7 @@
 #include "SkyCraft/Damage.h"
 #include "AdianFL.generated.h"
 
+class UInventoryComponent;
 class UNiagaraSystem;
 class AIsland;
 class UNiagaraComponent;
@@ -227,4 +228,10 @@ public:
 			break;
 		}
 	}
+
+	UFUNCTION(BlueprintCallable, Category = "PlayerFormInterface")
+	static UPARAM(DisplayName="IsPF") bool IsPlayerForm(const AActor* Actor);
+
+	UFUNCTION(BlueprintCallable, Category = "PlayerFormInterface")
+	static UPARAM(DisplayName="Inventory") UInventoryComponent* GetPlayerInventory(const AActor* Actor);
 };

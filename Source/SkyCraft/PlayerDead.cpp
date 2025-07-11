@@ -1,8 +1,12 @@
 ﻿// ADIAN Copyrighted
 
 #include "PlayerDead.h"
+
+#include "AdianFL.h"
+#include "PSS.h"
 #include "Components/InventoryComponent.h"
 #include "Enums/ItemType.h"
+#include "Net/UnrealNetwork.h"
 
 APlayerDead::APlayerDead()
 {
@@ -33,3 +37,34 @@ void APlayerDead::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+FEssence APlayerDead::SetEssence_Implementation(FEssence NewEssence)
+{
+	ensureAlways(PSS);
+	if (!IsValid(PSS)) return FEssence();
+	return PSS->Essence = NewEssence;
+}
+
+FEssence APlayerDead::GetEssence_Implementation()
+{
+	ensureAlways(PSS);
+	if (!IsValid(PSS)) return FEssence();
+	return PSS->Essence;
+}
+
+FEssence APlayerDead::AddEssence_Implementation(FEssence AddEssence)
+{
+	ensureAlways(PSS);
+	if (!IsValid(PSS)) return FEssence();
+	return UAdianFL::AddEssence(PSS->Essence, AddEssence);
+}
+
+void APlayerDead::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	FDoRepLifetimeParams Params;
+	Params.bIsPushBased = true;
+	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
+
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerDead, PSS, Params);
+}

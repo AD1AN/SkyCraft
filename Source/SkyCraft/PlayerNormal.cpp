@@ -269,6 +269,27 @@ USkeletalMeshComponent* APlayerNormal::GetEquipmentMeshComponent(int32 SlotIndex
 	}
 }
 
+FEssence APlayerNormal::SetEssence_Implementation(FEssence NewEssence)
+{
+	ensureAlways(PSS);
+	if (!IsValid(PSS)) return FEssence();
+	return PSS->Essence = NewEssence;
+}
+
+FEssence APlayerNormal::GetEssence_Implementation()
+{
+	ensureAlways(PSS);
+	if (!IsValid(PSS)) return FEssence();
+	return PSS->Essence;
+}
+
+FEssence APlayerNormal::AddEssence_Implementation(FEssence AddEssence)
+{
+	ensureAlways(PSS);
+	if (!IsValid(PSS)) return FEssence();
+	return UAdianFL::AddEssence(PSS->Essence, AddEssence);
+}
+
 void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

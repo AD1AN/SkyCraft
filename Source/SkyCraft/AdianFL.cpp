@@ -8,6 +8,7 @@
 #include "Components/EntityComponent.h"
 #include "Interfaces/Interface_AssetUserData.h"
 #include "Interfaces/IslandInterface.h"
+#include "Interfaces/PlayerFormInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
 #include "Structs/RelativeBox.h"
@@ -303,4 +304,28 @@ float UAdianFL::NormalizeToRangeClamped(float Value, float RangeMin, float Range
 
 	float Normalized = (Value - RangeMin) / (RangeMax - RangeMin);
 	return FMath::Clamp(Normalized, 0.0f, 1.0f);
+}
+
+bool UAdianFL::IsPlayerForm(const AActor* Actor)
+{
+	if (Actor && Actor->Implements<UPlayerFormInterface>())
+	{
+		if (const IPlayerFormInterface* PFInterface = Cast<const IPlayerFormInterface>(Actor))
+		{
+			return PFInterface->isPlayerForm();
+		}
+	}
+	return false;
+}
+
+UInventoryComponent* UAdianFL::GetPlayerInventory(const AActor* Actor)
+{
+	if (Actor && Actor->Implements<UPlayerFormInterface>())
+	{
+		if (const IPlayerFormInterface* PFInterface = Cast<const IPlayerFormInterface>(Actor))
+		{
+			return PFInterface->GetPlayerInventory();
+		}
+	}
+	return nullptr;
 }
