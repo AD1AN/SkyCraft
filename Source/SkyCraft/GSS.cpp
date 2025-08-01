@@ -99,6 +99,6 @@ void AGSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceRequireForLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, StrengthPerLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, StaminaPerLevel, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceCapacityPerLevel, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceControlPerLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceVesselPerLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceFlowPerLevel, Params);
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
 #include "Structs/FloatMinMax.h"
+#include "Structs/FX.h"
 #include "GSS.generated.h"
 
 class UGIS;
@@ -48,8 +49,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceRequireForLevel = 1000;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StrengthPerLevel = 1;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StaminaPerLevel = 1;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceCapacityPerLevel = 1;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceControlPerLevel = 1;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceVesselPerLevel = 1000;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceFlowPerLevel = 1;
 	// ~END: World Settings
 
 	virtual void BeginPlay() override;
@@ -62,13 +63,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHostPlayer(APSS* Host);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetTraversalAltitude(FFloatMinMax newTraversalAltitude);
 
-	//============================= Blueprint Classes
+	// ~BEGIN: Blueprint Classes
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class AEssenceActor> EssenceActorClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class ADamageNumbers> DamageNumbersClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") USoundAttenuation* NormalAttenuationClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") USoundAttenuation* BigAttenuationClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class APlayerNormal> PlayerNormalClass = nullptr;
-	
+	// ~END: Blueprint Classes
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedPlayers);
 	UPROPERTY(BlueprintAssignable) FOnConnectedPlayers OnConnectedPlayers;

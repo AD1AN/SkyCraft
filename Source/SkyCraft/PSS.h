@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Enums/Casta.h"
+#include "Enums/InteractKey.h"
 #include "Enums/InterruptedBy.h"
 #include "Enums/PlayerForm.h"
 #include "GameFramework/PlayerState.h"
@@ -11,7 +12,10 @@
 #include "Structs/Essence.h"
 #include "PSS.generated.h"
 
+class APlayerIsland;
 class APlayerNormal;
+class APlayerSpirit;
+class APlayerDead;
 class AGSS;
 class UDA_Craft;
 class UDA_Item;
@@ -21,10 +25,10 @@ class AIslandArchon;
 UENUM(BlueprintType)
 enum EStatLevel : uint8
 {
-	Strength,
 	Stamina,
-	EssenceCapacity,
-	EssenceControl
+	Strength,
+	EssenceFlow,
+	EssenceVessel
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandArchon);
@@ -32,7 +36,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEssence);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLearnedCraftItems);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedEntities);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedItems);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStatLevel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatLevel, EStatLevel, StatLevel);
 
 UCLASS()
 class SKYCRAFT_API APSS : public APlayerState
@@ -62,33 +66,39 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Island;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) EPlayerForm AuthSetPlayerForm(EPlayerForm NewPlayerForm);
 
+	UPROPERTY(Replicated, BlueprintReadWrite) APlayerIsland* PlayerIsland = nullptr;
+	UPROPERTY(Replicated, BlueprintReadWrite) APlayerNormal* PlayerNormal = nullptr;
+	UPROPERTY(Replicated, BlueprintReadWrite) APlayerSpirit* PlayerSpirit = nullptr;
+	UPROPERTY(Replicated, BlueprintReadWrite) APlayerDead* PlayerDead = nullptr;
+
 	UPROPERTY(BlueprintAssignable) FOnEssence OnEssence;
-	UPROPERTY(ReplicatedUsing=OnRep_Essence, BlueprintReadWrite) FEssence Essence;
+	UPROPERTY(ReplicatedUsing=OnRep_Essence, BlueprintReadOnly) FEssence Essence; // Set via SetEssence.
 	UFUNCTION() void OnRep_Essence() { OnEssence.Broadcast(); }
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) FEssence& SetEssence(FEssence NewEssence);
 
 	// ~Begin Additional Stats
 	UPROPERTY(BlueprintReadOnly, Replicated) int32 Strength = 1;
-	UPROPERTY(BlueprintReadOnly, Replicated) int32 EssenceCapacity = 3000;
-	UPROPERTY(BlueprintReadOnly, Replicated) int32 EssenceControl = 1;
+	UPROPERTY(BlueprintReadOnly, Replicated) int32 EssenceFlow = 1;
+	UPROPERTY(BlueprintReadOnly, Replicated) int32 EssenceVessel = 3000;
 	// ~End Additional Stats
 	
-	// ~Begin Levels
+	// ~Begin Forma Enhancement
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnStatLevel OnStatLevel;
 	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_StreangthLevel) int32 StrengthLevel = 1;
-	UFUNCTION() void OnRep_StreangthLevel() { OnStatLevel.Broadcast(); }
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_StrengthLevel) int32 StrengthLevel = 1;
+	UFUNCTION() void OnRep_StrengthLevel() { OnStatLevel.Broadcast(EStatLevel::Strength); }
 	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_StaminaLevel) int32 StaminaLevel = 1;
-	UFUNCTION() void OnRep_StaminaLevel() { OnStatLevel.Broadcast(); }
-	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_EssenceCapacityLevel) int32 EssenceCapacityLevel = 1;
-	UFUNCTION() void OnRep_EssenceCapacityLevel() { OnStatLevel.Broadcast(); }
-	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_EssenceControlLevel) int32 EssenceControlLevel = 1;
-	UFUNCTION() void OnRep_EssenceControlLevel() { OnStatLevel.Broadcast(); }
+	UFUNCTION() void OnRep_StaminaLevel() { OnStatLevel.Broadcast(EStatLevel::Stamina); }
 
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) bool StatLevelUp(EStatLevel StatLevel);
-	// ~End Levels
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_EssenceFlowLevel) int32 EssenceFlowLevel = 1;
+	UFUNCTION() void OnRep_EssenceFlowLevel() { OnStatLevel.Broadcast(EStatLevel::EssenceFlow); }
+	
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_EssenceVesselLevel) int32 EssenceVesselLevel = 1;
+	UFUNCTION() void OnRep_EssenceVesselLevel() { OnStatLevel.Broadcast(EStatLevel::EssenceVessel); }
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void StatLevelUp(EStatLevel StatLevel);
+	// ~End Forma Enhancement
 	
 	// Return the Pawn that is currently controlled.
 	UFUNCTION(BlueprintCallable, BlueprintPure) APawn* GetControlledPawn();
@@ -123,6 +133,12 @@ public:
 	void Client_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS);
 
 	UFUNCTION(BlueprintCallable) APawn* GetPlayerForm();
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, meta=(AutoCreateRefTerm="Text"))
+	void ActionWarning(const FText& Text);
+	
+	UFUNCTION(BlueprintCallable, Client, Reliable, meta=(AutoCreateRefTerm="Text"))
+	void Client_ActionWarning(const FText& Text);
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

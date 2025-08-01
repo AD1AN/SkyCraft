@@ -165,6 +165,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStatsChanged);
 
+// Requires Owner be a AdianActor instead of Actor.
 UCLASS(meta=(BlueprintSpawnableComponent), DisplayName="EntityComponent")
 class SKYCRAFT_API UEntityComponent : public UAdianComponent
 {
@@ -217,7 +218,7 @@ public:
 	void AddStatsModifier(const FEntityStatsModifier* NewStats);
 	void RemoveStatsModifier(const FEntityStatsModifier* OldStats);
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated) FGameplayTagContainer Tags;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated) FGameplayTagContainer Tags; // idk what for
 	
 	UPROPERTY(BlueprintReadOnly) bool bDied = false;
 	

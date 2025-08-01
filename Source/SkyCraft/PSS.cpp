@@ -1,14 +1,16 @@
 // ADIAN Copyrighted
 
 #include "PSS.h"
-
 #include "PlayerNormal.h"
 #include "PlayerSpirit.h"
+#include "RepHelpers.h"
 #include "Net/UnrealNetwork.h"
 #include "SkyCraft/Components/InteractComponent.h"
 #include "Interfaces/Interact_CPP.h"
 #include "Net/Core/PushModel/PushModel.h"
 #include "SkyCraft/GSS.h"
+
+#define LOCTEXT_NAMESPACE "PSS"
 
 APSS::APSS()
 {
@@ -53,6 +55,14 @@ EPlayerForm APSS::AuthSetPlayerForm(EPlayerForm NewPlayerForm)
 	PlayerForm = NewPlayerForm;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, PlayerForm, this);
 	return PlayerForm;
+}
+
+FEssence& APSS::SetEssence(FEssence NewEssence)
+{
+	Essence = NewEssence;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Essence, this);
+	OnRep_Essence();
+	return Essence;
 }
 
 void APSS::Server_InterruptActor_Implementation(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS)
@@ -103,16 +113,70 @@ void APSS::Client_InterruptActor_Implementation(AActor* InterruptActor, EInterru
 	}
 }
 
-bool APSS::StatLevelUp(EStatLevel StatLevel)
+void APSS::StatLevelUp(EStatLevel StatLevel)
 {
-	// switch (StatLevel)
-	// {
-	// case EStatLevel::Strength:
-	// 	int32 RequireEssence = GSS->EssenceRequireForLevel * StrengthLevel;
-	// 	return true;
-	// default: return false;
-	// }
-	return false;
+	FText NoEssence = LOCTEXT("NoEssence", "Not enough essence");
+	if (Essence.Total() <= 0)
+	{
+		Client_ActionWarning(NoEssence);
+		return;
+	}
+	
+	int32 RequireEssence;
+	FEssence NewEssence;
+	
+	switch (StatLevel)
+	{
+	case EStatLevel::Stamina:
+		RequireEssence = GSS->EssenceRequireForLevel * StaminaLevel;
+		if (RequireEssence > Essence.Total())
+		{
+			Client_ActionWarning(NoEssence);
+			return;
+		}
+		NewEssence = Essence - RequireEssence;
+		REP_SET(Essence, NewEssence);
+		StaminaLevel++;
+		PlayerNormal->StaminaMax += GSS->StaminaPerLevel;
+		break;
+	case EStatLevel::Strength:
+		RequireEssence = GSS->EssenceRequireForLevel * StrengthLevel;
+		if (RequireEssence > Essence.Total())
+		{
+			Client_ActionWarning(NoEssence);
+			return;
+		}
+		NewEssence = Essence - RequireEssence;
+		REP_SET(Essence, NewEssence);
+		StrengthLevel++;
+		Strength += GSS->StrengthPerLevel;
+		break;
+	case EStatLevel::EssenceFlow:
+		RequireEssence = GSS->EssenceRequireForLevel * EssenceFlowLevel;
+		if (RequireEssence > Essence.Total())
+		{
+			Client_ActionWarning(NoEssence);
+			return;
+		}
+		NewEssence = Essence - RequireEssence;
+		REP_SET(Essence, NewEssence);
+		EssenceFlowLevel++;
+		EssenceFlow += GSS->EssenceFlowPerLevel;
+		break;
+	case EStatLevel::EssenceVessel:
+		RequireEssence = GSS->EssenceRequireForLevel * EssenceVesselLevel;
+		if (RequireEssence > Essence.Total())
+		{
+			Client_ActionWarning(NoEssence);
+			return;
+		}
+		NewEssence = Essence - RequireEssence;
+		REP_SET(Essence, NewEssence);
+		EssenceVesselLevel++;
+		EssenceVessel += GSS->EssenceVesselPerLevel;
+		break;
+	default: return;
+	}
 }
 
 APawn* APSS::GetControlledPawn()
@@ -179,20 +243,25 @@ void APSS::AuthSetLearnedCraftItems(TArray<UDA_Craft*> New)
 
 APawn* APSS::GetPlayerForm()
 {
-	APlayerNormal* PlayerNormal;
-	APlayerSpirit* PlayerSpirit;
+	APlayerNormal* InPlayerNormal;
+	APlayerSpirit* InPlayerSpirit;
 	switch (PlayerForm)
 	{
 		case EPlayerForm::Normal:
-			PlayerNormal = Cast<APlayerNormal>(GetPlayerController()->GetPawn());
-			ensureAlways(PlayerNormal);
-			return PlayerNormal;
+			InPlayerNormal = Cast<APlayerNormal>(GetPlayerController()->GetPawn());
+			ensureAlways(InPlayerNormal);
+			return InPlayerNormal;
 		case EPlayerForm::Spirit:
-			PlayerSpirit = Cast<APlayerSpirit>(GetPlayerController()->GetPawn());
-			ensureAlways(PlayerSpirit);
-			return PlayerSpirit;
+			InPlayerSpirit = Cast<APlayerSpirit>(GetPlayerController()->GetPawn());
+			ensureAlways(InPlayerSpirit);
+			return InPlayerSpirit;
 			default: return nullptr;
 	}
+}
+
+void APSS::Client_ActionWarning_Implementation(const FText& Text)
+{
+	ActionWarning(Text);
 }
 
 void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -208,14 +277,18 @@ void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Casta, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, IslandArchon, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerForm, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerIsland, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerNormal, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerSpirit, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerDead, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Essence, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Strength, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceCapacity, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceControl, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceVessel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceFlow, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, StrengthLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, StaminaLevel, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceCapacityLevel, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceControlLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceVesselLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceFlowLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, AnalyzedEntities, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, AnalyzedItems, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, LearnedCraftItems, Params);

@@ -63,7 +63,7 @@ AResource* AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator 
 	return SpawnedRes;
 }
 
-APlayerNormal* AGMS::SpawnPlayerNormal(FVector Location, FRotator Rotation, AActor* InOwner, APSS* PSS, FEssence Essence, TArray<FSlot> InitialInventory, TArray<FSlot> InitialEquipment)
+APlayerNormal* AGMS::SpawnPlayerNormal(FVector Location, FRotator Rotation, AActor* InOwner, APSS* PSS, TArray<FSlot> InitialInventory, TArray<FSlot> InitialEquipment)
 {
 	ensureAlways(GSS);
 	if (!GSS) return nullptr;
@@ -75,7 +75,6 @@ APlayerNormal* AGMS::SpawnPlayerNormal(FVector Location, FRotator Rotation, AAct
 	SpawnTransform.SetRotation(Rotation.Quaternion());
 	APlayerNormal* SpawnedPlayer = GetWorld()->SpawnActorDeferred<APlayerNormal>(GSS->PlayerNormalClass, SpawnTransform, InOwner, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	SpawnedPlayer->PSS = PSS;
-	SpawnedPlayer->Essence = Essence;
 	if (!InitialInventory.IsEmpty()) SpawnedPlayer->InventoryComponent->Slots = InitialInventory;
 	if (!InitialEquipment.IsEmpty()) SpawnedPlayer->EquipmentInventoryComponent->Slots = InitialEquipment;
 	SpawnedPlayer->FinishSpawning(SpawnTransform);

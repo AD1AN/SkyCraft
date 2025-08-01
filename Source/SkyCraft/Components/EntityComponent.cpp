@@ -431,7 +431,7 @@ void UEntityComponent::Multicast_OnDamage_Implementation(FDamageInfo DamageInfo,
 	{
 		if (IEntityInterface* EntityInterface = Cast<IEntityInterface>(GetOwner()))
 		{
-			EntityInterface->InitialOnDamage(DamageInfo);
+			EntityInterface->NativeOnDamage(DamageInfo);
 		}
 		
 		IEntityInterface::Execute_OnDamage(GetOwner(), DamageInfo);
@@ -480,7 +480,7 @@ void UEntityComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 	{
 		if (IEntityInterface* EntityInterface = Cast<IEntityInterface>(GetOwner()))
 	    {
-	        EntityInterface->InitialOnDie(DamageInfo);
+	        EntityInterface->NativeOnDie(DamageInfo);
 	    }
 		
 		IEntityInterface::Execute_OnDie(GetOwner(), DamageInfo);

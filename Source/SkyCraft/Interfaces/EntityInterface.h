@@ -17,8 +17,8 @@ class SKYCRAFT_API IEntityInterface
 	GENERATED_BODY()
 
 public:
-	virtual void InitialOnDamage(const FDamageInfo& DamageInfo) {}
-	virtual void InitialOnDie(const FDamageInfo& DamageInfo) {}
+	virtual void NativeOnDamage(const FDamageInfo& DamageInfo) {}
+	virtual void NativeOnDie(const FDamageInfo& DamageInfo) {}
 	
 	UFUNCTION(BlueprintNativeEvent, Category="EntityInterface") bool OnDamage(const FDamageInfo& DamageInfo);
 	UFUNCTION(BlueprintNativeEvent, Category="EntityInterface") bool OnDie(const FDamageInfo& DamageInfo);

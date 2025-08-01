@@ -10,7 +10,6 @@
 #include "Interfaces/EssenceInterface.h"
 #include "Interfaces/IslandInterface.h"
 #include "Interfaces/PlayerFormInterface.h"
-#include "Structs/CharacterBio.h"
 #include "Structs/Essence.h"
 #include "PlayerNormal.generated.h"
 
@@ -74,6 +73,10 @@ public:
 	// Character Initiated and PSS is valid, but BP_PSS->PlayerLoaded can be true/false.
 	// PSS is important and should be replicated.
 	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
+
+	UPROPERTY(BlueprintReadWrite, Replicated) float Stamina = 100.0f;
+	UPROPERTY(BlueprintReadWrite, Replicated) float StaminaMax = 100.0f;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float StaminaCooldown = 1.0f;
 
 	UFUNCTION() void UpdateEquipmentSlot(int32 SlotIndex, UDA_Item* OldItem);
 	void InitialUpdateEquipmentSlots();

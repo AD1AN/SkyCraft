@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "AdianActor.h"
 #include "Damage.h"
-#include "GameFramework/Character.h"
 #include "Interfaces/EntityInterface.h"
 #include "Interfaces/IslandInterface.h"
 #include "NPC.generated.h"
@@ -13,7 +13,7 @@ class AIsland;
 struct FSS_NPC;
 
 UCLASS()
-class SKYCRAFT_API ANPC : public ACharacter, public IEntityInterface, public IIslandInterface
+class SKYCRAFT_API ANPC : public AAdianCharacter, public IEntityInterface, public IIslandInterface
 {
 	GENERATED_BODY()
 public:
@@ -28,7 +28,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveFromIsland();
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddToIsland(AIsland* NewIsland);
 	
-	virtual void BeginPlay() override;
+	virtual void ActorBeginPlay_Implementation() override;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
 	UPROPERTY(BlueprintAssignable) FOnNewBase OnNewBase;
@@ -49,7 +49,9 @@ public:
 		return Island;
 	}
 
-	virtual void InitialOnDie(const FDamageInfo& DamageInfo) override;
+	// ~Begin IEntityInterface
+	virtual void NativeOnDie(const FDamageInfo& DamageInfo) override;
+	// ~End IEntityInterface
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

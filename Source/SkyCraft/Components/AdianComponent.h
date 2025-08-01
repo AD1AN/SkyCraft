@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "AdianComponent.generated.h"
 
+// Requires Owner be a AdianActor instead of Actor.
 UCLASS(Blueprintable)
 class SKYCRAFT_API UAdianComponent : public UActorComponent
 {

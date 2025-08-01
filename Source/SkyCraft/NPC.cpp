@@ -12,7 +12,6 @@
 #include "SkyCraft/Components/EntityComponent.h"
 #include "SkyCraft/Structs/SS_Island.h"
 
-
 ANPC::ANPC()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -31,9 +30,9 @@ ANPC::ANPC()
 	GetMesh()->SetCollisionProfileName(TEXT("RagdollMesh"));
 }
 
-void ANPC::BeginPlay()
+void ANPC::ActorBeginPlay_Implementation()
 {
-	Super::BeginPlay();
+	Super::ActorBeginPlay_Implementation();
 	
 	if (!HasAuthority()) return;
 	SetActorTickEnabled(true);
@@ -45,7 +44,7 @@ void ANPC::BeginPlay()
 	Island->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
 }
 
-void ANPC::InitialOnDie(const FDamageInfo& DamageInfo)
+void ANPC::NativeOnDie(const FDamageInfo& DamageInfo)
 {
 	SetActorTickEnabled(false);
 	GetCharacterMovement()->StopMovementImmediately();

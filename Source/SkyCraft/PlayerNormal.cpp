@@ -273,7 +273,7 @@ FEssence APlayerNormal::SetEssence_Implementation(FEssence NewEssence)
 {
 	ensureAlways(PSS);
 	if (!IsValid(PSS)) return FEssence();
-	return PSS->Essence = NewEssence;
+	return PSS->SetEssence(NewEssence);
 }
 
 FEssence APlayerNormal::GetEssence_Implementation()
@@ -287,7 +287,7 @@ FEssence APlayerNormal::AddEssence_Implementation(FEssence AddEssence)
 {
 	ensureAlways(PSS);
 	if (!IsValid(PSS)) return FEssence();
-	return UAdianFL::AddEssence(PSS->Essence, AddEssence);
+	return PSS->SetEssence(UAdianFL::AddEssence(PSS->Essence, AddEssence));
 }
 
 void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -298,8 +298,9 @@ void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
-	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, Essence, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PSS, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, HandsFull, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, Stamina, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, StaminaMax, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, AnimLoopUpperBody, Params);
 }

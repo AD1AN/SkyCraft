@@ -14,7 +14,7 @@ FEssence APlayerSpirit::SetEssence_Implementation(FEssence NewEssence)
 {
 	ensureAlways(PSS);
 	if (!IsValid(PSS)) return FEssence();
-	return PSS->Essence = NewEssence;
+	return PSS->SetEssence(NewEssence);
 }
 
 FEssence APlayerSpirit::GetEssence_Implementation()
@@ -28,7 +28,7 @@ FEssence APlayerSpirit::AddEssence_Implementation(FEssence AddEssence)
 {
 	ensureAlways(PSS);
 	if (!IsValid(PSS)) return FEssence();
-	return UAdianFL::AddEssence(PSS->Essence, AddEssence);
+	return PSS->SetEssence(UAdianFL::AddEssence(PSS->Essence, AddEssence));
 }
 
 void APlayerSpirit::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
