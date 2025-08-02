@@ -49,8 +49,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceRequireForLevel = 1000;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StrengthPerLevel = 1;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StaminaPerLevel = 1;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceVesselPerLevel = 1000;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceFlowPerLevel = 1;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceVesselPerLevel = 3000;
 	// ~END: World Settings
 
 	virtual void BeginPlay() override;

@@ -23,7 +23,7 @@ class UDA_AnalyzeEntity;
 class AIslandArchon;
 
 UENUM(BlueprintType)
-enum EStatLevel : uint8
+enum class EStatLevel : uint8
 {
 	Stamina,
 	Strength,

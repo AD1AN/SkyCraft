@@ -25,37 +25,24 @@ struct FEssence
 		const float Proportion = static_cast<float>(TotalToSubtract) / static_cast<float>(TotalSum);
 
 		// Calculate proportional subtraction
-		int32 SubR = FMath::Clamp(FMath::RoundToInt(R * Proportion), 0, R);
-		int32 SubG = FMath::Clamp(FMath::RoundToInt(G * Proportion), 0, G);
-		int32 SubB = FMath::Clamp(FMath::RoundToInt(B * Proportion), 0, B);
+		int32 SubR = FMath::Clamp(FMath::FloorToInt(R * Proportion), 0, R);
+		int32 SubG = FMath::Clamp(FMath::FloorToInt(G * Proportion), 0, G);
+		int32 SubB = FMath::Clamp(FMath::FloorToInt(B * Proportion), 0, B);
 
 		R -= SubR;
 		G -= SubG;
 		B -= SubB;
 
 		// Adjust for rounding errors
-		int32 TotalSubtracted = SubR + SubG + SubB;
-		int32 Difference = TotalToSubtract - TotalSubtracted;
+		int32 Difference = TotalToSubtract - (SubR + SubG + SubB);
 
-		while (Difference != 0)
+		while (Difference > 0)
 		{
-			// Pick the largest component with something left to subtract
-			if (R >= G && R >= B && R > 0)
-			{
-				--R;
-			}
-			else if (G >= B && G > 0)
-			{
-				--G;
-			}
-			else if (B > 0)
-			{
-				--B;
-			}
-			else
-			{
-				break; // Nothing left to adjust
-			}
+			// Pick the largest channel, to subtract with leftovers
+			if (R >= G && R >= B && R > 0) --R;
+			else if (G >= B && G > 0) --G;
+			else if (B > 0) --B;
+			else break; // Nothing left to adjust
 			--Difference;
 		}
 

@@ -136,9 +136,11 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		}
 		NewEssence = Essence - RequireEssence;
 		REP_SET(Essence, NewEssence);
-		StaminaLevel++;
 		PlayerNormal->StaminaMax += GSS->StaminaPerLevel;
+		MARK_PROPERTY_DIRTY_FROM_NAME(APlayerNormal, StaminaMax, PlayerNormal);
+		REP_SET(StaminaLevel, StaminaLevel+1);
 		break;
+		
 	case EStatLevel::Strength:
 		RequireEssence = GSS->EssenceRequireForLevel * StrengthLevel;
 		if (RequireEssence > Essence.Total())
@@ -148,9 +150,10 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		}
 		NewEssence = Essence - RequireEssence;
 		REP_SET(Essence, NewEssence);
-		StrengthLevel++;
-		Strength += GSS->StrengthPerLevel;
+		REP_SET(Strength, Strength + GSS->StrengthPerLevel);
+		REP_SET(StrengthLevel, StrengthLevel+1);
 		break;
+		
 	case EStatLevel::EssenceFlow:
 		RequireEssence = GSS->EssenceRequireForLevel * EssenceFlowLevel;
 		if (RequireEssence > Essence.Total())
@@ -160,9 +163,10 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		}
 		NewEssence = Essence - RequireEssence;
 		REP_SET(Essence, NewEssence);
-		EssenceFlowLevel++;
-		EssenceFlow += GSS->EssenceFlowPerLevel;
+		REP_SET(EssenceFlow, EssenceFlow + GSS->EssenceFlowPerLevel);
+		REP_SET(EssenceFlowLevel, EssenceFlowLevel+1);
 		break;
+		
 	case EStatLevel::EssenceVessel:
 		RequireEssence = GSS->EssenceRequireForLevel * EssenceVesselLevel;
 		if (RequireEssence > Essence.Total())
@@ -172,10 +176,11 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		}
 		NewEssence = Essence - RequireEssence;
 		REP_SET(Essence, NewEssence);
-		EssenceVesselLevel++;
-		EssenceVessel += GSS->EssenceVesselPerLevel;
+		REP_SET(EssenceVessel, EssenceVessel + GSS->EssenceVesselPerLevel);
+		REP_SET(EssenceVesselLevel, EssenceVesselLevel+1);
 		break;
-	default: return;
+		
+	default: break;
 	}
 }
 
@@ -283,12 +288,12 @@ void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerDead, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Essence, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Strength, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceVessel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceFlow, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceVessel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, StrengthLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, StaminaLevel, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceVesselLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceFlowLevel, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceVesselLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, AnalyzedEntities, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, AnalyzedItems, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, LearnedCraftItems, Params);
