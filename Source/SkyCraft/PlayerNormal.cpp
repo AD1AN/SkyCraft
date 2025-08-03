@@ -301,6 +301,5 @@ void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PSS, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, HandsFull, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, Stamina, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, StaminaMax, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, AnimLoopUpperBody, Params);
 }

@@ -75,7 +75,6 @@ public:
 	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
 
 	UPROPERTY(BlueprintReadWrite, Replicated) float Stamina = 100.0f;
-	UPROPERTY(BlueprintReadWrite, Replicated) float StaminaMax = 100.0f;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float StaminaCooldown = 1.0f;
 
 	UFUNCTION() void UpdateEquipmentSlot(int32 SlotIndex, UDA_Item* OldItem);
@@ -110,7 +109,7 @@ private:
 	virtual FEssence SetEssence_Implementation(FEssence NewEssence) override;
 	virtual FEssence GetEssence_Implementation() override;
 	virtual FEssence AddEssence_Implementation(FEssence AddEssence) override;
-	virtual bool DoesConsumeEssence_Implementation() override { return true; }
+	virtual bool DoesConsumeEssence_Implementation(bool& bIsLocalLogic) override { return true; }
 	// ~End IEssenceInterface
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

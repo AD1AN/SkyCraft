@@ -55,7 +55,13 @@ void AEssenceActor::NotifyActorBeginOverlap(AActor* OtherActor)
 	Super::NotifyActorBeginOverlap(OtherActor);
 	if (!HasAuthority()) return;
 	if (!OtherActor->Implements<UEssenceInterface>()) return;
-	if (!IEssenceInterface::Execute_DoesConsumeEssence(OtherActor)) return;
+	bool bIsLocalLogic = false;
+	if (!IEssenceInterface::Execute_DoesConsumeEssence(OtherActor, bIsLocalLogic)) return;
+	if (bIsLocalLogic)
+	{
+		Multicast_Consumed(OtherActor);
+		return;
+	}
 	
 	IEssenceInterface::Execute_AddEssence(OtherActor, Essence);
 	Multicast_Consumed(OtherActor);

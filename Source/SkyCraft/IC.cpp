@@ -53,6 +53,7 @@ void AIC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps
 	
 	DOREPLIFETIME_CONDITION(AIC, PlayerNormal, COND_InitialOnly);
 	DOREPLIFETIME_CONDITION(AIC, Main, COND_InitialOnly);
+	DOREPLIFETIME_CONDITION(AIC, DA_Item, COND_InitialOnly);
 	DOREPLIFETIME(AIC, CanLMB);
 }
 

@@ -9,6 +9,7 @@
 
 class APAI;
 class APlayerNormal;
+class UDA_Item;
 
 UCLASS( Blueprintable)
 class SKYCRAFT_API AIC : public AActor
@@ -19,9 +20,9 @@ public:
 	AIC();
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_PlayerNormal, meta=(ExposeOnSpawn)) APlayerNormal* PlayerNormal = nullptr;
 	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) bool Main = true;
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) class UInventoryComponent* Inventory = nullptr;
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 SlotIndex;
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FItemComponentParameters ItemComponentParameters;
+	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) UDA_Item* DA_Item = nullptr;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) class UInventoryComponent* Inventory = nullptr; // Auth
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 SlotIndex; // Auth
 	UPROPERTY(BlueprintReadWrite, Replicated) bool CanLMB = true;
 	UPROPERTY(BlueprintReadWrite) bool CanRMB = true;
 	UPROPERTY(BlueprintReadWrite) bool ComponentStarted = false; // Can only start after character!

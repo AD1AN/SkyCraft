@@ -5,7 +5,9 @@
 #include "GSS.h"
 #include "Island.h"
 #include "NavigationSystem.h"
+#include "PCS.h"
 #include "PlayerNormal.h"
+#include "PSS.h"
 #include "Resource.h"
 #include "Components/BrushComponent.h"
 #include "DataAssets/DA_Resource.h"
@@ -29,6 +31,27 @@ APlayerController* AGMS::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const 
 		bWorldStarted = true;
 	}
 	return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+}
+
+void AGMS::CPP_LoadPlayer(APCS* PCS, FSS_Player SS)
+{
+	APSS* PSS = PCS->PSS;
+
+	PSS->AuthSetCasta(SS.Casta);
+	PSS->StaminaLevel = SS.StaminaLevel;
+	PSS->StrengthLevel = SS.StrengthLevel;
+	PSS->EssenceFlowLevel = SS.EssenceFlowLevel;
+	PSS->EssenceVesselLevel = SS.EssenceVesselLevel;
+
+	PSS->StaminaMax = (SS.StaminaLevel * GSS->StaminaPerLevel) + (PSS->StaminaMax - 1);
+	PSS->Strength = SS.StrengthLevel * GSS->StrengthPerLevel;
+	PSS->EssenceFlow = SS.EssenceFlowLevel * GSS->EssenceFlowPerLevel;
+	PSS->EssenceVessel = (SS.EssenceVesselLevel * GSS->EssenceVesselPerLevel) + (PSS->EssenceVessel - 3000);
+
+	PSS->AuthSetPlayerForm(SS.PlayerForm);
+	PSS->SetEssence(SS.Essence);
+	PSS->AnalyzedEntities = SS.AnalyzedEntities;
+	PSS->AnalyzedItems = SS.AnalyzedItems;
 }
 
 AResource* AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD)

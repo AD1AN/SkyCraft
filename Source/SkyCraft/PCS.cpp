@@ -2,12 +2,14 @@
 
 #include "PCS.h"
 #include "GIS.h"
+#include "PSS.h"
 #include "Interfaces/PossessionInterface.h"
 
 void APCS::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (HasAuthority()) PSS = Cast<APSS>(PlayerState);
 	if (!IsLocalController()) return;
 	if (UGIS* GIS = Cast<UGIS>(GetGameInstance())) GIS->PCS = this;
 }

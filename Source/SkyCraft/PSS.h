@@ -36,7 +36,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEssence);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLearnedCraftItems);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedEntities);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedItems);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatLevel, EStatLevel, StatLevel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatEnhanced, EStatLevel, StatLevel);
 
 UCLASS()
 class SKYCRAFT_API APSS : public APlayerState
@@ -77,25 +77,26 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) FEssence& SetEssence(FEssence NewEssence);
 
 	// ~Begin Additional Stats
-	UPROPERTY(BlueprintReadOnly, Replicated) int32 Strength = 1;
-	UPROPERTY(BlueprintReadOnly, Replicated) int32 EssenceFlow = 1;
-	UPROPERTY(BlueprintReadOnly, Replicated) int32 EssenceVessel = 3000;
+	UPROPERTY(BlueprintReadWrite, Replicated) int32 StaminaMax = 100;
+	UPROPERTY(BlueprintReadWrite, Replicated) int32 Strength = 1;
+	UPROPERTY(BlueprintReadWrite, Replicated) int32 EssenceFlow = 1;
+	UPROPERTY(BlueprintReadWrite, Replicated) int32 EssenceVessel = 3000;
 	// ~End Additional Stats
 	
 	// ~Begin Forma Enhancement
-	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnStatLevel OnStatLevel;
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnStatEnhanced OnStatEnhanced;
 	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_StrengthLevel) int32 StrengthLevel = 1;
-	UFUNCTION() void OnRep_StrengthLevel() { OnStatLevel.Broadcast(EStatLevel::Strength); }
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_StaminaLevel) int32 StaminaLevel = 1;
+	UFUNCTION() void OnRep_StaminaLevel() { OnStatEnhanced.Broadcast(EStatLevel::Stamina); }
 	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_StaminaLevel) int32 StaminaLevel = 1;
-	UFUNCTION() void OnRep_StaminaLevel() { OnStatLevel.Broadcast(EStatLevel::Stamina); }
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_StrengthLevel) int32 StrengthLevel = 1;
+	UFUNCTION() void OnRep_StrengthLevel() { OnStatEnhanced.Broadcast(EStatLevel::Strength); }
 
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_EssenceFlowLevel) int32 EssenceFlowLevel = 1;
-	UFUNCTION() void OnRep_EssenceFlowLevel() { OnStatLevel.Broadcast(EStatLevel::EssenceFlow); }
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_EssenceFlowLevel) int32 EssenceFlowLevel = 1;
+	UFUNCTION() void OnRep_EssenceFlowLevel() { OnStatEnhanced.Broadcast(EStatLevel::EssenceFlow); }
 	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_EssenceVesselLevel) int32 EssenceVesselLevel = 1;
-	UFUNCTION() void OnRep_EssenceVesselLevel() { OnStatLevel.Broadcast(EStatLevel::EssenceVessel); }
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_EssenceVesselLevel) int32 EssenceVesselLevel = 1;
+	UFUNCTION() void OnRep_EssenceVesselLevel() { OnStatEnhanced.Broadcast(EStatLevel::EssenceVessel); }
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void StatLevelUp(EStatLevel StatLevel);
 	// ~End Forma Enhancement

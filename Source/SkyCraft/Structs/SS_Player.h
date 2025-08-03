@@ -69,8 +69,8 @@ struct FSS_Player
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FSS_PF_Dead PF_Dead;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) TArray<UDA_AnalyzeEntity*> AnalyzedEntities;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) TArray<UDA_Item*> AnalyzedItems;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 StrengthLevel;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 StaminaLevel;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 EssenceCapacityLevel;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 EssenceControlLevel;	
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 StrengthLevel;
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 EssenceFlowLevel;
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 EssenceVesselLevel;
 };

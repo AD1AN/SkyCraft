@@ -59,7 +59,9 @@ EPlayerForm APSS::AuthSetPlayerForm(EPlayerForm NewPlayerForm)
 
 FEssence& APSS::SetEssence(FEssence NewEssence)
 {
-	Essence = NewEssence;
+	Essence.R = FMath::Clamp(NewEssence.R, 0, EssenceVessel/3);
+	Essence.G = FMath::Clamp(NewEssence.G, 0, EssenceVessel/3);
+	Essence.B = FMath::Clamp(NewEssence.B, 0, EssenceVessel/3);
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Essence, this);
 	OnRep_Essence();
 	return Essence;
@@ -136,8 +138,7 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		}
 		NewEssence = Essence - RequireEssence;
 		REP_SET(Essence, NewEssence);
-		PlayerNormal->StaminaMax += GSS->StaminaPerLevel;
-		MARK_PROPERTY_DIRTY_FROM_NAME(APlayerNormal, StaminaMax, PlayerNormal);
+		REP_SET(StaminaMax, StaminaMax + GSS->StaminaPerLevel);
 		REP_SET(StaminaLevel, StaminaLevel+1);
 		break;
 		
@@ -287,6 +288,7 @@ void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerSpirit, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerDead, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Essence, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, StaminaMax, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Strength, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceFlow, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, EssenceVessel, Params);

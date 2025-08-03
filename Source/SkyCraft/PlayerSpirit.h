@@ -34,7 +34,7 @@ private:
 	virtual FEssence SetEssence_Implementation(FEssence NewEssence) override;
 	virtual FEssence GetEssence_Implementation() override;
 	virtual FEssence AddEssence_Implementation(FEssence AddEssence) override;
-	virtual bool DoesConsumeEssence_Implementation() override { return true; }
+	virtual bool DoesConsumeEssence_Implementation(bool& bIsLocalLogic) override { return true; }
 	// ~End IEssenceInterface
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;

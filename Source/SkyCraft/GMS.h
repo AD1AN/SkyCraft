@@ -10,6 +10,7 @@
 #include "GMS.generated.h"
 
 class APSS;
+class APCS;
 struct FEssence;
 class APlayerNormal;
 class AResource;
@@ -49,6 +50,8 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent) void StartWorld();
 	bool bWorldStarted = false;
+
+	UFUNCTION(BlueprintCallable) void CPP_LoadPlayer(APCS* PCS, FSS_Player SS);
 	
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	

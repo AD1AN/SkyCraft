@@ -20,7 +20,7 @@ class SKYCRAFT_API IEssenceInterface
 	GENERATED_BODY()
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="EssenceInterface")
-	UPARAM(DisplayName="Essence") bool DoesConsumeEssence();
+	UPARAM(DisplayName="Essence") bool DoesConsumeEssence(bool& bIsLocalLogic);
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="EssenceInterface")
 	UPARAM(DisplayName="Essence") FEssence GetEssence();
