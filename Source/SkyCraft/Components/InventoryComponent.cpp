@@ -309,7 +309,7 @@ bool UInventoryComponent::Craftable(TArray<FSlot> RequiredSlots)
 bool UInventoryComponent::HasEmptySlots(int32 NumEmptySlots)
 {
 	int32 FoundEmptySlots = 0;
-	for (FSlot Slot : Slots)
+	for (FSlot& Slot : Slots)
 	{
 		if (!Slot.DA_Item)
 		{
@@ -318,6 +318,15 @@ bool UInventoryComponent::HasEmptySlots(int32 NumEmptySlots)
 		}
 	}
 	return false;
+}
+
+bool UInventoryComponent::IsAllSlotsEmpty()
+{
+	for (auto& Slot : Slots)
+	{
+		if (Slot.DA_Item) return false;
+	}
+	return true;
 }
 
 bool UInventoryComponent::TransferInventory(UInventoryComponent* ToInventory)

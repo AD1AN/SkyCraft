@@ -44,10 +44,17 @@ void AEssenceActor::BeginPlay()
 	Super::BeginPlay();
 	MaterialInstanceDynamic = StaticMeshComponent->CreateDynamicMaterialInstance(0);
 	bHadBeginPlay = true;
-	OnRep_Essence();
+	OnRep_EssenceColor();
 	
 	// Enable Overlap here, otherwise Overlap can happen faster BeginPlay!
 	StaticMeshComponent->SetGenerateOverlapEvents(true);
+}
+
+void AEssenceActor::OnRep_EssenceColor()
+{
+	if (!bHadBeginPlay) return;
+	MaterialInstanceDynamic->SetVectorParameterValue("EssenceColor", EssenceColor);
+	NiagaraComponent->SetVariableLinearColor(FName("EssenceColor"), EssenceColor);
 }
 
 void AEssenceActor::NotifyActorBeginOverlap(AActor* OtherActor)
@@ -55,30 +62,29 @@ void AEssenceActor::NotifyActorBeginOverlap(AActor* OtherActor)
 	Super::NotifyActorBeginOverlap(OtherActor);
 	if (!HasAuthority()) return;
 	if (!OtherActor->Implements<UEssenceInterface>()) return;
-	bool bIsLocalLogic = false;
-	if (!IEssenceInterface::Execute_DoesConsumeEssence(OtherActor, bIsLocalLogic)) return;
-	if (bIsLocalLogic)
-	{
-		Multicast_Consumed(OtherActor);
-		return;
-	}
+	if (!IEssenceInterface::Execute_DoesConsumeEssenceActor(OtherActor)) return;
 	
-	IEssenceInterface::Execute_AddEssence(OtherActor, Essence);
-	Multicast_Consumed(OtherActor);
-	Destroy();
+	bool bFullyAdded = false;
+	int32 PreviousEssence = Essence;
+	IEssenceInterface::Execute_AddEssence(OtherActor, this, Essence, bFullyAdded);
+
+	if (bFullyAdded)
+	{
+		Multicast_Consumed(OtherActor, Essence);
+		Destroy();
+	}
+	else
+	{
+		int32 ConsumedEssence = PreviousEssence - Essence;
+		if (ConsumedEssence <= 0) return;
+		Multicast_Consumed(OtherActor, ConsumedEssence);
+	}
 }
 
-void AEssenceActor::OnRep_Essence()
-{
-	if (!bHadBeginPlay) return;
-	MaterialInstanceDynamic->SetVectorParameterValue("EssenceColor", UAdianFL::EssenceToRGB(Essence));
-	NiagaraComponent->SetVariableLinearColor(FName("EssenceColor"), UAdianFL::EssenceToRGB(Essence));
-}
-
-void AEssenceActor::Multicast_Consumed_Implementation(AActor* OtherActor)
+void AEssenceActor::Multicast_Consumed_Implementation(AActor* OtherActor, int32 InEssence)
 {
 	if (!OtherActor || !OtherActor->Implements<UEssenceInterface>()) return;
-	IEssenceInterface::Execute_OnEssenceConsume(OtherActor, Essence, GetActorLocation());
+	IEssenceInterface::Execute_OnConsumeEssenceActor(OtherActor, InEssence, GetActorLocation(), EssenceColor);
 	
 	if (!IsValid(SpawnedDeathEssence)) return;
 	SpawnedDeathEssence->ConsumingActor = OtherActor;
@@ -120,5 +126,6 @@ void AEssenceActor::DelayedDestroy()
 
 REP_CLASS(AEssenceActor,
 {
-REP_PROPERTY(Essence);
+	REP_PROPERTY(Essence);
+	REP_PROPERTY(EssenceColor);
 })

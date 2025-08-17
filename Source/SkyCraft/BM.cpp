@@ -32,9 +32,9 @@ ABM::ABM()
 	EntityComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
 }
 
-void ABM::BeginPlay()
+void ABM::ActorBeginPlay_Implementation()
 {
-	Super::BeginPlay();
+	Super::ActorBeginPlay_Implementation();
 	// This code duplicated in Resource::BeginPlay
 	if (DA_Building->EntityConfigUse == EEntityConfigUse::DataAsset)
 	{
@@ -61,7 +61,7 @@ void ABM::BeginPlay()
 	{
 		EntityComponent->Config = DA_Building->DefinedEntityConfig;
 	}
-	EntityComponent->SetHealth(EntityComponent->Config.HealthMax);
+	EntityComponent->OverrideHealth(EntityComponent->Config.HealthMax);
 	
 	if (HasAuthority()) AttachToActor(AttachIsland, FAttachmentTransformRules::KeepRelativeTransform);
 	else AttachIsland = Cast<AIsland>(UAdianFL::GetRootActor(this));

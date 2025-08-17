@@ -13,6 +13,7 @@
 #include "DataAssets/DA_Resource.h"
 #include "SkyCraft/Components/InventoryComponent.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
+#include "Net/Core/PushModel/PushModel.h"
 
 AGMS::AGMS(){}
 
@@ -39,19 +40,29 @@ void AGMS::CPP_LoadPlayer(APCS* PCS, FSS_Player SS)
 
 	PSS->AuthSetCasta(SS.Casta);
 	PSS->StaminaLevel = SS.StaminaLevel;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StaminaLevel, PSS);
 	PSS->StrengthLevel = SS.StrengthLevel;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StrengthLevel, PSS);
 	PSS->EssenceFlowLevel = SS.EssenceFlowLevel;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceFlowLevel, PSS);
 	PSS->EssenceVesselLevel = SS.EssenceVesselLevel;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceVesselLevel, PSS);
 
 	PSS->StaminaMax = (SS.StaminaLevel * GSS->StaminaPerLevel) + (PSS->StaminaMax - 1);
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StaminaMax, PSS);
 	PSS->Strength = SS.StrengthLevel * GSS->StrengthPerLevel;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Strength, PSS);
 	PSS->EssenceFlow = SS.EssenceFlowLevel * GSS->EssenceFlowPerLevel;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceFlow, PSS);
 	PSS->EssenceVessel = (SS.EssenceVesselLevel * GSS->EssenceVesselPerLevel) + (PSS->EssenceVessel - 3000);
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceVessel, PSS);
 
 	PSS->AuthSetPlayerForm(SS.PlayerForm);
 	PSS->SetEssence(SS.Essence);
 	PSS->AnalyzedEntities = SS.AnalyzedEntities;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedEntities, PSS);
 	PSS->AnalyzedItems = SS.AnalyzedItems;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedItems, PSS);
 }
 
 AResource* AGMS::SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD)

@@ -10,7 +10,7 @@ UHungerComponent::UHungerComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
-	PrimaryComponentTick.TickInterval = 1.0f;
+	PrimaryComponentTick.TickInterval = 1.5f;
 	SetIsReplicatedByDefault(true);
 }
 

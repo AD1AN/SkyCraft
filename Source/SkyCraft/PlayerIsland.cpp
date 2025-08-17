@@ -1,8 +1,7 @@
 ﻿// ADIAN Copyrighted
 
 #include "PlayerIsland.h"
-
-#include "AdianFL.h"
+#include "GSS.h"
 #include "PSS.h"
 #include "Components/InventoryComponent.h"
 #include "Enums/ItemType.h"
@@ -23,8 +22,8 @@ APlayerIsland::APlayerIsland()
 
 void APlayerIsland::BeginPlay()
 {
+	GSS = GetWorld()->GetGameState<AGSS>();
 	Super::BeginPlay();
-	
 }
 
 void APlayerIsland::Tick(float DeltaTime)
@@ -37,25 +36,50 @@ void APlayerIsland::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-FEssence APlayerIsland::SetEssence_Implementation(FEssence NewEssence)
+int32 APlayerIsland::OverrideEssence_Implementation(int32 NewEssence)
 {
 	ensureAlways(PSS);
-	if (!IsValid(PSS)) return FEssence();
-	return PSS->Essence = NewEssence;
+	if (!IsValid(PSS)) return 0;
+	
+	return PSS->SetEssence(NewEssence);
 }
 
-FEssence APlayerIsland::GetEssence_Implementation()
+int32 APlayerIsland::FetchEssence_Implementation()
 {
 	ensureAlways(PSS);
-	if (!IsValid(PSS)) return FEssence();
-	return PSS->Essence;
+	if (!IsValid(PSS)) return 0;
+	
+	return PSS->GetEssence();
 }
 
-FEssence APlayerIsland::AddEssence_Implementation(FEssence AddEssence)
+void APlayerIsland::AddEssence_Implementation(AActor* Sender, int32 AddEssence, bool& bFullyAdded)
 {
+	// This code identical/similar in other Player forms.
+	bFullyAdded = false;
 	ensureAlways(PSS);
-	if (!IsValid(PSS)) return FEssence();
-	return UAdianFL::AddEssence(PSS->Essence, AddEssence);
+	if (!IsValid(PSS)) return;
+	
+	int32 CombinedEssence = PSS->GetEssence() + AddEssence;
+	if (CombinedEssence > PSS->EssenceVessel)
+	{
+		if (Sender && Sender->Implements<UEssenceInterface>())
+		{
+			int32 SenderEssence = IEssenceInterface::Execute_FetchEssence(Sender);
+			SenderEssence -= AddEssence;
+			
+			int32 ReturnEssence = (CombinedEssence - PSS->EssenceVessel) + SenderEssence;
+			IEssenceInterface::Execute_OverrideEssence(Sender, ReturnEssence);
+		}
+		
+		bFullyAdded = false;
+		PSS->SetEssence(PSS->EssenceVessel);
+		PSS->Client_ActionWarning(FText::FromStringTable(GSS->ST_Warnings, TEXT("VesselIsFull")));
+	}
+	else
+	{
+		bFullyAdded = true;
+		PSS->SetEssence(PSS->GetEssence() + AddEssence);
+	}
 }
 
 void APlayerIsland::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

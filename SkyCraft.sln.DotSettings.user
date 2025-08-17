@@ -1,6 +1,7 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003ADylohid_002Easm_002Fl_003A_002E_002E_003F_002E_002E_003FUsers_003FADIAN_003FAppData_003FLocal_003FTemp_003FSandboxFiles_003FZogabag_003FDylohid_002Easm/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003ANozugyc_002Easm_002Fl_003A_002E_002E_003F_002E_002E_003FUsers_003FADIAN_003FAppData_003FLocal_003FTemp_003FSandboxFiles_003FRolocub_003FNozugyc_002Easm/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003ARaciqel_002Easm_002Fl_003A_002E_002E_003F_002E_002E_003FUsers_003FADIAN_003FAppData_003FLocal_003FTemp_003FSandboxFiles_003FTabekoj_003FRaciqel_002Easm/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AWupemot_002Easm_002Fl_003A_002E_002E_003F_002E_002E_003FUsers_003FADIAN_003FAppData_003FLocal_003FTemp_003FSandboxFiles_003FXywehyr_003FWupemot_002Easm/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=CDDB2AD1_002D9BFD_002D3B1F_002D9AF3_002DEB8B020F996B_002Fdl_003ASource_003A_002E_002E_003F_002E_002E_003FSource_002Fd_003ASkyCraft_002Fd_003AStructs_002Ff_003ASS_005FIslandStatic_002Eh/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=CDDB2AD1_002D9BFD_002D3B1F_002D9AF3_002DEB8B020F996B_002Fdl_003ASource_003A_002E_002E_003F_002E_002E_003FSource_002Fd_003ASkyCraft_002Ff_003ANPC_002Ecpp/@EntryIndexedValue">ForceIncluded</s:String>
@@ -11,6 +12,7 @@
 	
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppConstParameterInDeclaration/@EntryIndexedValue"></s:String>
 	<s:Boolean x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=CppConstParameterInDeclaration/@EntryIndexRemoved">True</s:Boolean>
+	<s:String x:Key="/Default/CodeInspection/PencilsConfiguration/ActualSeverity/@EntryValue">INFO</s:String>
 	
 	
 	

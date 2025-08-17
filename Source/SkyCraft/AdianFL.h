@@ -234,4 +234,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "PlayerFormInterface")
 	static UPARAM(DisplayName="Inventory") UInventoryComponent* GetPlayerInventory(const AActor* Actor);
+
+	
 };

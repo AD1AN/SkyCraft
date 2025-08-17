@@ -148,10 +148,10 @@ struct FEntityConfig
 	EDropEssenceAmount DropEssenceAmount = EDropEssenceAmount::MinMax;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::MinMax", EditConditionHides))
-	FEssenceMinMax DropEssenceMinMax;
+	FIntMinMax DropEssenceMinMax;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::Static", EditConditionHides))
-	FEssence DropEssenceStatic;
+	int32 DropEssenceStatic;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence", EditConditionHides))
 	EDropEssenceLocationType DropEssenceLocationType = EDropEssenceLocationType::ActorOriginPlusZ;
@@ -185,7 +185,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta=(CompactNodeTitle="Health")) int32 GetHealth() const { return Health; }
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHealth(int32 NewHealth);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void LoadHealth(int32 NewHealth);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void OverrideHealth(int32 NewHealth);
 
 	// ~Begin Stats
 private:

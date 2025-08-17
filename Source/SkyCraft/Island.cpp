@@ -1003,7 +1003,7 @@ TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
 		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
 		SpawnedRes->bLoaded = true;
 		SpawnedRes->Island = this;
-		SpawnedRes->EntityComponent->LoadHealth(SS_Resource.Health);
+		SpawnedRes->EntityComponent->OverrideHealth(SS_Resource.Health);
 		SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
 		SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
 		SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
@@ -1053,7 +1053,7 @@ void AIsland::LoadBuildings()
 		SpawnedBuilding->ID = SS_Building.ID;
 		SpawnedBuilding->AttachIsland = this;
 		SpawnedBuilding->FinishSpawning(BuildingTransform);
-		SpawnedBuilding->EntityComponent->LoadHealth(SS_Building.Health);
+		SpawnedBuilding->EntityComponent->OverrideHealth(SS_Building.Health);
 		SpawnedBuilding->LoadBuildingParameters(SS_Building.Parameters);
 		BuildingsMap.Add(SS_Building.ID, SpawnedBuilding);
 	}

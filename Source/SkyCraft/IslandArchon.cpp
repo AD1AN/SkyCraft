@@ -45,13 +45,6 @@ void AIslandArchon::StartIsland()
 	InitialGenerateComplete(_ID);
 }
 
-void AIslandArchon::AuthSetCrystal(bool newCrystal)
-{
-	Crystal = newCrystal;
-	OnRep_Crystal();
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIslandArchon, Crystal, this);
-}
-
 void AIslandArchon::SetIslandSize(float NewSize)
 {
 	PreviousIslandSize = IslandSize;
@@ -160,24 +153,6 @@ void AIslandArchon::OnRep_Crystal_Implementation()
 	OnCrystal.Broadcast();
 }
 
-void AIslandArchon::AuthSetArchonPSS(APSS* NewArchonPSS)
-{
-	ArchonPSS = NewArchonPSS;
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIslandArchon, ArchonPSS, this);
-}
-
-void AIslandArchon::AuthSetArchonSteamID(FString SteamID)
-{
-	ArchonSteamID = SteamID;
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIslandArchon, ArchonSteamID, this);
-	OnRep_ArchonSteamID();
-}
-
-void AIslandArchon::OnRep_ArchonSteamID()
-{
-	OnArchonSteamID.Broadcast();
-}
-
 void AIslandArchon::AuthAddDenizen(APSS* Denizen)
 {
 	if (!IsValid(Denizen)) return;
@@ -218,6 +193,7 @@ void AIslandArchon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
+	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandArchon, Essence, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandArchon, Crystal, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandArchon, ArchonPSS, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandArchon, ArchonSteamID, Params);

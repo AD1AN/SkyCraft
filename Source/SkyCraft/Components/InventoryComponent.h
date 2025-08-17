@@ -70,6 +70,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure) bool Craftable(TArray<FSlot> RequiredSlots);
 	UFUNCTION(BlueprintCallable, BlueprintPure) bool HasEmptySlots(int32 NumEmptySlots = 1);
 	// GetEmptySlots() - maybe in the future, returns empty slots indexes.
+	UFUNCTION(BlueprintCallable, BlueprintPure) bool IsAllSlotsEmpty();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable) void AuthCraft(UDA_Craft* DA_Craft);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) bool TransferInventory(UInventoryComponent* ToInventory);

@@ -7,6 +7,6 @@ enum class EPlayerForm : uint8
 {
 	Island,
 	Normal,
-	Spirit,
+	Phantom,
 	Dead
 };

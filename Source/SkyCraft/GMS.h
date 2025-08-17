@@ -11,7 +11,6 @@
 
 class APSS;
 class APCS;
-struct FEssence;
 class APlayerNormal;
 class AResource;
 class AGSS;

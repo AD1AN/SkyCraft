@@ -7,6 +7,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
 #include "Structs/FX.h"
+#include "Internationalization/StringTable.h"
 
 AGSS::AGSS(){}
 
@@ -41,6 +42,11 @@ void AGSS::BeginPlay()
 {
 	Super::BeginPlay();
 	GIS = GetWorld()->GetGameInstance<UGIS>();
+
+	if (StringTableWarnings.IsValid())
+	{
+		ST_Warnings = FName(StringTableWarnings.ToSoftObjectPath().GetAssetPath().ToString());
+	}
 }
 
 void AGSS::SetHostPlayer(APSS* Host)

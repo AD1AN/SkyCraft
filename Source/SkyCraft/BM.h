@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AdianActor.h"
 #include "AdianFL.h"
 #include "Island.h"
 #include "GameFramework/Actor.h"
@@ -26,7 +27,7 @@ struct FArrayMaterials
 };
 
 UCLASS()
-class SKYCRAFT_API ABM : public AActor, public IIslandInterface, public IEntityInterface
+class SKYCRAFT_API ABM : public AAdianActor, public IIslandInterface, public IEntityInterface
 {
 	GENERATED_BODY()
 	
@@ -46,7 +47,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated) uint8 Grounded = 0;
 	UFUNCTION(BlueprintAuthorityOnly, BlueprintCallable) void AuthSetGrounded(uint8 NewGrounded);
 
-	virtual void BeginPlay() override;
+	virtual void ActorBeginPlay_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) FBuildingParameters SaveBuildingParameters();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) bool LoadBuildingParameters(FBuildingParameters BuildingParameters);

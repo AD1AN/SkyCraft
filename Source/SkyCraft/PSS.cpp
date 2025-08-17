@@ -1,8 +1,6 @@
 // ADIAN Copyrighted
 
 #include "PSS.h"
-#include "PlayerNormal.h"
-#include "PlayerSpirit.h"
 #include "RepHelpers.h"
 #include "Net/UnrealNetwork.h"
 #include "SkyCraft/Components/InteractComponent.h"
@@ -26,42 +24,9 @@ void APSS::BeginPlay()
 	GSS = GetWorld()->GetGameState<AGSS>();
 }
 
-void APSS::AuthSetSteamID(FString NewSteamID)
+int32 APSS::SetEssence(int32 NewEssence)
 {
-	SteamID = NewSteamID;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, SteamID, this);
-}
-
-void APSS::AuthSetCasta(ECasta NewCasta)
-{
-	Casta = NewCasta;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Casta, this);
-}
-
-void APSS::AuthSetIslandArchon(AIslandArchon* NewIslandArchon)
-{
-	IslandArchon = NewIslandArchon;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, IslandArchon, this);
-	OnRep_IslandArchon();
-}
-
-void APSS::OnRep_IslandArchon()
-{
-	OnIslandArchon.Broadcast();
-}
-
-EPlayerForm APSS::AuthSetPlayerForm(EPlayerForm NewPlayerForm)
-{
-	PlayerForm = NewPlayerForm;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, PlayerForm, this);
-	return PlayerForm;
-}
-
-FEssence& APSS::SetEssence(FEssence NewEssence)
-{
-	Essence.R = FMath::Clamp(NewEssence.R, 0, EssenceVessel/3);
-	Essence.G = FMath::Clamp(NewEssence.G, 0, EssenceVessel/3);
-	Essence.B = FMath::Clamp(NewEssence.B, 0, EssenceVessel/3);
+	Essence = FMath::Clamp(NewEssence, 0, EssenceVessel);
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Essence, this);
 	OnRep_Essence();
 	return Essence;
@@ -118,20 +83,26 @@ void APSS::Client_InterruptActor_Implementation(AActor* InterruptActor, EInterru
 void APSS::StatLevelUp(EStatLevel StatLevel)
 {
 	FText NoEssence = LOCTEXT("NoEssence", "Not enough essence");
-	if (Essence.Total() <= 0)
+	FText StatMaxLevel = LOCTEXT("StatMaxLevel", "Max level reached");
+	if (Essence <= 0)
 	{
 		Client_ActionWarning(NoEssence);
 		return;
 	}
 	
 	int32 RequireEssence;
-	FEssence NewEssence;
+	int32 NewEssence;
 	
 	switch (StatLevel)
 	{
 	case EStatLevel::Stamina:
+		if (StaminaLevel >= GSS->StaminaMaxLevel)
+		{
+			Client_ActionWarning(StatMaxLevel);
+			return;
+		}
 		RequireEssence = GSS->EssenceRequireForLevel * StaminaLevel;
-		if (RequireEssence > Essence.Total())
+		if (RequireEssence > Essence)
 		{
 			Client_ActionWarning(NoEssence);
 			return;
@@ -143,8 +114,13 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		break;
 		
 	case EStatLevel::Strength:
+		if (StrengthLevel >= GSS->StrengthMaxLevel)
+		{
+			Client_ActionWarning(StatMaxLevel);
+			return;
+		}
 		RequireEssence = GSS->EssenceRequireForLevel * StrengthLevel;
-		if (RequireEssence > Essence.Total())
+		if (RequireEssence > Essence)
 		{
 			Client_ActionWarning(NoEssence);
 			return;
@@ -156,8 +132,13 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		break;
 		
 	case EStatLevel::EssenceFlow:
+		if (EssenceFlowLevel >= GSS->EssenceFlowMaxLevel)
+    	{
+    		Client_ActionWarning(StatMaxLevel);
+    		return;
+    	}
 		RequireEssence = GSS->EssenceRequireForLevel * EssenceFlowLevel;
-		if (RequireEssence > Essence.Total())
+		if (RequireEssence > Essence)
 		{
 			Client_ActionWarning(NoEssence);
 			return;
@@ -170,7 +151,7 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		
 	case EStatLevel::EssenceVessel:
 		RequireEssence = GSS->EssenceRequireForLevel * EssenceVesselLevel;
-		if (RequireEssence > Essence.Total())
+		if (RequireEssence > Essence)
 		{
 			Client_ActionWarning(NoEssence);
 			return;
@@ -182,86 +163,6 @@ void APSS::StatLevelUp(EStatLevel StatLevel)
 		break;
 		
 	default: break;
-	}
-}
-
-APawn* APSS::GetControlledPawn()
-{
-	return GetPlayerController()->GetPawn();
-}
-
-void APSS::OnRep_AnalyzedEntities() const
-{
-	OnAnalyzedEntities.Broadcast();
-}
-
-void APSS::OnRep_AnalyzedItems() const
-{
-	OnAnalyzedItems.Broadcast();
-}
-
-void APSS::OnRep_LearnedCraftItems() const
-{
-	OnLearnedCraftItems.Broadcast();
-}
-
-void APSS::AuthAddAnalyzedEntities(UDA_AnalyzeEntity* AddEntity)
-{
-	AnalyzedEntities.Add(AddEntity);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedEntities, this);
-	OnRep_AnalyzedEntities();
-}
-
-void APSS::AuthSetAnalyzedEntities(TArray<UDA_AnalyzeEntity*> NewEntities)
-{
-	AnalyzedEntities = NewEntities;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedEntities, this);
-	OnRep_AnalyzedEntities();
-}
-
-void APSS::AuthAddAnalyzedItems(UDA_Item* AddItem)
-{
-	AnalyzedItems.Add(AddItem);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedItems, this);
-	OnRep_AnalyzedItems();
-}
-
-void APSS::AuthSetAnalyzedItems(TArray<UDA_Item*> NewItems)
-{
-	AnalyzedItems = NewItems;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedItems, this);
-	OnRep_AnalyzedItems();
-}
-
-void APSS::AuthAddLearnedCraftItems(UDA_Craft* Adding)
-{
-	LearnedCraftItems.Add(Adding);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, LearnedCraftItems, this);
-	OnRep_LearnedCraftItems();
-}
-
-void APSS::AuthSetLearnedCraftItems(TArray<UDA_Craft*> New)
-{
-	LearnedCraftItems = New;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, LearnedCraftItems, this);
-	OnRep_LearnedCraftItems();
-}
-
-APawn* APSS::GetPlayerForm()
-{
-	APlayerNormal* InPlayerNormal;
-	APlayerSpirit* InPlayerSpirit;
-	switch (PlayerForm)
-	{
-		case EPlayerForm::Normal:
-			InPlayerNormal = Cast<APlayerNormal>(GetPlayerController()->GetPawn());
-			ensureAlways(InPlayerNormal);
-			return InPlayerNormal;
-		case EPlayerForm::Spirit:
-			InPlayerSpirit = Cast<APlayerSpirit>(GetPlayerController()->GetPawn());
-			ensureAlways(InPlayerSpirit);
-			return InPlayerSpirit;
-			default: return nullptr;
 	}
 }
 

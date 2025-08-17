@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Structs/Essence.h"
 #include "EssenceNumbers.generated.h"
 
 class UWidgetComponent;
@@ -20,7 +19,8 @@ public:
 	AEssenceNumbers();
 
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) AActor* InitialAttachTo = nullptr;
-	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FEssence Essence;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 Essence;
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FLinearColor EssenceColor;
 	
 private:
 	virtual void BeginPlay() override;

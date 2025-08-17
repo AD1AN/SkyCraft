@@ -3,18 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "RepHelpers.h"
 #include "Enums/Casta.h"
 #include "Enums/InteractKey.h"
 #include "Enums/InterruptedBy.h"
 #include "Enums/PlayerForm.h"
 #include "GameFramework/PlayerState.h"
 #include "Structs/CharacterBio.h"
-#include "Structs/Essence.h"
 #include "PSS.generated.h"
 
 class APlayerIsland;
 class APlayerNormal;
-class APlayerSpirit;
+class APlayerPhantom;
 class APlayerDead;
 class AGSS;
 class UDA_Craft;
@@ -51,58 +51,68 @@ public:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(Replicated, BlueprintReadOnly) FString SteamID = "";
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetSteamID(FString NewSteamID);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthSetSteamID(FString NewSteamID) { REP_SET(SteamID, NewSteamID); }
 	
 	UPROPERTY(Replicated, BlueprintReadWrite) FCharacterBio CharacterBio;
 
 	UPROPERTY(Replicated, BlueprintReadOnly) ECasta Casta = ECasta::Archon;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetCasta(ECasta NewCasta);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthSetCasta(ECasta NewCasta) { REP_SET(Casta, NewCasta); }
 	
 	UPROPERTY(ReplicatedUsing=OnRep_IslandArchon, BlueprintReadOnly) AIslandArchon* IslandArchon = nullptr;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetIslandArchon(AIslandArchon* NewIslandArchon);
-	UPROPERTY(BlueprintAssignable) FOnIslandArchon OnIslandArchon;
-	UFUNCTION() void OnRep_IslandArchon();
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthSetIslandArchon(AIslandArchon* NewIslandArchon) { REP_SET(IslandArchon, NewIslandArchon); }
+	UPROPERTY(BlueprintAssignable)FOnIslandArchon OnIslandArchon;
+	UFUNCTION() void OnRep_IslandArchon() { OnIslandArchon.Broadcast(); }
 	
 	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Island;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) EPlayerForm AuthSetPlayerForm(EPlayerForm NewPlayerForm);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	EPlayerForm AuthSetPlayerForm(EPlayerForm NewPlayerForm)
+	{
+		REP_SET(PlayerForm, NewPlayerForm);
+		return PlayerForm;
+	}
 
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerIsland* PlayerIsland = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerNormal* PlayerNormal = nullptr;
-	UPROPERTY(Replicated, BlueprintReadWrite) APlayerSpirit* PlayerSpirit = nullptr;
+	UPROPERTY(Replicated, BlueprintReadWrite) APlayerPhantom* PlayerSpirit = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerDead* PlayerDead = nullptr;
 
 	UPROPERTY(BlueprintAssignable) FOnEssence OnEssence;
-	UPROPERTY(ReplicatedUsing=OnRep_Essence, BlueprintReadOnly) FEssence Essence; // Set via SetEssence.
+private:
+	UPROPERTY(ReplicatedUsing=OnRep_Essence) int32 Essence;
 	UFUNCTION() void OnRep_Essence() { OnEssence.Broadcast(); }
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) FEssence& SetEssence(FEssence NewEssence);
 
-	// ~Begin Additional Stats
-	UPROPERTY(BlueprintReadWrite, Replicated) int32 StaminaMax = 100;
-	UPROPERTY(BlueprintReadWrite, Replicated) int32 Strength = 1;
-	UPROPERTY(BlueprintReadWrite, Replicated) int32 EssenceFlow = 1;
-	UPROPERTY(BlueprintReadWrite, Replicated) int32 EssenceVessel = 3000;
-	// ~End Additional Stats
-	
-	// ~Begin Forma Enhancement
+public:
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta=(CompactNodeTitle="E")) int32 GetEssence() { return Essence; }
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) int32 SetEssence(int32 NewEssence);
+
+	// ~BEGIN: Enhancement Stats
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnStatEnhanced OnStatEnhanced;
 	
+	UPROPERTY(BlueprintReadWrite, Replicated) int32 StaminaMax = 100;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_StaminaLevel) int32 StaminaLevel = 1;
 	UFUNCTION() void OnRep_StaminaLevel() { OnStatEnhanced.Broadcast(EStatLevel::Stamina); }
 	
+	UPROPERTY(BlueprintReadWrite, Replicated) int32 Strength = 1;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_StrengthLevel) int32 StrengthLevel = 1;
 	UFUNCTION() void OnRep_StrengthLevel() { OnStatEnhanced.Broadcast(EStatLevel::Strength); }
-
+	
+	UPROPERTY(BlueprintReadWrite, Replicated) int32 EssenceFlow = 1;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_EssenceFlowLevel) int32 EssenceFlowLevel = 1;
 	UFUNCTION() void OnRep_EssenceFlowLevel() { OnStatEnhanced.Broadcast(EStatLevel::EssenceFlow); }
 	
+	UPROPERTY(BlueprintReadWrite, Replicated) int32 EssenceVessel = 3000;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_EssenceVesselLevel) int32 EssenceVesselLevel = 1;
 	UFUNCTION() void OnRep_EssenceVesselLevel() { OnStatEnhanced.Broadcast(EStatLevel::EssenceVessel); }
-
+	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void StatLevelUp(EStatLevel StatLevel);
-	// ~End Forma Enhancement
+	// ~END: Enhancement Stats
 	
 	// Return the Pawn that is currently controlled.
-	UFUNCTION(BlueprintCallable, BlueprintPure) APawn* GetControlledPawn();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UPARAM(DisplayName="Pawn") APawn* GetControlledPawn() { return GetPlayerController()->GetPawn(); }
 	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnLearnedCraftItems OnLearnedCraftItems;
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnAnalyzedEntities OnAnalyzedEntities;
@@ -114,26 +124,33 @@ public:
 	UPROPERTY(ReplicatedUsing=OnRep_LearnedCraftItems, BlueprintReadWrite)
 	TArray<UDA_Craft*> LearnedCraftItems;
 	
-	UFUNCTION(BlueprintCallable) void OnRep_AnalyzedEntities() const;
-	UFUNCTION(BlueprintCallable) void OnRep_AnalyzedItems() const;
-	UFUNCTION(BlueprintCallable) void OnRep_LearnedCraftItems() const;
+	UFUNCTION(BlueprintCallable) void OnRep_AnalyzedEntities() const { OnAnalyzedEntities.Broadcast(); }
+	UFUNCTION(BlueprintCallable) void OnRep_AnalyzedItems() const { OnAnalyzedItems.Broadcast(); }
+	UFUNCTION(BlueprintCallable) void OnRep_LearnedCraftItems() const { OnLearnedCraftItems.Broadcast(); }
 
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddAnalyzedEntities(UDA_AnalyzeEntity* AddEntity);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetAnalyzedEntities(TArray<UDA_AnalyzeEntity*> NewEntities);
-
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddAnalyzedItems(UDA_Item* AddItem);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetAnalyzedItems(TArray<UDA_Item*> NewItems);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthAddAnalyzedEntities(UDA_AnalyzeEntity* AddEntity) { REP_ADD(AnalyzedEntities, AddEntity); }
 	
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddLearnedCraftItems(UDA_Craft* Adding);
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetLearnedCraftItems(TArray<UDA_Craft*> New);
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthSetAnalyzedEntities(TArray<UDA_AnalyzeEntity*> NewEntities) { REP_SET(AnalyzedEntities, NewEntities); }
+
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthAddAnalyzedItems(UDA_Item* AddItem) { REP_ADD(AnalyzedItems, AddItem); }
+	
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthSetAnalyzedItems(TArray<UDA_Item*> NewItems) { REP_SET(AnalyzedItems, NewItems); }
+	
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthAddLearnedCraftItems(UDA_Craft* Adding) { REP_ADD(LearnedCraftItems, Adding); }
+	
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
+	void AuthSetLearnedCraftItems(TArray<UDA_Craft*> New) { REP_SET(LearnedCraftItems, New); }
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void Server_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS);
 
 	UFUNCTION(Client, Reliable) // DO NOT CALL, only for calling from Server_Interrupt
 	void Client_InterruptActor(AActor* InterruptActor, EInterruptedBy InterruptedBy, EInteractKey InteractKey, APawn* Pawn, APSS* PSS);
-
-	UFUNCTION(BlueprintCallable) APawn* GetPlayerForm();
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, meta=(AutoCreateRefTerm="Text"))
 	void ActionWarning(const FText& Text);

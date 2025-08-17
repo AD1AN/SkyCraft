@@ -21,6 +21,7 @@ public:
 
 	APlayerIsland();
 	
+	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
 	UPROPERTY(Replicated, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
 
 	virtual void BeginPlay() override;
@@ -34,9 +35,9 @@ private:
 	// ~End IPlayerFormInterface
 
 	// ~Begin IEssenceInterface
-	virtual FEssence SetEssence_Implementation(FEssence NewEssence) override;
-	virtual FEssence GetEssence_Implementation() override;
-	virtual FEssence AddEssence_Implementation(FEssence AddEssence) override;
-	virtual bool DoesConsumeEssence_Implementation(bool& bIsLocalLogic) override { return false; }
+	virtual int32 OverrideEssence_Implementation(int32 NewEssence) override;
+	virtual int32 FetchEssence_Implementation() override;
+	virtual void AddEssence_Implementation(AActor* Sender, int32 AddEssence, bool& bFullyAdded) override;
+	virtual bool DoesConsumeEssenceActor_Implementation() override { return false; }
 	// ~End IEssenceInterface
 };

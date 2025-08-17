@@ -10,7 +10,6 @@
 #include "Interfaces/EssenceInterface.h"
 #include "Interfaces/IslandInterface.h"
 #include "Interfaces/PlayerFormInterface.h"
-#include "Structs/Essence.h"
 #include "PlayerNormal.generated.h"
 
 class UInventoryComponent;
@@ -34,7 +33,6 @@ class SKYCRAFT_API APlayerNormal : public AAdianCharacter, public IPlayerFormInt
 {
 	GENERATED_BODY()
 public:
-	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UEntityComponent> EntityComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UHealthRegenComponent> HealthRegenComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UHungerComponent> HungerComponent;
@@ -46,6 +44,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Feet;
 	
 	APlayerNormal(const FObjectInitializer& ObjectInitializer);
+
+	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Island)
 	AIsland* Island = nullptr; // The island under feet. Changes on SetBase().
@@ -106,10 +106,10 @@ private:
 	// ~End IPlayerFormInterface
 
 	// ~Begin IEssenceInterface
-	virtual FEssence SetEssence_Implementation(FEssence NewEssence) override;
-	virtual FEssence GetEssence_Implementation() override;
-	virtual FEssence AddEssence_Implementation(FEssence AddEssence) override;
-	virtual bool DoesConsumeEssence_Implementation(bool& bIsLocalLogic) override { return true; }
+	virtual int32 OverrideEssence_Implementation(int32 NewEssence) override;
+	virtual int32 FetchEssence_Implementation() override;
+	virtual void AddEssence_Implementation(AActor* Sender, int32 AddEssence, bool& bFullyAdded) override;
+	virtual bool DoesConsumeEssenceActor_Implementation() override { return true; }
 	// ~End IEssenceInterface
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

@@ -47,10 +47,15 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) bool CheatsEnabled = false;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceRequireForLevel = 1000;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StrengthPerLevel = 1;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StaminaPerLevel = 1;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StrengthPerLevel = 1;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceFlowPerLevel = 1;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceVesselPerLevel = 3000;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StaminaMaxLevel = 1000;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StrengthMaxLevel = 1000;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceFlowMaxLevel = 100;
 	// ~END: World Settings
 
 	virtual void BeginPlay() override;
@@ -69,6 +74,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") USoundAttenuation* NormalAttenuationClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") USoundAttenuation* BigAttenuationClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class APlayerNormal> PlayerNormalClass = nullptr;
+private:
+	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSoftObjectPtr<class UStringTable> StringTableWarnings = nullptr;
+public:
+	FName ST_Warnings;
 	// ~END: Blueprint Classes
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedPlayers);

@@ -8,6 +8,7 @@
 #include "SkyCraft/AdianFL.h"
 #include "SkyCraft/DroppedItem.h"
 #include "Net/UnrealNetwork.h"
+#include "SkyCraft/BM.h"
 #include "SkyCraft/DamageNumbers.h"
 #include "SkyCraft/GIS.h"
 #include "SkyCraft/GSS.h"
@@ -16,6 +17,8 @@
 #include "SkyCraft/RepHelpers.h"
 #include "SkyCraft/Damage.h"
 #include "SkyCraft/EssenceActor.h"
+#include "SkyCraft/PlayerNormal.h"
+#include "SkyCraft/PSS.h"
 #include "SkyCraft/DataAssets/DA_EntityEffect.h"
 #include "SkyCraft/Interfaces/EntityInterface.h"
 
@@ -37,9 +40,9 @@ void UEntityComponent::AfterActorBeginPlay_Implementation()
 	Super::AfterActorBeginPlay_Implementation();
 	
 	// If health's is not loaded then set by config
-	if (HealthMax <= 0) HealthMax = Config.HealthMax;
-	if (Health <= 0) Health = Config.HealthMax;
-}
+	if (HealthMax <= 0) REP_SET(HealthMax, Config.HealthMax);
+	if (Health <= 0) REP_SET(Health, Config.HealthMax);
+}	
 
 void UEntityComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -201,7 +204,7 @@ void UEntityComponent::SetHealth(int32 NewHealth)
 	REP_SET(Health, FMath::Clamp(NewHealth, 0, HealthMax));
 }
 
-void UEntityComponent::LoadHealth(int32 NewHealth)
+void UEntityComponent::OverrideHealth(int32 NewHealth)
 {
 	REP_SET(Health, NewHealth);
 }
@@ -242,7 +245,7 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 	ensureAlways(DamageInfo.DA_Damage);
 	if (!DamageInfo.DA_Damage) return;
 
-	if (DamageInfo.DA_Damage->HitMass > 0 && GetOwner()->IsA(ACharacter::StaticClass()))
+	if (GetOwner()->IsA(ACharacter::StaticClass()) && DamageInfo.DA_Damage->HitMass > 0)
 	{
 		ACharacter* Character = Cast<ACharacter>(GetOwner());
 		float CharacterMass = Character->GetCapsuleComponent()->GetBodyInstance()->GetBodyMass();
@@ -288,6 +291,17 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 	{
 		DamageTaken = Config.HealthMax * DamageTaken / 100;
 	}
+
+	// TODO: Need a better system for handling Strength for PlayerNormal.
+	if (DamageInfo.EntityDealer && DamageInfo.EntityDealer->IsA(APlayerNormal::StaticClass()))
+	{
+		APlayerNormal* PlayerNormal = Cast<APlayerNormal>(DamageInfo.EntityDealer);
+		
+		// float Multiplier = 1.0f + (PlayerNormal->PSS->Strength * 0.01f);
+		// DamageTaken = FMath::RoundToInt(static_cast<float>(DamageTaken) * Multiplier);
+		
+		DamageTaken += PlayerNormal->PSS->Strength - 1;
+	}
 	
 	if (Config.bInclusiveDamageOnly)
 	{
@@ -316,6 +330,10 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 		if (DamageInfo.DA_Damage->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
 		return;
 	}
+
+	// Diminishing return with K = 300
+	float ReductionFactor = FMath::Exp(-PhysicalResistance / 300.0f);
+	DamageTaken = FMath::RoundToInt(static_cast<float>(DamageTaken) * ReductionFactor);
 	
 	SetHealth(Health - DamageTaken);
 	Multicast_OnDamage(DamageInfo, DamageTaken);
@@ -389,16 +407,14 @@ AEssenceActor* UEntityComponent::DroppingEssence(ACharacter* Character, FVector 
 	}
 	else EssenceTransform.SetLocation(OverrideLocation);
 
-	FEssence FinalEssence;
+	int32 FinalEssence;
 	if (Config.DropEssenceAmount == EDropEssenceAmount::MinMax)
 	{
-		FinalEssence.R = FMath::RandRange(Config.DropEssenceMinMax.R.Min, Config.DropEssenceMinMax.R.Max);
-		FinalEssence.G = FMath::RandRange(Config.DropEssenceMinMax.G.Min, Config.DropEssenceMinMax.G.Max);
-		FinalEssence.B = FMath::RandRange(Config.DropEssenceMinMax.B.Min, Config.DropEssenceMinMax.B.Max);
+		FinalEssence = FMath::RandRange(Config.DropEssenceMinMax.Min, Config.DropEssenceMinMax.Max);
 	}
 	else FinalEssence = Config.DropEssenceStatic;
 
-	if (UAdianFL::EssenceTotal(FinalEssence) > 0)
+	if (FinalEssence > 0)
 	{
 		AEssenceActor* EssenceActor = GetWorld()->SpawnActorDeferred<AEssenceActor>(GetGSS()->EssenceActorClass, EssenceTransform);
 		EssenceActor->Essence = FinalEssence;

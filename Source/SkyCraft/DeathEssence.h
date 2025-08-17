@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Structs/Essence.h"
 #include "DeathEssence.generated.h"
 
 class UNiagaraComponent;
@@ -19,7 +18,7 @@ public:
 	
 	ADeathEssence();
 
-	UPROPERTY() FEssence Essence;
+	UPROPERTY() int32 Essence;
 	UPROPERTY() ACharacter* Character = nullptr;
 	UPROPERTY() AActor* ConsumingActor = nullptr;
 	

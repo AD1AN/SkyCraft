@@ -3,6 +3,7 @@
 #include "PlayerNormal.h"
 
 #include "AdianFL.h"
+#include "GSS.h"
 #include "Island.h"
 #include "PSS.h"
 #include "Components/EntityComponent.h"
@@ -80,6 +81,8 @@ void APlayerNormal::OnRep_Island()
 void APlayerNormal::ActorBeginPlay_Implementation()
 {
 	Super::ActorBeginPlay_Implementation();
+	GSS = GetWorld()->GetGameState<AGSS>();
+	
 	if (HasAuthority())
 	{
 		EntityComponent->HealthMax = EntityComponent->Config.HealthMax; // Because of InitialUpdateEquipmentSlots().
@@ -269,25 +272,49 @@ USkeletalMeshComponent* APlayerNormal::GetEquipmentMeshComponent(int32 SlotIndex
 	}
 }
 
-FEssence APlayerNormal::SetEssence_Implementation(FEssence NewEssence)
+int32 APlayerNormal::OverrideEssence_Implementation(int32 NewEssence)
 {
 	ensureAlways(PSS);
-	if (!IsValid(PSS)) return FEssence();
+	if (!IsValid(PSS)) return 0;
+	PSS->Client_ActionWarning(FText::FromStringTable(GSS->ST_Warnings, TEXT("VesselIsFull")));
 	return PSS->SetEssence(NewEssence);
 }
 
-FEssence APlayerNormal::GetEssence_Implementation()
+int32 APlayerNormal::FetchEssence_Implementation()
 {
 	ensureAlways(PSS);
-	if (!IsValid(PSS)) return FEssence();
-	return PSS->Essence;
+	if (!IsValid(PSS)) return 0;
+	return PSS->GetEssence();
 }
 
-FEssence APlayerNormal::AddEssence_Implementation(FEssence AddEssence)
+void APlayerNormal::AddEssence_Implementation(AActor* Sender, int32 AddEssence, bool& bFullyAdded)
 {
+	// This code identical/similar in other Player forms.
+	bFullyAdded = false;
 	ensureAlways(PSS);
-	if (!IsValid(PSS)) return FEssence();
-	return PSS->SetEssence(UAdianFL::AddEssence(PSS->Essence, AddEssence));
+	if (!IsValid(PSS)) return;
+	
+	int32 CombinedEssence = PSS->GetEssence() + AddEssence;
+	if (CombinedEssence > PSS->EssenceVessel)
+	{
+		if (Sender && Sender->Implements<UEssenceInterface>())
+		{
+			int32 SenderEssence = IEssenceInterface::Execute_FetchEssence(Sender);
+			SenderEssence -= AddEssence;
+		
+			int32 ReturnEssence = (CombinedEssence - PSS->EssenceVessel) + SenderEssence;
+			IEssenceInterface::Execute_OverrideEssence(Sender, ReturnEssence);
+		}
+		
+		bFullyAdded = false;
+		PSS->SetEssence(PSS->EssenceVessel);
+		PSS->Client_ActionWarning(FText::FromStringTable(GSS->ST_Warnings, TEXT("VesselIsFull")));
+	}
+	else
+	{
+		bFullyAdded = true;
+		PSS->SetEssence(PSS->GetEssence() + AddEssence);
+	}
 }
 
 void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
