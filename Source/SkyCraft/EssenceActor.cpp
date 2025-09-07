@@ -109,6 +109,7 @@ void AEssenceActor::Multicast_SpawnDeathEssence_Implementation(ACharacter* Chara
 	SpawnedDeathEssence->Character = Character;
 	SpawnedDeathEssence->ConsumingActor = this;
 	SpawnedDeathEssence->Essence = Essence;
+	SpawnedDeathEssence->EssenceColor = EssenceColor;
 	SpawnedDeathEssence->FinishSpawning(SpawnTransform);
 }
 

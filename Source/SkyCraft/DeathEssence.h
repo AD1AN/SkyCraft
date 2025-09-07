@@ -19,6 +19,7 @@ public:
 	ADeathEssence();
 
 	UPROPERTY() int32 Essence;
+	UPROPERTY() FLinearColor EssenceColor;
 	UPROPERTY() ACharacter* Character = nullptr;
 	UPROPERTY() AActor* ConsumingActor = nullptr;
 	

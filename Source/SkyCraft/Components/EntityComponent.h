@@ -143,6 +143,9 @@ struct FEntityConfig
 	//==================== Drop Essence ==================//
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	bool bDropEssence = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence", EditConditionHides))
+	FLinearColor EssenceColor = FLinearColor::White;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence", EditConditionHides))
 	EDropEssenceAmount DropEssenceAmount = EDropEssenceAmount::MinMax;

@@ -18,10 +18,12 @@ public:
 	
 	AEssenceNumbers();
 
+	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FVector RelativeLocation = FVector::ZeroVector;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) AActor* InitialAttachTo = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 Essence;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FLinearColor EssenceColor;
 	
 private:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 };

@@ -418,6 +418,7 @@ AEssenceActor* UEntityComponent::DroppingEssence(ACharacter* Character, FVector 
 	{
 		AEssenceActor* EssenceActor = GetWorld()->SpawnActorDeferred<AEssenceActor>(GetGSS()->EssenceActorClass, EssenceTransform);
 		EssenceActor->Essence = FinalEssence;
+		EssenceActor->EssenceColor = Config.EssenceColor;
 		if (Character) EssenceActor->Multicast_SpawnDeathEssence(Character);
 		EssenceActor->FinishSpawning(EssenceTransform);
 		return EssenceActor;

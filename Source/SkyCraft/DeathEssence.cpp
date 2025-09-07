@@ -25,7 +25,7 @@ void ADeathEssence::BeginPlay()
 	Super::BeginPlay();
 	NiagaraComponent->OnSystemFinished.AddDynamic(this, &ADeathEssence::OnNiagaraFinished);
 	UNiagaraFunctionLibrary::OverrideSystemUserVariableSkeletalMeshComponent(NiagaraComponent, "SkeletalMesh", Character->GetMesh());
-	// NiagaraComponent->SetVariableLinearColor("EssenceColor", UAdianFL::EssenceToRGB(Essence));
+	NiagaraComponent->SetVariableLinearColor("EssenceColor", EssenceColor);
 	NiagaraComponent->SetActive(true);
 }
 
