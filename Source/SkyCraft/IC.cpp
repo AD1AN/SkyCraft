@@ -40,6 +40,16 @@ void AIC::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
+void AIC::NativeLMB(bool Pressed)
+{
+	LMB_Pressed = Pressed;
+}
+
+void AIC::NativeRMB(bool Pressed)
+{
+	RMB_Pressed = Pressed;
+}
+
 void AIC::AfterCharacterStarted_Implementation()
 {
 	StartItemComponent();

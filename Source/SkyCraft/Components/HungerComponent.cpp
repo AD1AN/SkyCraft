@@ -1,10 +1,13 @@
 // ADIAN Copyrighted
 
 #include "HungerComponent.h"
+
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
 #include "SkyCraft/AdianFL.h"
 #include "SkyCraft/PlayerNormal.h"
+#include "SkyCraft/GSS.h"
 
 UHungerComponent::UHungerComponent()
 {
@@ -31,9 +34,11 @@ void UHungerComponent::SubtractHunger(float InHunger)
 void UHungerComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	if (!GetOwner()->HasAuthority()) return;
 	PlayerNormal = Cast<APlayerNormal>(GetOwner());
+	GSS = GetWorld()->GetGameState<AGSS>();
+	if (!GetOwner()->HasAuthority()) return;
 	ensureAlways(PlayerNormal);
+	ensureAlways(GSS);
 	SetComponentTickEnabled(true);
 }
 
@@ -41,8 +46,10 @@ void UHungerComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	ensureAlways(PlayerNormal);
+	ensureAlways(GSS);
+	if (!GSS) return;
 	if (!PlayerNormal) return;
-	Hunger += 1.0f;
+	Hunger += GSS->PlayerHunger;
 	OnHunger.Broadcast();
 	MARK_PROPERTY_DIRTY_FROM_NAME(UHungerComponent, Hunger, this);
 	if (Hunger >= MaxHunger)
@@ -55,7 +62,27 @@ void UHungerComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 		
 		UAdianFL::DoDamage(PlayerNormal, DamageInfo);
 	}
-	// TODO: stomach growling multicast sound
+	
+	if (Hunger > MaxHunger/1.111f)
+	{
+		CurrentGrowling += PrimaryComponentTick.TickInterval;
+		if (CurrentGrowling >= GrowlingPeriod)
+		{
+			CurrentGrowling = FMath::FRandRange(-1.0f, 1.0f);
+			Multicast_StomachGrowlingSound();
+		}
+	}
+}
+
+void UHungerComponent::Multicast_StomachGrowlingSound_Implementation()
+{
+	ensureAlways(GSS);
+	ensureAlways(PlayerNormal);
+	ensureAlways(StomachGrowlingSound);
+	if (!GSS) return;
+	if (!PlayerNormal) return;
+	if (!StomachGrowlingSound) return;
+	UGameplayStatics::SpawnSoundAttached(StomachGrowlingSound, PlayerNormal->GetRootComponent(), NAME_None, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, true, 1, 1, 0, GSS->NormalAttenuationClass);
 }
 
 void UHungerComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

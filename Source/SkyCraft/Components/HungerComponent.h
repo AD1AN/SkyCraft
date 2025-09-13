@@ -17,6 +17,8 @@ class SKYCRAFT_API UHungerComponent : public UActorComponent
 	UHungerComponent(); 
 public:
 	UPROPERTY() class APlayerNormal* PlayerNormal = nullptr;
+	UPROPERTY() class AGSS* GSS = nullptr;
+	UPROPERTY(EditAnywhere) TObjectPtr<USoundBase> StomachGrowlingSound = nullptr;
 	UPROPERTY(EditAnywhere) UDA_Damage* DA_Damage = nullptr;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCurrentHunger);
@@ -32,6 +34,10 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	float GrowlingPeriod = 8.0f;
+	float CurrentGrowling = 0.0f;
+	UFUNCTION(Unreliable, NetMulticast) void Multicast_StomachGrowlingSound();
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

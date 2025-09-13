@@ -8,7 +8,6 @@
 #include "SkyCraft/AdianFL.h"
 #include "SkyCraft/DroppedItem.h"
 #include "Net/UnrealNetwork.h"
-#include "SkyCraft/BM.h"
 #include "SkyCraft/DamageNumbers.h"
 #include "SkyCraft/GIS.h"
 #include "SkyCraft/GSS.h"
@@ -21,6 +20,7 @@
 #include "SkyCraft/PSS.h"
 #include "SkyCraft/DataAssets/DA_EntityEffect.h"
 #include "SkyCraft/Interfaces/EntityInterface.h"
+#include "GameplayStateTreeModule/Public/Components/StateTreeAIComponent.h"
 
 UEntityComponent::UEntityComponent()
 {
@@ -430,6 +430,19 @@ void UEntityComponent::AuthDie(const FDamageInfo& DamageInfo)
 {
 	if (bDied) return;
 	bDied = true;
+
+	if (GetOwner()->IsA<APawn>())
+	{
+		APawn* OwnerPawn = Cast<APawn>(GetOwner());
+		if (OwnerPawn->GetController())
+		{
+			UStateTreeAIComponent* StateTreeAIComponent = OwnerPawn->GetController()->FindComponentByClass<UStateTreeAIComponent>();
+			if (StateTreeAIComponent)
+			{
+				StateTreeAIComponent->StopLogic("EntityDie");
+			}
+		}
+	}
 
 	Multicast_OnDie(DamageInfo);
 	

@@ -46,6 +46,16 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) uint8 GroundedMax = 15;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) bool CheatsEnabled = false;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float PlayerHunger = 1.0f;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) bool PlayerIslandsCorruption = true; // Corruption = Скверна
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) float PlayerIslandsCorruptionTime = 3600.0f; // Seconds
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float PlayerIslandsCorruptionScale = 1.0f;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) bool WildIslandsCorruption = true; // Corruption on wild Islands on night.
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) uint8 WildIslandsCorruptionCycle = 0; // Cycle of Nights. 0 = Every night corruption.
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float WildIslandsCorruptionScale = 1.0f;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 EssenceRequireForLevel = 1000;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) int32 StaminaPerLevel = 1;

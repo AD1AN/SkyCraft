@@ -23,7 +23,8 @@ public class SkyCraft : ModuleRules
 			"SlateCore",
 			"NavigationSystem",
 			"EnhancedInput",
-			"GameplayTags"
+			"GameplayTags",
+			"GameplayStateTreeModule"
 		});
 		
 		if (Target.bBuildEditor)

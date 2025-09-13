@@ -23,7 +23,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) UDA_Item* DA_Item = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) class UInventoryComponent* Inventory = nullptr; // Auth
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 SlotIndex; // Auth
+	UPROPERTY(BlueprintReadOnly) bool LMB_Pressed = false;
 	UPROPERTY(BlueprintReadWrite, Replicated) bool CanLMB = true;
+	UPROPERTY(BlueprintReadOnly) bool RMB_Pressed = false;
 	UPROPERTY(BlueprintReadWrite) bool CanRMB = true;
 	UPROPERTY(BlueprintReadWrite) bool ComponentStarted = false; // Can only start after character!
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PlayerNormal();
@@ -36,10 +38,12 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void Select();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void Deselect();
+	UFUNCTION(BlueprintCallable) void NativeLMB(bool Pressed);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB(bool Pressed);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB_Tap();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB_HoldStart();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void LMB_HoldStop();
+	UFUNCTION(BlueprintCallable) void NativeRMB(bool Pressed);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void RMB(bool Pressed);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void RMB_Tap();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) void RMB_HoldStart();
