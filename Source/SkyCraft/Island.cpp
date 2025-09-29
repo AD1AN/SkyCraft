@@ -114,7 +114,7 @@ void AIsland::BeginPlay()
 	Super::BeginPlay();
 	if (HasAuthority()) CurrentNMBV = GSS->GMS->NMBV_Use(this);
 	// Read GMS about BeginPlay() order.
-	if (!bIslandArchon) StartIsland();
+	if (!bIslandPlayer) StartIsland();
 }
 
 void AIsland::SpawnCliffsComponents()
@@ -195,7 +195,7 @@ FIslandData AIsland::GenerateIsland()
 	FVector2D FromZeroToOne = FVector2D(0, 1);
 	
 	// Scale parameters by IslandSize
-	if (bIslandArchon)
+	if (bIslandPlayer)
 	{
 		ShapeRadius = 1000 + (IslandSize * 100) * 100;
 		InterpShapePointLength = FMath::GetMappedRangeValueClamped(FVector2D(0,1), FVector2D(275,1050), IslandSize);
@@ -298,7 +298,7 @@ FIslandData AIsland::GenerateIsland()
 	}
 
 	// Add to DeadVerticesMap
-	if (bIslandArchon)
+	if (bIslandPlayer)
 	{
 		int32 Offset = (Resolution) / 2; // For center.
 		for (int32 X = Offset-3; X <= Offset+3; ++X)
@@ -380,7 +380,7 @@ FIslandData AIsland::GenerateIsland()
 	// Interpolate bottom loops with Randomization
 	const int32 BottomVerticesNum = _ID.BottomVertices.Num();
 	float BottomVertexZ;
-	if (bIslandArchon) BottomVertexZ = -ShapeRadius * 1.3f;
+	if (bIslandPlayer) BottomVertexZ = -ShapeRadius * 1.3f;
 	else BottomVertexZ = Seed.FRandRange(-ShapeRadius, -ShapeRadius * 2.5f);
 	for (int32 LoopIndex = 1; LoopIndex <= NumLoops; ++LoopIndex)
 	{
@@ -750,7 +750,7 @@ void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	if (!HasAuthority()) return;
-	if (!bIslandArchon) SaveIsland();
+	if (!bIslandPlayer) SaveIsland();
 	DestroyLODs();
 	for (int32 i = Buildings.Num() - 1; i >= 0; --i)
 	{
@@ -1102,7 +1102,7 @@ void AIsland::SaveIsland()
 		SS_Island.TerrainChunks.Add(FSS_TerrainChunk(TerrainChunk->EditedVertices));
 	}
 	
-	if (bIslandArchon) return; // Do not save IslandArchon in SavedIslands.
+	if (bIslandPlayer) return; // Do not save IslandPlayer in SavedIslands.
 	if (!IsValid(GSS) && !IsValid(GSS->GMS)) return;
 	GSS->GMS->SavedIslands.Add(HashCombine(GetTypeHash(Coords.X),GetTypeHash(Coords.Y)), SS_Island);
 }

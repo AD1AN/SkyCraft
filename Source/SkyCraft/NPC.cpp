@@ -5,6 +5,7 @@
 #include "AdianFL.h"
 #include "Island.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/CorruptionOverlayEffect.h"
 #include "Components/SuffocationComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -17,6 +18,8 @@ ANPC::ANPC()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.TickInterval = 0.1f;
+
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	
 	EntityComponent = CreateDefaultSubobject<UEntityComponent>("EntityComponent");
 	EntityComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
@@ -27,12 +30,27 @@ ANPC::ANPC()
 	SuffocationComponent->PrimaryComponentTick.TickInterval = 15;
 	SuffocationComponent->SuffocationType = ESuffocationType::InstantDestroy;
 
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("AliveNPC"));
 	GetMesh()->SetCollisionProfileName(TEXT("RagdollMesh"));
+}
+
+void ANPC::OnCorruptionOverlayEffectDestroyed(UActorComponent* Component)
+{
+	SpawnWithCorruptionOverlayEffect = nullptr;
 }
 
 void ANPC::ActorBeginPlay_Implementation()
 {
 	Super::ActorBeginPlay_Implementation();
+
+	if (SpawnWithCorruptionOverlayEffect)
+	{
+		UCorruptionOverlayEffect* CorruptionOverlayEffect = NewObject<UCorruptionOverlayEffect>(this, SpawnWithCorruptionOverlayEffect);
+		CorruptionOverlayEffect->RegisterComponent();
+		CorruptionOverlayEffect->SkeletalMeshComponent = GetMesh();
+		CorruptionOverlayEffect->StartOverlay();
+		if (HasAuthority()) CorruptionOverlayEffect->OnComponentDeactivated.AddDynamic(this, &ANPC::OnCorruptionOverlayEffectDestroyed);
+	}
 	
 	if (!HasAuthority()) return;
 	SetActorTickEnabled(true);
@@ -48,7 +66,7 @@ void ANPC::NativeOnDie(const FDamageInfo& DamageInfo)
 {
 	SetActorTickEnabled(false);
 	GetCharacterMovement()->StopMovementImmediately();
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("DeadNPC"));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationCustomMode);
 	
 	GetMesh()->SetSimulatePhysics(true);
@@ -191,4 +209,5 @@ void ANPC::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifeti
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
 	DOREPLIFETIME_WITH_PARAMS_FAST(ANPC, Island, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ANPC, SpawnWithCorruptionOverlayEffect, Params);
 }

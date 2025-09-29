@@ -7,6 +7,10 @@
 #include "GameFramework/Character.h"
 #include "AdianActor.generated.h"
 
+/*
+ * Introduced for ordering BeginPlay for Actor and child Components.
+ * Used with pair UAdianComponent.
+ */
 UCLASS(Blueprintable)
 class SKYCRAFT_API AAdianActor : public AActor
 {
@@ -23,6 +27,9 @@ protected:
 
 	// Called after ActorInit.
 	UFUNCTION(BlueprintNativeEvent) void ActorBeginPlay();
+
+	// Called after ActorBeginPlay.
+	UFUNCTION(BlueprintNativeEvent) void PostBeginPlay();
 	
 private:
 	// Calls new functions in order. Do not override or call this method directly. Use ActorBeginPlay instead.

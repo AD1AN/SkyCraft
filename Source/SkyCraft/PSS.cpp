@@ -171,6 +171,11 @@ void APSS::Client_ActionWarning_Implementation(const FText& Text)
 	ActionWarning(Text);
 }
 
+void APSS::Client_GlobalWarning_Implementation(const FText& Text)
+{
+	GlobalWarning(Text);
+}
+
 void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -182,7 +187,7 @@ void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, SteamID, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, CharacterBio, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Casta, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, IslandArchon, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, IslandPlayer, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerForm, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerIsland, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PlayerNormal, Params);

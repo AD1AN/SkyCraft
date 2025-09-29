@@ -584,27 +584,34 @@ void UEntityComponent::PlayDieEffects(FDamageInfo DamageInfo)
 
 void UEntityComponent::ImplementNiagaraVars(FFX& FX, UNiagaraComponent* NiagaraComponent)
 {
-	for (auto& NiagaraVariable : FX.NiagaraVars)
+	for (auto& NiagaraVar : FX.NiagaraVars)
 	{
-		if (NiagaraVariable.Type == ENiagaraVarType::CurrentStaticMesh)
+		if (NiagaraVar.Type == ENiagaraVarType::CurrentStaticMesh)
 		{
 			if (UStaticMeshComponent* StaticMeshComponent = GetOwner()->FindComponentByClass<UStaticMeshComponent>())
 			{
-				if (StaticMeshComponent->GetStaticMesh()) UNiagaraFunctionLibrary::OverrideSystemUserVariableStaticMesh(NiagaraComponent, NiagaraVariable.Name.ToString(), StaticMeshComponent->GetStaticMesh());	
+				if (StaticMeshComponent->GetStaticMesh()) UNiagaraFunctionLibrary::OverrideSystemUserVariableStaticMesh(NiagaraComponent, NiagaraVar.Name.ToString(), StaticMeshComponent->GetStaticMesh());	
 			}
 		}
-		else if (NiagaraVariable.Type == ENiagaraVarType::Float)
+		else if (NiagaraVar.Type == ENiagaraVarType::Float)
 		{
-			NiagaraComponent->SetVariableFloat(NiagaraVariable.Name, NiagaraVariable.Float);
+			NiagaraComponent->SetVariableFloat(NiagaraVar.Name, NiagaraVar.Float);
 		}
-		else if (NiagaraVariable.Type == ENiagaraVarType::Integer)
+		else if (NiagaraVar.Type == ENiagaraVarType::Integer)
 		{
-			NiagaraComponent->SetVariableInt(NiagaraVariable.Name, NiagaraVariable.Integer);
+			NiagaraComponent->SetVariableInt(NiagaraVar.Name, NiagaraVar.Integer);
 		}
-		else if (NiagaraVariable.Type == ENiagaraVarType::StaticMesh)
+		else if (NiagaraVar.Type == ENiagaraVarType::StaticMesh)
 		{
 			// Works only with DefaultMeshOnly parameter.
-			if (NiagaraVariable.StaticMesh) UNiagaraFunctionLibrary::OverrideSystemUserVariableStaticMesh(NiagaraComponent, NiagaraVariable.Name.ToString(), NiagaraVariable.StaticMesh);
+			if (NiagaraVar.StaticMesh) UNiagaraFunctionLibrary::OverrideSystemUserVariableStaticMesh(NiagaraComponent, NiagaraVar.Name.ToString(), NiagaraVar.StaticMesh);
+		}
+		else if (NiagaraVar.Type == ENiagaraVarType::CurrentSkeletalMesh)
+		{
+			if (USkeletalMeshComponent* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+			{
+				if (SkeletalMeshComponent && SkeletalMeshComponent->GetSkeletalMeshAsset()) UNiagaraFunctionLibrary::OverrideSystemUserVariableSkeletalMeshComponent(NiagaraComponent, NiagaraVar.Name.ToString(), SkeletalMeshComponent);
+			}
 		}
 	}
 }

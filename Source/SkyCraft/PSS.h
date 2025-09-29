@@ -20,7 +20,7 @@ class AGSS;
 class UDA_Craft;
 class UDA_Item;
 class UDA_AnalyzeEntity;
-class AIslandArchon;
+class AIslandPlayer;
 
 UENUM(BlueprintType)
 enum class EStatLevel : uint8
@@ -31,7 +31,7 @@ enum class EStatLevel : uint8
 	EssenceVessel
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandArchon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandPlayer);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEssence);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLearnedCraftItems);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedEntities);
@@ -60,11 +60,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void AuthSetCasta(ECasta NewCasta) { REP_SET(Casta, NewCasta); }
 	
-	UPROPERTY(ReplicatedUsing=OnRep_IslandArchon, BlueprintReadOnly) AIslandArchon* IslandArchon = nullptr;
+	UPROPERTY(ReplicatedUsing=OnRep_IslandPlayer, BlueprintReadOnly) AIslandPlayer* IslandPlayer = nullptr;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AuthSetIslandArchon(AIslandArchon* NewIslandArchon) { REP_SET(IslandArchon, NewIslandArchon); }
-	UPROPERTY(BlueprintAssignable)FOnIslandArchon OnIslandArchon;
-	UFUNCTION() void OnRep_IslandArchon() { OnIslandArchon.Broadcast(); }
+	void AuthSetIslandPlayer(AIslandPlayer* NewIslandPlayer) { REP_SET(IslandPlayer, NewIslandPlayer); }
+	UPROPERTY(BlueprintAssignable)FOnIslandPlayer OnIslandPlayer;
+	UFUNCTION() void OnRep_IslandPlayer() { OnIslandPlayer.Broadcast(); }
 	
 	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Island;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
@@ -157,6 +157,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Client, Reliable, meta=(AutoCreateRefTerm="Text"))
 	void Client_ActionWarning(const FText& Text);
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, meta=(AutoCreateRefTerm="Text"))
+	void GlobalWarning(const FText& Text);
+
+	UFUNCTION(BlueprintCallable, Client, Reliable, meta=(AutoCreateRefTerm="Text"))
+	void Client_GlobalWarning(const FText& Text);
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

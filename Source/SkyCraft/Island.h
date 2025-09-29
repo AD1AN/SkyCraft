@@ -19,6 +19,7 @@ class UDA_Foliage;
 class UFoliageHISM;
 class UProceduralMeshComponent;
 class UHierarchicalInstancedStaticMeshComponent;
+class UGrowingResourcesComponent;
 class ADroppedItem;
 class AResource;
 class ANPC;
@@ -56,7 +57,7 @@ struct FIslandData
 	TMap<int32, FVertexData> TopVerticesMap; // VertexKey: Combined Axis = (X * Resolution + Y)
 	UPROPERTY(BlueprintReadOnly) TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
 	TMap<int32, int32> EdgeTopVerticesMap; // VertexKey
-	TMap<int32, int32> DeadVerticesMap; // VertexKey. For Island Archon's Crystal and maybe for future needs.
+	TMap<int32, int32> DeadVerticesMap; // VertexKey. For IslandPlayer's bIsCrystal and maybe for future needs.
 	TArray<int32> TopTriangles;
 	TArray<FVector2D> TopUVs;
 	TArray<FVector> TopNormals;
@@ -73,19 +74,19 @@ class SKYCRAFT_API AIsland : public AActor
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene = nullptr;
-	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* PMC_Main = nullptr;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies = nullptr;
+	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene;
+	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* PMC_Main;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies;
 	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> CliffsComponents;
 	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
-	UPROPERTY(VisibleAnywhere) class UGrowingResourcesComponent* GrowingResourcesComponent = nullptr;
+	UPROPERTY(VisibleAnywhere) UGrowingResourcesComponent* GrowingResourcesComponent;
 	
-	bool bIslandArchon = false;
+	bool bIslandPlayer = false;
 	
 	AIsland();
 
 	UPROPERTY(BlueprintReadOnly) AGSS* GSS = nullptr;
-	UPROPERTY() AChunkIsland* ChunkIsland;
+	UPROPERTY() AChunkIsland* ChunkIsland = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FCoords Coords;
 	UPROPERTY(Replicated, EditAnywhere) UDA_IslandBiome* DA_IslandBiome = nullptr;
 	

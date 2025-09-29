@@ -18,6 +18,10 @@ void AAdianActor::PostInitializeComponents()
 	Super::PostInitializeComponents();
 }
 
+void AAdianActor::PostBeginPlay_Implementation()
+{
+}
+
 void AAdianActor::BeginPlay()
 {
 	Super::BeginPlay();
@@ -36,6 +40,8 @@ void AAdianActor::BeginPlay()
 	{
 		Component->AfterActorBeginPlay();
 	}
+
+	PostBeginPlay();
 }
 
 void AAdianCharacter::BeginPlay()

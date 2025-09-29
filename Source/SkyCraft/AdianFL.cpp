@@ -251,6 +251,8 @@ bool UAdianFL::DoDamage(AActor* Actor, FDamageInfo DamageInfo)
 
 UNiagaraComponent* UAdianFL::SpawnNiagaraIsland(UObject* WorldContextObject, UNiagaraSystem* SystemNiagara, AIsland* Island, FVector WorldLocation, FRotator Rotation, FVector Scale, bool bAutoDestroy, bool bAutoActivate, bool bPreCullCheck)
 {
+	if (!SystemNiagara) return nullptr;
+	
 	UNiagaraComponent* SpawnedNiagara;
 	if (IsValid(Island))
 	{

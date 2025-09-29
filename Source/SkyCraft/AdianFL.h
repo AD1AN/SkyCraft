@@ -184,6 +184,20 @@ public:
 		const FVector_NetQuantize Result = InVec;
 		return Result;
 	}
+	
+	UFUNCTION(BlueprintPure, meta=(DisplayName = "To Quantize Normal (Vector)", CompactNodeTitle = "->", BlueprintAutocast), Category="AdianFL")
+	static FVector_NetQuantizeNormal Conv_VectorToQuantizeNormal(const FVector& InVec)
+	{
+		const FVector_NetQuantizeNormal Result = InVec;
+		return Result;
+	}
+
+	UFUNCTION(BlueprintPure, meta=(DisplayName = "To Vector (Quantize Normal)", CompactNodeTitle = "->", BlueprintAutocast), Category="AdianFL")
+	static FVector Conv_QuantizeNormalToVector(const FVector_NetQuantizeNormal& InQuantize)
+	{
+		const FVector Result = InQuantize;
+		return Result;
+	}
 
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "HealthMax", BlueprintAutocast), Category="AdianFL")
 	static int32 GetMaxHealth(const FEntityConfig& InHealthComponentConfig)
@@ -235,5 +249,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PlayerFormInterface")
 	static UPARAM(DisplayName="Inventory") UInventoryComponent* GetPlayerInventory(const AActor* Actor);
 
-	
+	UFUNCTION(BlueprintPure, meta=(DisplayName = "String To Byte(uint8)", CompactNodeTitle = "->", BlueprintAutocast), Category="AdianFL")
+	static uint8 Conv_StringToByte(const FString& InString)
+	{
+		int32 Value = FCString::Atoi(*InString);
+		return static_cast<uint8>(FMath::Clamp(Value, 0, 255));
+	}
 };

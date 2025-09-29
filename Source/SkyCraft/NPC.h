@@ -7,6 +7,8 @@
 #include "Interfaces/IslandInterface.h"
 #include "NPC.generated.h"
 
+class AIslandCrystal;
+class UCorruptionOverlayEffect;
 class UEntityComponent;
 class USuffocationComponent;
 class AIsland;
@@ -24,17 +26,19 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, Replicated) AIsland* Island = nullptr;
 	UPROPERTY(BlueprintReadOnly) int32 IslandLODIndex = 0;
+	UPROPERTY(BlueprintReadOnly) AIslandCrystal* IslandCrystal = nullptr; // Used for corrupted NPC to attack.
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveFromIsland();
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddToIsland(AIsland* NewIsland);
+
+	UPROPERTY(Replicated) TSubclassOf<UCorruptionOverlayEffect> SpawnWithCorruptionOverlayEffect = nullptr;
+	UFUNCTION() void OnCorruptionOverlayEffectDestroyed(UActorComponent* Component);
 	
 	virtual void ActorBeginPlay_Implementation() override;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
 	UPROPERTY(BlueprintAssignable) FOnNewBase OnNewBase;
 	virtual void SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor) override;
-	
-	// virtual void Tick(float DeltaSeconds) override;
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) FSS_NPC SaveNPC();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) bool LoadNPC(const FSS_NPC& NPC_Parameters);
