@@ -12,7 +12,7 @@
 #include "Structs/CharacterBio.h"
 #include "PSS.generated.h"
 
-class APlayerIsland;
+class APlayerCrystal;
 class APlayerNormal;
 class APlayerPhantom;
 class APlayerDead;
@@ -20,7 +20,7 @@ class AGSS;
 class UDA_Craft;
 class UDA_Item;
 class UDA_AnalyzeEntity;
-class AIslandPlayer;
+class APlayerIsland;
 
 UENUM(BlueprintType)
 enum class EStatLevel : uint8
@@ -31,7 +31,7 @@ enum class EStatLevel : uint8
 	EssenceVessel
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandPlayer);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerIsland);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEssence);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLearnedCraftItems);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnalyzedEntities);
@@ -60,13 +60,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void AuthSetCasta(ECasta NewCasta) { REP_SET(Casta, NewCasta); }
 	
-	UPROPERTY(ReplicatedUsing=OnRep_IslandPlayer, BlueprintReadOnly) AIslandPlayer* IslandPlayer = nullptr;
+	UPROPERTY(ReplicatedUsing=OnRep_PlayerIsland, BlueprintReadOnly) APlayerIsland* PlayerIsland = nullptr;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AuthSetIslandPlayer(AIslandPlayer* NewIslandPlayer) { REP_SET(IslandPlayer, NewIslandPlayer); }
-	UPROPERTY(BlueprintAssignable)FOnIslandPlayer OnIslandPlayer;
-	UFUNCTION() void OnRep_IslandPlayer() { OnIslandPlayer.Broadcast(); }
+	void AuthSetPlayerIsland(APlayerIsland* NewPlayerIsland) { REP_SET(PlayerIsland, NewPlayerIsland); }
+	UPROPERTY(BlueprintAssignable) FOnPlayerIsland OnPlayerIsland;
+	UFUNCTION() void OnRep_PlayerIsland() { OnPlayerIsland.Broadcast(); }
 	
-	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Island;
+	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Crystal;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	EPlayerForm AuthSetPlayerForm(EPlayerForm NewPlayerForm)
 	{
@@ -74,7 +74,7 @@ public:
 		return PlayerForm;
 	}
 
-	UPROPERTY(Replicated, BlueprintReadWrite) APlayerIsland* PlayerIsland = nullptr;
+	UPROPERTY(Replicated, BlueprintReadWrite) APlayerCrystal* PlayerCrystal = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerNormal* PlayerNormal = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerPhantom* PlayerSpirit = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerDead* PlayerDead = nullptr;

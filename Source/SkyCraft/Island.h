@@ -57,7 +57,7 @@ struct FIslandData
 	TMap<int32, FVertexData> TopVerticesMap; // VertexKey: Combined Axis = (X * Resolution + Y)
 	UPROPERTY(BlueprintReadOnly) TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
 	TMap<int32, int32> EdgeTopVerticesMap; // VertexKey
-	TMap<int32, int32> DeadVerticesMap; // VertexKey. For IslandPlayer's bIsCrystal and maybe for future needs.
+	TMap<int32, int32> DeadVerticesMap; // VertexKey. For PlayerIsland's bIsCrystal and maybe for future needs.
 	TArray<int32> TopTriangles;
 	TArray<FVector2D> TopUVs;
 	TArray<FVector> TopNormals;
@@ -81,7 +81,7 @@ public:
 	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
 	UPROPERTY(VisibleAnywhere) UGrowingResourcesComponent* GrowingResourcesComponent;
 	
-	bool bIslandPlayer = false;
+	bool bPlayerIsland = false;
 	
 	AIsland();
 

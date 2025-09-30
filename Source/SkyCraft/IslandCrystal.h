@@ -11,7 +11,7 @@ class UInteractComponent;
 class UEntityComponent;
 class USphereComponent;
 class UNiagaraComponent;
-class AIslandPlayer;
+class APlayerIsland;
 
 UCLASS()
 class SKYCRAFT_API AIslandCrystal : public AAdianActor
@@ -29,8 +29,8 @@ public:
 	
 	AIslandCrystal();
 
-	UPROPERTY(ReplicatedUsing=OnRep_IslandPlayer, BlueprintReadOnly) AIslandPlayer* IslandPlayer = nullptr;
-	UFUNCTION(BlueprintNativeEvent) void OnRep_IslandPlayer();
+	UPROPERTY(ReplicatedUsing=OnRep_PlayerIsland, BlueprintReadOnly) APlayerIsland* PlayerIsland = nullptr;
+	UFUNCTION(BlueprintNativeEvent) void OnRep_PlayerIsland();
 	
 	virtual void ActorBeginPlay_Implementation() override;
 	void InitializeCrystal();

@@ -1,7 +1,7 @@
 ﻿// ADIAN Copyrighted
 
 #include "IslandCrystal.h"
-#include "IslandPlayer.h"
+#include "PlayerIsland.h"
 #include "NiagaraComponent.h"
 #include "Components/EntityComponent.h"
 #include "Components/InteractComponent.h"
@@ -43,47 +43,47 @@ void AIslandCrystal::ActorBeginPlay_Implementation()
 }
 
 // Only Clients
-void AIslandCrystal::OnRep_IslandPlayer_Implementation()
+void AIslandCrystal::OnRep_PlayerIsland_Implementation()
 {
 	InitializeCrystal();
 }
 
 void AIslandCrystal::InitializeCrystal()
 {
-	AttachToActor(IslandPlayer, FAttachmentTransformRules::KeepRelativeTransform);
-	IslandPlayer->OnStopIsland.AddDynamic(this, &AIslandCrystal::OnTargetDirection);
-	IslandPlayer->OnTargetDirection.AddDynamic(this, &AIslandCrystal::OnTargetDirection);
+	AttachToActor(PlayerIsland, FAttachmentTransformRules::KeepRelativeTransform);
+	PlayerIsland->OnStopIsland.AddDynamic(this, &AIslandCrystal::OnTargetDirection);
+	PlayerIsland->OnTargetDirection.AddDynamic(this, &AIslandCrystal::OnTargetDirection);
 	OnTargetDirection();
-	IslandPlayer->OnIsCrystal.AddDynamic(this, &AIslandCrystal::OnCrystal);
+	PlayerIsland->OnIsCrystal.AddDynamic(this, &AIslandCrystal::OnCrystal);
 	OnCrystal();
-	IslandPlayer->OnIslandSize.AddDynamic(this, &AIslandCrystal::OnIslandSize);
+	PlayerIsland->OnIslandSize.AddDynamic(this, &AIslandCrystal::OnIslandSize);
 	OnIslandSize();
 }
 
 void AIslandCrystal::OnTargetDirection()
 {
-	FVector NewDirection = IslandPlayer->StopIsland ? FVector::ZeroVector : IslandPlayer->TargetDirection * 100;
+	FVector NewDirection = PlayerIsland->bStopIsland ? FVector::ZeroVector : PlayerIsland->TargetDirection * 100;
 	NiagaraCrystal->SetVariableVec3("AttractorPosition", NewDirection);
 }
 
 void AIslandCrystal::OnCrystal()
 {
-	if (!IslandPlayer->IslandStarted) return;
+	if (!PlayerIsland->IslandStarted) return;
 
-	InteractComponent->InteractLocation = IslandPlayer->bIsCrystal ? FVector(0,0,50.0f) : FVector::ZeroVector;
-	StaticMeshCrystal->SetVisibility(IslandPlayer->bIsCrystal);
-	StaticMeshCrystal->SetCollisionEnabled(IslandPlayer->bIsCrystal ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
-	NiagaraCrystal->SetActive(IslandPlayer->bIsCrystal);
-	SphereCollapsed->SetCollisionEnabled(IslandPlayer->bIsCrystal ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryAndPhysics);
-	NiagaraCollapsed->SetActive(!IslandPlayer->bIsCrystal);
+	InteractComponent->InteractLocation = PlayerIsland->bIsCrystal ? FVector(0,0,50.0f) : FVector::ZeroVector;
+	StaticMeshCrystal->SetVisibility(PlayerIsland->bIsCrystal);
+	StaticMeshCrystal->SetCollisionEnabled(PlayerIsland->bIsCrystal ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
+	NiagaraCrystal->SetActive(PlayerIsland->bIsCrystal);
+	SphereCollapsed->SetCollisionEnabled(PlayerIsland->bIsCrystal ? ECollisionEnabled::NoCollision : ECollisionEnabled::QueryAndPhysics);
+	NiagaraCollapsed->SetActive(!PlayerIsland->bIsCrystal);
 }
 
 void AIslandCrystal::OnIslandSize()
 {
-	float CrystalXY = IslandPlayer->IslandSize * 2 + 1;
-	float CrystalZ = IslandPlayer->IslandSize * 2 + CrystalXY;
+	float CrystalXY = PlayerIsland->IslandSize * 2 + 1;
+	float CrystalZ = PlayerIsland->IslandSize * 2 + CrystalXY;
 	StaticMeshCrystal->SetRelativeScale3D(FVector(CrystalXY, CrystalXY, CrystalZ));
-	NiagaraCrystal->SetRelativeScale3D(FVector(IslandPlayer->IslandSize * 0.015f + 1));
+	NiagaraCrystal->SetRelativeScale3D(FVector(PlayerIsland->IslandSize * 0.015f + 1));
 }
 
 void AIslandCrystal::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -94,5 +94,5 @@ void AIslandCrystal::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
-	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandCrystal, IslandPlayer, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AIslandCrystal, PlayerIsland, Params);
 }

@@ -42,8 +42,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax IslandsAltitude = FFloatMinMax(90000, 95000);
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Replicated) FFloatMinMax TraversalAltitude = FFloatMinMax(30000, 100000);
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax Suffocation = FFloatMinMax(80000, 150000);
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) float IslandPlayerSpawnXY = 75000.0;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax IslandPlayerSpawnZ = FFloatMinMax(80000, 95000);
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) float PlayerIslandSpawnXY = 75000.0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) FFloatMinMax PlayerIslandSpawnZ = FFloatMinMax(80000, 95000);
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float SkyEssenceDensity = 1.0f;
 	

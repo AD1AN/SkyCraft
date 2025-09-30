@@ -6,7 +6,7 @@
 #include "GameFramework/Pawn.h"
 #include "PawnIslandControl.generated.h"
 
-class AIslandPlayer;
+class APlayerIsland;
 
 UCLASS()
 class SKYCRAFT_API APawnIslandControl : public APawn
@@ -15,11 +15,12 @@ class SKYCRAFT_API APawnIslandControl : public APawn
 
 public:
 	APawnIslandControl();
+	
+	UPROPERTY(ReplicatedUsing=OnRep_PlayerIsland, BlueprintReadOnly) APlayerIsland* PlayerIsland = nullptr;
+	UFUNCTION(BlueprintImplementableEvent) void OnRep_PlayerIsland();
 
 	UPROPERTY(BlueprintReadWrite) APawn* PawnInControl = nullptr;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_IslandPlayer) AIslandPlayer* IslandPlayer = nullptr;
-	UFUNCTION(BlueprintImplementableEvent) void OnRep_IslandPlayer();
 
 	virtual void BeginPlay() override;
 

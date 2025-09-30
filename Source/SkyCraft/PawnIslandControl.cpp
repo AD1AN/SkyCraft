@@ -32,5 +32,5 @@ void APawnIslandControl::GetLifetimeReplicatedProps(TArray<class FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION_NOTIFY(APawnIslandControl, IslandPlayer, COND_InitialOnly, REPNOTIFY_OnChanged);
+	DOREPLIFETIME_CONDITION_NOTIFY(APawnIslandControl, PlayerIsland, COND_InitialOnly, REPNOTIFY_OnChanged);
 }
