@@ -3,9 +3,11 @@
 #include "CorruptionSpawnPoint.h"
 #include "AdianFL.h"
 #include "GSS.h"
+#include "Island.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NPC.h"
+#include "PlayerIsland.h"
 #include "Components/AudioComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -59,6 +61,7 @@ void ACorruptionSpawnPoint::SpawnNPC()
 	SpawnTransform.SetLocation(GetActorLocation() + FVector(0.0f, 0.0f, 50.0f));
 	ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(ClassNPC, SpawnTransform);
 	SpawnedNPC->Island = AttachToIsland;
+	if (AttachToIsland->bPlayerIsland) SpawnedNPC->IslandCrystal = Cast<APlayerIsland>(AttachToIsland)->IslandCrystal;
 	SpawnedNPC->SpawnWithCorruptionOverlayEffect = GetWorld()->GetGameState<AGSS>()->CorruptionOverlayEffectClass;
 	SpawnedNPC->FinishSpawning(SpawnTransform);
 	Multicast_FinishSpawn();

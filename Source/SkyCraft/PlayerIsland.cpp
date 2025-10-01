@@ -43,9 +43,11 @@ void APlayerIsland::BeginPlay()
 		SpawnedCrystal->FinishSpawning(FTransform::Identity);
 		IslandCrystal = SpawnedCrystal;
 
-		PawnIslandControl = GetWorld()->SpawnActor<APawnIslandControl>(GSS->PawnIslandControl);
+		PawnIslandControl = GetWorld()->SpawnActorDeferred<APawnIslandControl>(GSS->PawnIslandControl, FTransform::Identity);
+		PawnIslandControl->PlayerIsland = this;
+		PawnIslandControl->FinishSpawning(FTransform::Identity);
 		PawnIslandControl->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-		if (HasAuthority()) OnRep_PawnIslandControl();
+		OnRep_PawnIslandControl();
 	}
 	Super::BeginPlay();
 }

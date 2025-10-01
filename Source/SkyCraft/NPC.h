@@ -26,7 +26,7 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, Replicated) AIsland* Island = nullptr;
 	UPROPERTY(BlueprintReadOnly) int32 IslandLODIndex = 0;
-	UPROPERTY(BlueprintReadOnly) AIslandCrystal* IslandCrystal = nullptr; // Used for corrupted NPC to attack.
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) AIslandCrystal* IslandCrystal = nullptr; // Used for corrupted NPC to attack.
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveFromIsland();
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddToIsland(AIsland* NewIsland);

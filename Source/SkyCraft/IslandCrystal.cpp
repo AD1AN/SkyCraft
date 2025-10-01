@@ -21,9 +21,11 @@ AIslandCrystal::AIslandCrystal()
 
 	StaticMeshCrystal = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshCrystal");
 	SetRootComponent(StaticMeshCrystal);
+	StaticMeshCrystal->SetRelativeScale3D(FVector(1.2f));
 	
 	NiagaraCrystal = CreateDefaultSubobject<UNiagaraComponent>("NiagaraCrystal");
 	NiagaraCrystal->SetupAttachment(RootComponent);
+	NiagaraCrystal->SetRelativeLocation(FVector(0, -5.0f, 30.0f));
 
 	SphereCollapsed = CreateDefaultSubobject<USphereComponent>("SphereCollapsed");
 	SphereCollapsed->SetupAttachment(RootComponent);
