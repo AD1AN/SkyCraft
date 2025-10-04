@@ -33,19 +33,19 @@ struct FOverrideDropItems : public FEntityConfigModifier
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	bool bDropItems = false;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides, TitleProperty="Repeats: {RepeatDrop}(-{RandomMinusRepeats}) | Quantity: {Min}~{Max}"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides, TitleProperty="Repeats: {RepeatDrop}(-{RandomMinusRepeats}) | Quantity: {Min}~{Max}"))
 	TArray<FDropItem> DropItems;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides))
 	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
 	FRelativeBox DropInRelativeBox;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides))
 	EDropDirectionType DropDirectionType = EDropDirectionType::RandomDirection;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
 	FVector DropDirection = FVector::ZeroVector;
 
 	virtual void Implement(FEntityConfig& EntityConfig) override

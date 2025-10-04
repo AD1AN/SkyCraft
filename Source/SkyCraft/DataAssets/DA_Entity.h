@@ -71,42 +71,42 @@ public:
 
 	//==================== Drop Items ==================//
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	bool bDropItems = false;
+	bool bIsDroppingItems = false;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides, TitleProperty="Repeats: {RepeatDrop}(-{RandomMinusRepeats}) | Quantity: {Min}~{Max}"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides, TitleProperty="Repeats: {RepeatDrop}(-{RandomMinusRepeats}) | Quantity: {Min}~{Max}"))
 	TArray<FDropItem> DropItems;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides))
 	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
 	FRelativeBox DropInRelativeBox;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides))
 	EDropDirectionType DropDirectionType = EDropDirectionType::RandomDirection;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
 	FVector DropDirection = FVector::ZeroVector;
 
 	//==================== Drop Essence ==================//
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	bool bDropEssence = false;
+	bool bIsDroppingEssence = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence", EditConditionHides))
 	FLinearColor EssenceColor = FLinearColor::White;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence", EditConditionHides))
 	EDropEssenceAmount DropEssenceAmount = EDropEssenceAmount::MinMax;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::MinMax", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence && DropEssenceAmount == EDropEssenceAmount::MinMax", EditConditionHides))
 	FIntMinMax DropEssenceMinMax;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence && DropEssenceAmount == EDropEssenceAmount::Static", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence && DropEssenceAmount == EDropEssenceAmount::Static", EditConditionHides))
 	int32 DropEssenceStatic;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence", EditConditionHides))
 	EDropEssenceLocationType DropEssenceLocationType = EDropEssenceLocationType::ActorOriginPlusZ;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bDropEssence && DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence && DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ", EditConditionHides))
 	float DropEssenceLocationPlusZ = 50.0f;
 };

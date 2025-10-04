@@ -376,15 +376,16 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 
 void UEntityComponent::DroppingItems(FVector OverrideLocation)
 {
-	bool bDropItems;
-	if (OverrideDropItems) bDropItems = OverrideDropItems->bDropItems;
-	else bDropItems = DA_Entity->bDropItems;
+	bool bIsDroppingItems;
+	if (OverrideDropItems) bIsDroppingItems = OverrideDropItems->bIsDroppingItems;
+	else bIsDroppingItems = DA_Entity->bIsDroppingItems;
 	
-	if (!bDropItems) return;
+	if (!bIsDroppingItems) return;
 
-	TArray<FDropItem> DropItems;
-	if (OverrideDropItems) DropItems = OverrideDropItems->DropItems;
-	else DropItems = DA_Entity->DropItems;
+	TArray<FDropItem>* DropItems;
+	if (ReplaceDropItems) DropItems = &ReplaceDropItems->DropItems;
+	else if (OverrideDropItems) DropItems = &OverrideDropItems->DropItems;
+	else DropItems = &DA_Entity->DropItems;
 
 	EDropLocationType DropLocationType;
 	if (OverrideDropItems) DropLocationType = OverrideDropItems->DropLocationType;
@@ -393,8 +394,9 @@ void UEntityComponent::DroppingItems(FVector OverrideLocation)
 	FRelativeBox DropInRelativeBox;
 	if (OverrideDropItems) DropInRelativeBox = OverrideDropItems->DropInRelativeBox;
 	else DropInRelativeBox = DA_Entity->DropInRelativeBox;
-	
-	for (auto& DropItem : DropItems)
+
+	if (DropItems == nullptr) return;
+	for (auto& DropItem : *DropItems)
 	{
 		ensureAlways(DropItem.Item);
 		if (!DropItem.Item) continue;
@@ -456,7 +458,7 @@ void UEntityComponent::DroppingItems(FVector OverrideLocation)
 
 AEssenceActor* UEntityComponent::DroppingEssence(ACharacter* Character, FVector OverrideLocation)
 {
-	if (!DA_Entity->bDropEssence) return nullptr;
+	if (!DA_Entity->bIsDroppingEssence) return nullptr;
 
 	FTransform EssenceTransform;
 	if (DA_Entity->DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ)
@@ -531,8 +533,9 @@ void UEntityComponent::Multicast_OnDamage_Implementation(FDamageInfo DamageInfo,
 	AIsland* Island = UAdianFL::GetIsland(GetOwner());
 
 	USoundAttenuation* SoundAttenuation = GetGSS()->NormalAttenuationClass;
-	if (OverrideAttenuation) SoundAttenuation = OverrideAttenuation->SoundAttenuation;
-	else if (DA_Entity->SoundAttenuation) SoundAttenuation = DA_Entity->SoundAttenuation;
+	if (OverrideSoundSettings && OverrideSoundSettings->bOverrideSoundSettings) SoundAttenuation = OverrideSoundSettings->SoundAttenuation.Get();
+	else if (OverrideAttenuation) SoundAttenuation = OverrideAttenuation->SoundAttenuation;
+	else if (DA_Entity->SoundAttenuation) SoundAttenuation = DA_Entity->SoundAttenuation.Get();
 	
 	TMap<TObjectPtr<UDA_DamageAction>, FCueArray> DamageCuesMap;
 	if (OverrideDamageCues) DamageCuesMap = OverrideDamageCues->Cues;
@@ -597,15 +600,28 @@ void UEntityComponent::PlayDieCues(FDamageInfo DamageInfo)
 	
 	FVector NiagaraLocation = GetOwner()->GetActorLocation();
 	FVector SoundLocation = GetOwner()->GetActorLocation();
-	if (DA_Entity->bOverrideSoundSettings)
+
+	bool bOverrideSoundSettings;
+	if (OverrideSoundSettings) bOverrideSoundSettings = OverrideSoundSettings->bOverrideSoundSettings;
+	else bOverrideSoundSettings = DA_Entity->bOverrideSoundSettings;
+
+	ESoundDieLocation SoundDieLocation;
+	if (OverrideSoundSettings) SoundDieLocation = OverrideSoundSettings->SoundDieLocation;
+	else SoundDieLocation = DA_Entity->SoundDieLocation;
+
+	FVector SoundDieRelativeLocation;
+	if (OverrideSoundSettings) SoundDieRelativeLocation = OverrideSoundSettings->SoundDieRelativeLocation;
+	else SoundDieRelativeLocation = DA_Entity->SoundDieRelativeLocation;
+		
+	if (bOverrideSoundSettings)
 	{
-		switch (DA_Entity->SoundDieLocation)
+		switch (SoundDieLocation)
 		{
 		case ESoundDieLocation::ActorOrigin:
 			// Do nothing. Location is already defined.
 				break;
 		case ESoundDieLocation::RelativeLocation:
-			SoundLocation = GetOwner()->GetActorTransform().TransformPosition(DA_Entity->SoundDieRelativeLocation);
+			SoundLocation = GetOwner()->GetActorTransform().TransformPosition(SoundDieRelativeLocation);
 			break;
 		case ESoundDieLocation::InCenterOfMass:
 			if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent()))
@@ -615,11 +631,11 @@ void UEntityComponent::PlayDieCues(FDamageInfo DamageInfo)
 			break;
 		}
 	}
-
 	
 	USoundAttenuation* SoundAttenuation = GetGSS()->NormalAttenuationClass;
-	if (OverrideAttenuation) SoundAttenuation = OverrideAttenuation->SoundAttenuation;
-	else if (DA_Entity->SoundAttenuation) SoundAttenuation = DA_Entity->SoundAttenuation;
+	if (OverrideSoundSettings && OverrideSoundSettings->bOverrideSoundSettings) SoundAttenuation = OverrideSoundSettings->SoundAttenuation.Get();
+	else if (OverrideAttenuation) SoundAttenuation = OverrideAttenuation->SoundAttenuation;
+	else if (DA_Entity->SoundAttenuation) SoundAttenuation = DA_Entity->SoundAttenuation.Get();
 	
 	TMap<TObjectPtr<UDA_DamageAction>, FCueArray> DieCuesMap;
 	if (OverrideDieCues) DieCuesMap = OverrideDieCues->Cues;
