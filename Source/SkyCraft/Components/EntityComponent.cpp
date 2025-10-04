@@ -21,6 +21,8 @@
 #include "SkyCraft/DataAssets/DA_EntityEffect.h"
 #include "SkyCraft/Interfaces/EntityInterface.h"
 #include "GameplayStateTreeModule/Public/Components/StateTreeAIComponent.h"
+#include "SkyCraft/DataAssets/DA_Entity.h"
+#include "SkyCraft/Structs/EntityModifier.h"
 
 UEntityComponent::UEntityComponent()
 {
@@ -35,14 +37,28 @@ UEntityComponent::UEntityComponent()
 	}
 }
 
-void UEntityComponent::AfterActorBeginPlay_Implementation()
+void UEntityComponent::BeforeBeginActor_Implementation()
 {
-	Super::AfterActorBeginPlay_Implementation();
+	Super::BeforeBeginActor_Implementation();
+
+#if WITH_EDITOR
+	if (DA_Entity->bUseOverrideHealthMax && OverrideHealthMax == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DA_Entity: %s is configured to use OverrideHealthMax, but Actor: %s has no OverrideHealthMax assigned."), *DA_Entity->GetName(), *GetOwner()->GetName());
+	}
+#endif
+
+	int32 DefaultHealthMax = (OverrideHealthMax == nullptr) ? DA_Entity->HealthMax : *OverrideHealthMax;
+	REP_SET(HealthMax, DefaultHealthMax);
+}
+
+void UEntityComponent::AfterBeginActor_Implementation()
+{
+	Super::AfterBeginActor_Implementation();
 	
-	// If health's is not loaded then set by config
-	if (HealthMax <= 0) REP_SET(HealthMax, Config.HealthMax);
-	if (Health <= 0) REP_SET(Health, Config.HealthMax);
-}	
+	// If Health is not loaded then set with HealthMax.
+	if (Health <= 0) REP_SET(Health, HealthMax);
+}
 
 void UEntityComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -199,6 +215,24 @@ void UEntityComponent::SpawnDamageNumbers(FDamageInfo DamageInfo, int32 DamageTa
 	SpawnedDamageNumbers->FinishSpawning(DamageTransform);
 }
 
+void UEntityComponent::SetupDataAssetEntity(UDA_Entity* InDA_Entity)
+{
+	ensureAlways(InDA_Entity);
+	if (!InDA_Entity) return;
+	DA_Entity = InDA_Entity;
+}
+
+void UEntityComponent::ImplementEntityModifiers(TArray<TInstancedStruct<FEntityModifier>>& EntityModifiers)
+{
+	for (auto& Modifier : EntityModifiers)
+	{
+		if (FEntityModifier* Pointer = Modifier.GetMutablePtr<FEntityModifier>())
+		{
+			Pointer->Implement(this);
+		}
+	}
+}
+
 void UEntityComponent::SetHealth(int32 NewHealth)
 {
 	REP_SET(Health, FMath::Clamp(NewHealth, 0, HealthMax));
@@ -242,16 +276,16 @@ void UEntityComponent::Multicast_OnZeroDamage_Implementation(FDamageInfo DamageI
 
 void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 {
-	ensureAlways(DamageInfo.DA_Damage);
-	if (!DamageInfo.DA_Damage) return;
+	ensureAlways(DamageInfo.DA_DamageAction);
+	if (!DamageInfo.DA_DamageAction) return;
 
-	if (GetOwner()->IsA(ACharacter::StaticClass()) && DamageInfo.DA_Damage->HitMass > 0)
+	if (GetOwner()->IsA(ACharacter::StaticClass()) && DamageInfo.DA_DamageAction->HitMass > 0)
 	{
 		ACharacter* Character = Cast<ACharacter>(GetOwner());
 		float CharacterMass = Character->GetCapsuleComponent()->GetBodyInstance()->GetBodyMass();
 		if (CharacterMass <= 0) CharacterMass = 0.01f;
 		
-		float MassRatio = DamageInfo.DA_Damage->HitMass / CharacterMass; // How heavy the hit is compared to the character
+		float MassRatio = DamageInfo.DA_DamageAction->HitMass / CharacterMass; // How heavy the hit is compared to the character
 
 		// If Character mass > HitMass more than three times, then LaunchCharacter is not applied.
 		if (MassRatio > 0.3333f)
@@ -278,16 +312,16 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 
 	int32 DamageTaken;
 
-	if (DamageInfo.DA_Damage->bIsLinearDamage)
+	if (DamageInfo.DA_DamageAction->bIsLinearDamage)
 	{
-		DamageTaken = FMath::Lerp(DamageInfo.DA_Damage->BaseDamage, DamageInfo.DA_Damage->MaxLinearDamage, DamageInfo.LinearDamage);
+		DamageTaken = FMath::Lerp(DamageInfo.DA_DamageAction->BaseDamage, DamageInfo.DA_DamageAction->MaxLinearDamage, DamageInfo.LinearDamage);
 	}
 	else
 	{
-		DamageTaken = DamageInfo.DA_Damage->BaseDamage;
+		DamageTaken = DamageInfo.DA_DamageAction->BaseDamage;
 	}
 
-	if (DamageInfo.DA_Damage->bIsPercentage)
+	if (DamageInfo.DA_DamageAction->bIsPercentage)
 	{
 		DamageTaken = Config.HealthMax * DamageTaken / 100;
 	}
@@ -305,29 +339,29 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 	
 	if (Config.bInclusiveDamageOnly)
 	{
-		if (!Config.InclusiveDamage.Contains(DamageInfo.DA_Damage))
+		if (!Config.InclusiveDamage.Contains(DamageInfo.DA_DamageAction))
 		{
-			if (DamageInfo.DA_Damage->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
+			if (DamageInfo.DA_DamageAction->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
 			return;
 		}
 	}
 	else
 	{
-		if (Config.ImmuneToDamage.Find(DamageInfo.DA_Damage))
+		if (Config.ImmuneToDamage.Find(DamageInfo.DA_DamageAction))
 		{
-			if (DamageInfo.DA_Damage->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
+			if (DamageInfo.DA_DamageAction->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
 			return;
 		}
 	}
 	
-	if (float* FoundMD = Config.MultiplyDamageType.Find(DamageInfo.DA_Damage->DamageGlobalType))
+	if (float* FoundMD = Config.MultiplyDamageType.Find(DamageInfo.DA_DamageAction->DamageGlobalType))
 	{
 		DamageTaken = DamageTaken * (*FoundMD);
 	}
 	
 	if (DamageTaken <= 0)
 	{
-		if (DamageInfo.DA_Damage->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
+		if (DamageInfo.DA_DamageAction->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
 		return;
 	}
 
@@ -342,9 +376,25 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 
 void UEntityComponent::DroppingItems(FVector OverrideLocation)
 {
-	if (!Config.bDropItems) return;
+	bool bDropItems;
+	if (OverrideDropItems) bDropItems = OverrideDropItems->bDropItems;
+	else bDropItems = DA_Entity->bDropItems;
 	
-	for (const FDropItem& DropItem : Config.DropItems)
+	if (!bDropItems) return;
+
+	TArray<FDropItem> DropItems;
+	if (OverrideDropItems) DropItems = OverrideDropItems->DropItems;
+	else DropItems = DA_Entity->DropItems;
+
+	EDropLocationType DropLocationType;
+	if (OverrideDropItems) DropLocationType = OverrideDropItems->DropLocationType;
+	else DropLocationType = DA_Entity->DropLocationType;
+
+	FRelativeBox DropInRelativeBox;
+	if (OverrideDropItems) DropInRelativeBox = OverrideDropItems->DropInRelativeBox;
+	else DropInRelativeBox = DA_Entity->DropInRelativeBox;
+	
+	for (auto& DropItem : DropItems)
 	{
 		ensureAlways(DropItem.Item);
 		if (!DropItem.Item) continue;
@@ -365,21 +415,21 @@ void UEntityComponent::DroppingItems(FVector OverrideLocation)
 			ADroppedItem* DroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
 			DroppedItem->AttachedToIsland = Island;
 			
-			if (Config.DropLocationType == EDropLocationType::ActorOrigin)
+			if (DropLocationType == EDropLocationType::ActorOrigin)
 			{
 				if (IsValid(Island)) SpawnTransform.SetLocation(Island->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()) + FVector(0,0,10));
 				else SpawnTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0,10));
 			}
-			else if (Config.DropLocationType == EDropLocationType::RandomPointInBox)
+			else if (DropLocationType == EDropLocationType::RandomPointInBox)
 			{
 				// #if WITH_EDITOR
 				// 	DrawDebugBox(GetWorld(), GetOwner()->GetActorTransform().TransformPosition(DropInRelativeBox.RelativeCenter), DropInRelativeBox.Size * GetOwner()->GetActorScale3D(), GetOwner()->GetActorRotation().Quaternion(), FColor::Red, false, 60.f, 0, 1.0f);
 				// #endif
-				FVector RandomPointInRelativeBox = GetOwner()->GetActorTransform().TransformVector(UAdianFL::RandomPointInRelativeBox(Config.DropInRelativeBox));
+				FVector RandomPointInRelativeBox = GetOwner()->GetActorTransform().TransformVector(UAdianFL::RandomPointInRelativeBox(DropInRelativeBox));
 				if (IsValid(Island)) SpawnTransform.SetLocation(RandomPointInRelativeBox + Island->GetTransform().InverseTransformPosition(GetOwner()->GetActorLocation()));
 				else SpawnTransform.SetLocation(RandomPointInRelativeBox + GetOwner()->GetActorLocation());
 			}
-			else if (Config.DropLocationType == EDropLocationType::OverrideLocation)
+			else if (DropLocationType == EDropLocationType::OverrideLocation)
 			{
 				if (IsValid(Island)) SpawnTransform.SetLocation(Island->GetTransform().InverseTransformPosition(OverrideLocation));
 				else SpawnTransform.SetLocation(OverrideLocation);
@@ -389,8 +439,16 @@ void UEntityComponent::DroppingItems(FVector OverrideLocation)
 			DropInventorySlot.DA_Item = DropItem.Item;
 			DropInventorySlot.Quantity = FMath::RandRange(DropItem.Min, DropItem.Max);
 			DroppedItem->Slot = DropInventorySlot;
-			DroppedItem->DropDirectionType = Config.DropDirectionType;
-			DroppedItem->DropDirection = Config.DropDirection;
+			if (OverrideDropItems)
+			{
+				DroppedItem->DropDirectionType = OverrideDropItems->DropDirectionType;
+				DroppedItem->DropDirection = OverrideDropItems->DropDirection;
+			}
+			else
+			{
+				DroppedItem->DropDirectionType = DA_Entity->DropDirectionType;
+				DroppedItem->DropDirection = DA_Entity->DropDirection;
+			}
 			DroppedItem->FinishSpawning(SpawnTransform);
 		}
 	}
@@ -398,27 +456,27 @@ void UEntityComponent::DroppingItems(FVector OverrideLocation)
 
 AEssenceActor* UEntityComponent::DroppingEssence(ACharacter* Character, FVector OverrideLocation)
 {
-	if (!Config.bDropEssence) return nullptr;
+	if (!DA_Entity->bDropEssence) return nullptr;
 
 	FTransform EssenceTransform;
-	if (Config.DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ)
+	if (DA_Entity->DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ)
 	{
 		EssenceTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0,Config.DropEssenceLocationPlusZ));
 	}
 	else EssenceTransform.SetLocation(OverrideLocation);
 
 	int32 FinalEssence;
-	if (Config.DropEssenceAmount == EDropEssenceAmount::MinMax)
+	if (DA_Entity->DropEssenceAmount == EDropEssenceAmount::MinMax)
 	{
-		FinalEssence = FMath::RandRange(Config.DropEssenceMinMax.Min, Config.DropEssenceMinMax.Max);
+		FinalEssence = FMath::RandRange(DA_Entity->DropEssenceMinMax.Min, DA_Entity->DropEssenceMinMax.Max);
 	}
-	else FinalEssence = Config.DropEssenceStatic;
+	else FinalEssence = DA_Entity->DropEssenceStatic;
 
 	if (FinalEssence > 0)
 	{
 		AEssenceActor* EssenceActor = GetWorld()->SpawnActorDeferred<AEssenceActor>(GetGSS()->EssenceActorClass, EssenceTransform);
 		EssenceActor->Essence = FinalEssence;
-		EssenceActor->EssenceColor = Config.EssenceColor;
+		EssenceActor->EssenceColor = DA_Entity->EssenceColor;
 		if (Character) EssenceActor->Multicast_SpawnDeathEssence(Character);
 		EssenceActor->FinishSpawning(EssenceTransform);
 		return EssenceActor;
@@ -473,34 +531,39 @@ void UEntityComponent::Multicast_OnDamage_Implementation(FDamageInfo DamageInfo,
 	AIsland* Island = UAdianFL::GetIsland(GetOwner());
 
 	USoundAttenuation* SoundAttenuation = GetGSS()->NormalAttenuationClass;
-	if (Config.bOverrideSoundSettings && Config.OverrideSoundAttenuation) SoundAttenuation = Config.OverrideSoundAttenuation;
+	if (OverrideAttenuation) SoundAttenuation = OverrideAttenuation->SoundAttenuation;
+	else if (DA_Entity->SoundAttenuation) SoundAttenuation = DA_Entity->SoundAttenuation;
 	
-	if (FFXArray* FXArray = Config.DamageFX.Find(DamageInfo.DA_Damage))
+	TMap<TObjectPtr<UDA_DamageAction>, FCueArray> DamageCuesMap;
+	if (OverrideDamageCues) DamageCuesMap = OverrideDamageCues->Cues;
+	else DamageCuesMap = DA_Entity->DamageCues;
+
+	if (FCueArray* Found = DamageCuesMap.Find(DamageInfo.DA_DamageAction))
 	{
-		for (auto& FX : FXArray->FXs)
+		for (auto& Cue : Found->Cues)
 		{
-			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, DamageInfo.WorldLocation, SoundAttenuation);
-			if (FX.Niagara)
+			if (Cue.Sound) UAdianFL::SpawnSoundIsland(this, Cue.Sound, Island, DamageInfo.WorldLocation, SoundAttenuation);
+			if (Cue.Niagara)
 			{
-				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, DamageInfo.WorldLocation);
-				if (FX.bHaveNiagaraVars) ImplementNiagaraVars(FX, SpawnedNiagara);
+				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, Cue.Niagara, Island, DamageInfo.WorldLocation);
+				if (Cue.bHaveNiagaraVars) ImplementNiagaraVars(Cue, SpawnedNiagara);
 			}
 		}
 	}
-	else
+	else if (FCueArray* Default = DamageCuesMap.Find(nullptr))
 	{
-		for (auto& FX : Config.DamageFXDefault)
+		for (auto& Cue : Default->Cues)
 		{
-			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, DamageInfo.WorldLocation, SoundAttenuation);
-			if (FX.Niagara)
+			if (Cue.Sound) UAdianFL::SpawnSoundIsland(this, Cue.Sound, Island, DamageInfo.WorldLocation, SoundAttenuation);
+			if (Cue.Niagara)
 			{
-				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, DamageInfo.WorldLocation);
-				if (FX.bHaveNiagaraVars) ImplementNiagaraVars(FX, SpawnedNiagara);
+				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, Cue.Niagara, Island, DamageInfo.WorldLocation);
+				if (Cue.bHaveNiagaraVars) ImplementNiagaraVars(Cue, SpawnedNiagara);
 			}
 		}
 	}
 	
-	if (!DamageInfo.DA_Damage->bShowDamageNumbers) return;
+	if (!DamageInfo.DA_DamageAction->bShowDamageNumbers) return;
 	SpawnDamageNumbers(DamageInfo, DamageTaken);
 }
 
@@ -517,7 +580,7 @@ void UEntityComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 	}
 	OnDie.Broadcast();
 	
-	PlayDieEffects(DamageInfo);
+	PlayDieCues(DamageInfo);
 }
 
 float UEntityComponent::HealthRatio()
@@ -526,7 +589,7 @@ float UEntityComponent::HealthRatio()
 	return static_cast<float>(Health) / static_cast<float>(Config.HealthMax);
 }
 
-void UEntityComponent::PlayDieEffects(FDamageInfo DamageInfo)
+void UEntityComponent::PlayDieCues(FDamageInfo DamageInfo)
 {
 	if (IsNetMode(NM_DedicatedServer)) return;
 	
@@ -534,15 +597,15 @@ void UEntityComponent::PlayDieEffects(FDamageInfo DamageInfo)
 	
 	FVector NiagaraLocation = GetOwner()->GetActorLocation();
 	FVector SoundLocation = GetOwner()->GetActorLocation();
-	if (Config.bOverrideSoundSettings)
+	if (DA_Entity->bOverrideSoundSettings)
 	{
-		switch (Config.SoundDieLocation)
+		switch (DA_Entity->SoundDieLocation)
 		{
 		case ESoundDieLocation::ActorOrigin:
 			// Do nothing. Location is already defined.
 				break;
 		case ESoundDieLocation::RelativeLocation:
-			SoundLocation = GetOwner()->GetActorTransform().TransformPosition(Config.SoundDieRelativeLocation);
+			SoundLocation = GetOwner()->GetActorTransform().TransformPosition(DA_Entity->SoundDieRelativeLocation);
 			break;
 		case ESoundDieLocation::InCenterOfMass:
 			if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent()))
@@ -553,36 +616,42 @@ void UEntityComponent::PlayDieEffects(FDamageInfo DamageInfo)
 		}
 	}
 
-	USoundAttenuation* SoundAttenuation = GetGSS()->NormalAttenuationClass;
-	if (Config.bOverrideSoundSettings && Config.OverrideSoundAttenuation) SoundAttenuation = Config.OverrideSoundAttenuation;
 	
-	if (FFXArray* FXArray = Config.DieFX.Find(DamageInfo.DA_Damage))
+	USoundAttenuation* SoundAttenuation = GetGSS()->NormalAttenuationClass;
+	if (OverrideAttenuation) SoundAttenuation = OverrideAttenuation->SoundAttenuation;
+	else if (DA_Entity->SoundAttenuation) SoundAttenuation = DA_Entity->SoundAttenuation;
+	
+	TMap<TObjectPtr<UDA_DamageAction>, FCueArray> DieCuesMap;
+	if (OverrideDieCues) DieCuesMap = OverrideDieCues->Cues;
+	else DieCuesMap = DA_Entity->DieCues;
+
+	if (FCueArray* Found = DieCuesMap.Find(DamageInfo.DA_DamageAction))
 	{
-		for (auto& FX : FXArray->FXs)
+		for (auto& Cue : Found->Cues)
 		{
-			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, SoundLocation, SoundAttenuation);
-			if (FX.Niagara)
+			if (Cue.Sound) UAdianFL::SpawnSoundIsland(this, Cue.Sound, Island, DamageInfo.WorldLocation, SoundAttenuation);
+			if (Cue.Niagara)
 			{
-				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, NiagaraLocation);
-				if (FX.bHaveNiagaraVars) ImplementNiagaraVars(FX, SpawnedNiagara);
+				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, Cue.Niagara, Island, DamageInfo.WorldLocation);
+				if (Cue.bHaveNiagaraVars) ImplementNiagaraVars(Cue, SpawnedNiagara);
 			}
 		}
 	}
-	else
+	else if (FCueArray* Default = DieCuesMap.Find(nullptr))
 	{
-		for (auto& FX : Config.DieFXDefault)
+		for (auto& Cue : Default->Cues)
 		{
-			if (FX.Sound) UAdianFL::SpawnSoundIsland(this, FX.Sound, Island, SoundLocation, SoundAttenuation);
-			if (FX.Niagara)
+			if (Cue.Sound) UAdianFL::SpawnSoundIsland(this, Cue.Sound, Island, DamageInfo.WorldLocation, SoundAttenuation);
+			if (Cue.Niagara)
 			{
-				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, FX.Niagara, Island, NiagaraLocation, GetOwner()->GetActorRotation(), GetOwner()->GetActorScale());
-				if (FX.bHaveNiagaraVars) ImplementNiagaraVars(FX, SpawnedNiagara);
+				UNiagaraComponent* SpawnedNiagara = UAdianFL::SpawnNiagaraIsland(this, Cue.Niagara, Island, DamageInfo.WorldLocation);
+				if (Cue.bHaveNiagaraVars) ImplementNiagaraVars(Cue, SpawnedNiagara);
 			}
 		}
 	}
 }
 
-void UEntityComponent::ImplementNiagaraVars(FFX& FX, UNiagaraComponent* NiagaraComponent)
+void UEntityComponent::ImplementNiagaraVars(FCue& FX, UNiagaraComponent* NiagaraComponent)
 {
 	for (auto& NiagaraVar : FX.NiagaraVars)
 	{

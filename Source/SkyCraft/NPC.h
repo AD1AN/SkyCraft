@@ -34,7 +34,7 @@ public:
 	UPROPERTY(Replicated) TSubclassOf<UCorruptionOverlayEffect> SpawnWithCorruptionOverlayEffect = nullptr;
 	UFUNCTION() void OnCorruptionOverlayEffectDestroyed(UActorComponent* Component);
 	
-	virtual void ActorBeginPlay_Implementation() override;
+	virtual void BeginActor_Implementation() override;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
 	UPROPERTY(BlueprintAssignable) FOnNewBase OnNewBase;

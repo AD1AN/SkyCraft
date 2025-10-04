@@ -36,11 +36,26 @@ AResource::AResource()
 
 void AResource::OnSpawnLogic_Implementation() {}
 
-void AResource::ActorBeginPlay_Implementation()
+void AResource::InitActor_Implementation()
 {
-	Super::ActorBeginPlay_Implementation();
+	Super::InitActor_Implementation();
 	ensureAlways(DA_Resource);
 	if (!DA_Resource) return;
+	ensureAlways(DA_Resource->Size.IsValidIndex(ResourceSize));
+	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
+
+	EntityComponent->SetupDataAssetEntity(DA_Resource->DA_Entity);
+	EntityComponent->SetupOverrideHealthMax(DA_Resource->Size[ResourceSize].Health);
+	EntityComponent->ImplementEntityModifiers(DA_Resource->EntityModifiers);
+	EntityComponent->ImplementEntityModifiers(DA_Resource->Size[ResourceSize].EntityModifiers);
+}
+
+void AResource::BeginActor_Implementation()
+{
+	Super::BeginActor_Implementation();
+	ensureAlways(DA_Resource);
+	if (!DA_Resource) return;
+	ensureAlways(DA_Resource->Size.IsValidIndex(ResourceSize));
 	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
 	CurrentSize = DA_Resource->Size[ResourceSize];
 
@@ -54,43 +69,7 @@ void AResource::ActorBeginPlay_Implementation()
 	StaticMeshComponent->SetCullDistance(CurrentSize.CullDistance);
 	SetNetCullDistanceSquared(FMath::Square(CurrentSize.CullDistance));
 	if (DA_Resource->OverlapCollision) StaticMeshComponent->SetCollisionProfileName(TEXT("ResourceOverlap"));
-
-	// This code duplicated in BM::BeginPlay
-	// Implementing main EntityConfigModifiers.
-	if (DA_Resource->EntityConfigUse == EEntityConfigUse::DataAsset)
-	{
-		if (DA_Resource->DA_EntityConfig)
-		{
-			FEntityConfig TempEntityConfig = DA_Resource->DA_EntityConfig->EntityConfig;
-			for (auto& Modifier : DA_Resource->EntityConfigModifiers)
-			{
-				if (FEntityConfigModifier* mod = Modifier.GetMutablePtr<FEntityConfigModifier>())
-				{
-					mod->Implement(TempEntityConfig);
-				}
-			}
-			EntityComponent->Config = TempEntityConfig;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("DA_Resource: %s not contains DA_EntityConfig! Using DefinedEntityConfig!"), *DA_Resource->GetName());
-			EntityComponent->Config = DA_Resource->DefinedEntityConfig;
-		}
-	}
-	else
-	{
-		EntityComponent->Config = DA_Resource->DefinedEntityConfig;
-	}
-
-	// Implementing CurrentSize.EntityConfigModifiers after main.
-	for (auto& Modifier : CurrentSize.EntityConfigModifiers)
-	{
-		if (FEntityConfigModifier* mod = Modifier.GetMutablePtr<FEntityConfigModifier>())
-		{
-			mod->Implement(EntityComponent->Config);
-		}
-	}
-
+	
 	ImplementModifiers(DA_Resource->ResourceModifiers);
 	ImplementModifiers(CurrentSize.ResourceModifiers);
 	
@@ -102,8 +81,8 @@ void AResource::ActorBeginPlay_Implementation()
 	}
 	
 	StaticMeshComponent->GetAssetUserData<UAUD_SkyTags>()->DA_SkyTags.Append(DA_Resource->SkyTags);
-	
-	EntityComponent->Config.HealthMax = CurrentSize.Health;
+
+	// TODO: add dropitems override, remove below old garbage
 	EntityComponent->Config.DropItems = CurrentSize.DropItems;
 	
 	if (HasAuthority())

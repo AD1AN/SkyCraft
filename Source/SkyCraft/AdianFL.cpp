@@ -241,8 +241,8 @@ bool UAdianFL::DoDamage(AActor* Actor, FDamageInfo DamageInfo)
 	if (!IsValid(Actor)) return false;
 	UEntityComponent* EntityComponent = Actor->FindComponentByClass<UEntityComponent>();
 	if (!EntityComponent) return false;
-	ensureAlways(DamageInfo.DA_Damage);
-	if (!DamageInfo.DA_Damage) return false;
+	ensureAlways(DamageInfo.DA_DamageAction);
+	if (!DamageInfo.DA_DamageAction) return false;
 
 	EntityComponent->DoDamage(DamageInfo);
 	

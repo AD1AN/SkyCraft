@@ -42,7 +42,7 @@ void USuffocationComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 		if (IsValid(EntityComponent))
 		{
 			FDamageInfo DamageInfo;
-			DamageInfo.DA_Damage = DA_Damage;
+			DamageInfo.DA_DamageAction = DA_Damage;
 			DamageInfo.WorldLocation = GetOwner()->GetActorLocation();
 			EntityComponent->DoDamage(DamageInfo);
 		}

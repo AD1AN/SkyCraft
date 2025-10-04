@@ -17,7 +17,7 @@ struct FOverrideDieFXDefault : public FEntityConfigModifier
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FFX> DieFXDefault;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<FCue> DieFXDefault;
 
 	virtual void Implement(FEntityConfig& EntityConfig) override
 	{

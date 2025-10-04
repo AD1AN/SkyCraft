@@ -78,14 +78,13 @@ void APlayerNormal::OnRep_Island()
 {
 }
 
-void APlayerNormal::ActorBeginPlay_Implementation()
+void APlayerNormal::BeginActor_Implementation()
 {
-	Super::ActorBeginPlay_Implementation();
+	Super::BeginActor_Implementation();
 	GSS = GetWorld()->GetGameState<AGSS>();
 	
 	if (HasAuthority())
 	{
-		EntityComponent->HealthMax = EntityComponent->Config.HealthMax; // Because of InitialUpdateEquipmentSlots().
 		InitialUpdateEquipmentSlots();
 		EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
 	}

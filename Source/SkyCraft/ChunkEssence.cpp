@@ -5,9 +5,9 @@
 #include "AdianFL.h"
 #include "GSS.h"
 
-void AChunkEssence::ActorBeginPlay_Implementation()
+void AChunkEssence::BeginActor_Implementation()
 {
-	Super::ActorBeginPlay_Implementation();
+	Super::BeginActor_Implementation();
 	GSS = GetWorld()->GetGameState<AGSS>();
 }
 

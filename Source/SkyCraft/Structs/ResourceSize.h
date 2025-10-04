@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "DropItem.h"
 #include "EntityConfigModifier.h"
+#include "EntityModifier.h"
 #include "StructUtils/InstancedStruct.h"
 #include "SkyCraft/Structs/ResourceModifier.h"
 #include "ResourceSize.generated.h"
@@ -46,6 +47,7 @@ struct FResourceSize
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool bSpawnOnDestroy = true;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FResourceModifier>> ResourceModifiers;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FEntityConfigModifier>> EntityConfigModifiers;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FEntityModifier>> EntityModifiers;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Repeats: {RepeatDrop}(-{RandomMinusRepeats}) | Quantity: {Min}~{Max}")) TArray<FDropItem> DropItems;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TArray<TInstancedStruct<FStaticMeshBase>> StaticMeshes;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) float CullDistance = 150000.0f;

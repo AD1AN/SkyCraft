@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "AdianComponent.generated.h"
 
-// Requires Owner be a AdianActor instead of Actor.
+/* Requires Owner to be an AAdianActor instead of Actor. */
 UCLASS(Blueprintable)
 class SKYCRAFT_API UAdianComponent : public UActorComponent
 {
@@ -16,10 +16,10 @@ public:
 	UAdianComponent();
 	
 	// FIXME: These functions are not called if component spawned at runtime.
-	UFUNCTION(BlueprintNativeEvent) void BeforeActorBeginPlay();
-	UFUNCTION(BlueprintNativeEvent) void AfterActorBeginPlay();
+	UFUNCTION(BlueprintNativeEvent) void BeforeBeginActor();
+	UFUNCTION(BlueprintNativeEvent) void AfterBeginActor();
 
 private:
-	// Do not override or call this method directly. Use Before/After ActorBeginPlay instead.
+	// Do not override or call this method directly. Use Before/After BeginActor instead.
 	virtual void BeginPlay() final override;
 };

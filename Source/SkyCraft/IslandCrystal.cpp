@@ -38,9 +38,9 @@ AIslandCrystal::AIslandCrystal()
 }
 
 // Only Server
-void AIslandCrystal::ActorBeginPlay_Implementation()
+void AIslandCrystal::BeginActor_Implementation()
 {
-	Super::ActorBeginPlay_Implementation();
+	Super::BeginActor_Implementation();
 	if (HasAuthority()) InitializeCrystal();
 }
 

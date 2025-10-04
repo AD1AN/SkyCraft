@@ -39,9 +39,9 @@ void ANPC::OnCorruptionOverlayEffectDestroyed(UActorComponent* Component)
 	SpawnWithCorruptionOverlayEffect = nullptr;
 }
 
-void ANPC::ActorBeginPlay_Implementation()
+void ANPC::BeginActor_Implementation()
 {
-	Super::ActorBeginPlay_Implementation();
+	Super::BeginActor_Implementation();
 
 	if (SpawnWithCorruptionOverlayEffect)
 	{
@@ -74,13 +74,13 @@ void ANPC::NativeOnDie(const FDamageInfo& DamageInfo)
 	
 	if (!HasAuthority()) return;
 	
-	if (DamageInfo.DA_Damage->HitMass > 0)
+	if (DamageInfo.DA_DamageAction->HitMass > 0)
 	{
 		
 		float CharacterMass = GetCapsuleComponent()->GetBodyInstance()->GetBodyMass();
 		if (CharacterMass <= 0) CharacterMass = 0.01f;
 		
-		float MassRatio = DamageInfo.DA_Damage->HitMass / CharacterMass; // How heavy the hit is compared to the character
+		float MassRatio = DamageInfo.DA_DamageAction->HitMass / CharacterMass; // How heavy the hit is compared to the character
 
 		// If Character mass > HitMass more than three times, then LaunchCharacter is not applied.
 		if (MassRatio > 0.3333f)

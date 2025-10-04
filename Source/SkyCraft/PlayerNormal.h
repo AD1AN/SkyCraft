@@ -62,12 +62,12 @@ public:
 	UPROPERTY(BlueprintReadOnly) bool bAnimLoopUpperBody = false;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnimLoopUpperBody(UAnimSequenceBase* Sequence);
 	
-	virtual void ActorBeginPlay_Implementation() override;
+	virtual void BeginActor_Implementation() override;
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
 
-	// Called ONCE from ActorBeginPlay or OnRep_PSS.
+	// Called ONCE from BeginActor or OnRep_PSS.
 	UFUNCTION(BlueprintNativeEvent) void CharacterStart();
 
 	// Character Initiated and PSS is valid, but BP_PSS->PlayerLoaded can be true/false.

@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "SuffocationComponent.generated.h"
 
-class UDA_Damage;
+class UDA_DamageAction;
 class UHealthComponent;
 
 UENUM()
@@ -26,7 +26,7 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) ESuffocationType SuffocationType = ESuffocationType::TickDamage;
-	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="SuffocationType==ESuffocationType::TickDamage", EditConditionHides)) UDA_Damage* DA_Damage = nullptr;
+	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="SuffocationType==ESuffocationType::TickDamage", EditConditionHides)) UDA_DamageAction* DA_Damage = nullptr;
 	
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

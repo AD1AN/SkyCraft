@@ -57,7 +57,7 @@ void UHungerComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 		Hunger = MaxHunger;
 
 		FDamageInfo DamageInfo;
-		DamageInfo.DA_Damage = DA_Damage;
+		DamageInfo.DA_DamageAction = DA_Damage;
 		DamageInfo.WorldLocation = PlayerNormal->GetActorLocation();
 		
 		UAdianFL::DoDamage(PlayerNormal, DamageInfo);

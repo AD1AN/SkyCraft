@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "HungerComponent.generated.h"
 
-class UDA_Damage;
+class UDA_DamageAction;
 
 // TODO, THIS COMPONENT ONLY DESIGNED FOR PLAYER_NORMAL, REWORK IT IF NEED FOR OTHER ENTITIES!
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent), DisplayName="HungerComponent")
@@ -19,7 +19,7 @@ public:
 	UPROPERTY() class APlayerNormal* PlayerNormal = nullptr;
 	UPROPERTY() class AGSS* GSS = nullptr;
 	UPROPERTY(EditAnywhere) TObjectPtr<USoundBase> StomachGrowlingSound = nullptr;
-	UPROPERTY(EditAnywhere) UDA_Damage* DA_Damage = nullptr;
+	UPROPERTY(EditAnywhere) UDA_DamageAction* DA_Damage = nullptr;
 	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCurrentHunger);
 	UPROPERTY(BlueprintAssignable) FOnCurrentHunger OnHunger;

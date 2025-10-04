@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "SkyCraft/Structs/FloatMinMax.h"
 #include "SkyCraft/Components/EntityComponent.h"
+#include "SkyCraft/Structs/EntityModifier.h"
 #include "SkyCraft/Structs/EntityConfigModifier.h"
 #include "SkyCraft/Structs/Slot.h"
 #include "StructUtils/InstancedStruct.h"
@@ -47,10 +48,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(EditCondition="BuildingType==EBuildingType::Snap", EditConditionHides)) bool bDependBySnapBox;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Config") EEntityConfigUse EntityConfigUse = EEntityConfigUse::DataAsset;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") int32 BuildingHealth = 402;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") TObjectPtr<UDA_EntityConfig> DA_EntityConfig = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct, EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") TArray<TInstancedStruct<FEntityConfigModifier>> EntityConfigModifiers;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::Defined", EditConditionHides), Category="Entity Config") FEntityConfig DefinedEntityConfig;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Component") int32 HealthMax = 402;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Component") UDA_Entity* DA_Entity = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Component", meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FEntityModifier>> EntityModifiers;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") TObjectPtr<UNiagaraSystem> NiagaraBuild = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effects") TObjectPtr<USoundBase> SoundBuild = nullptr;

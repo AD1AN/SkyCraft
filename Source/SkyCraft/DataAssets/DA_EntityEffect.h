@@ -49,6 +49,6 @@ public:
 	bool bExpireStacks = false; // When duration is 0 then remove stack instead of effect.
 	
 	// todo apply gameplay tags
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTagContainer GrantTags;
+	// UPROPERTY(EditDefaultsOnly)
+	// FGameplayTagContainer GrantTags;
 };

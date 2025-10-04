@@ -6,12 +6,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
-#include "Structs/FX.h"
+#include "Structs/Cue.h"
 #include "Internationalization/StringTable.h"
 
 AGSS::AGSS(){}
 
-void AGSS::Multicast_SpawnFXAttached_Implementation(FFX FX, FVector LocalLocation, AActor* AttachTo, USoundAttenuation* AttenuationSettings)
+void AGSS::Multicast_SpawnFXAttached_Implementation(FCue FX, FVector LocalLocation, AActor* AttachTo, USoundAttenuation* AttenuationSettings)
 {
 	if (!IsValid(AttachTo)) return;
 	if (FX.Sound) UGameplayStatics::SpawnSoundAttached(FX.Sound, AttachTo->GetRootComponent(), NAME_None, LocalLocation, FRotator::ZeroRotator, EAttachLocation::KeepRelativeOffset, false, 1,1,0,AttenuationSettings);

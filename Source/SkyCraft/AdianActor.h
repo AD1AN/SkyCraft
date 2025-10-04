@@ -22,17 +22,17 @@ public:
 	virtual void PostInitializeComponents() override;
 
 protected:
-	// Called before ActorBeginPlay.
-	UFUNCTION(BlueprintNativeEvent) void ActorInit();
+	// Called before BeginActor.
+	UFUNCTION(BlueprintNativeEvent) void InitActor();
 
-	// Called after ActorInit.
-	UFUNCTION(BlueprintNativeEvent) void ActorBeginPlay();
+	// Called after InitActor.
+	UFUNCTION(BlueprintNativeEvent) void BeginActor();
 
-	// Called after ActorBeginPlay.
-	UFUNCTION(BlueprintNativeEvent) void PostBeginPlay();
+	// Called after BeginActor.
+	UFUNCTION(BlueprintNativeEvent) void PostBeginActor();
 	
 private:
-	// Calls new functions in order. Do not override or call this method directly. Use ActorBeginPlay instead.
+	// Calls new functions in order. Do not override or call this method directly. Use BeginActor instead.
 	virtual void BeginPlay() final override;
 };
 
@@ -42,10 +42,10 @@ class SKYCRAFT_API AAdianCharacter : public ACharacter
 	GENERATED_BODY()
 
 protected:
-	// Called after ActorInit.
-	UFUNCTION(BlueprintNativeEvent) void ActorBeginPlay();
+	// Called after InitActor.
+	UFUNCTION(BlueprintNativeEvent) void BeginActor();
 
 private:
-	// Calls new functions in order. Do not override or call this method directly. Use ActorBeginPlay instead.
+	// Calls new functions in order. Do not override or call this method directly. Use BeginActor instead.
 	virtual void BeginPlay() final override;
 };

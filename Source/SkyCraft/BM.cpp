@@ -32,36 +32,18 @@ ABM::ABM()
 	EntityComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
 }
 
-void ABM::ActorBeginPlay_Implementation()
+void ABM::InitActor_Implementation()
 {
-	Super::ActorBeginPlay_Implementation();
-	// This code duplicated in Resource::BeginPlay
-	if (DA_Building->EntityConfigUse == EEntityConfigUse::DataAsset)
-	{
-		if (DA_Building->DA_EntityConfig)
-		{
-			FEntityConfig TempHealthConfig = DA_Building->DA_EntityConfig->EntityConfig;
-			for (auto& Modifier : DA_Building->EntityConfigModifiers)
-			{
-				if (FEntityConfigModifier* mod = Modifier.GetMutablePtr<FEntityConfigModifier>())
-				{
-					mod->Implement(TempHealthConfig);
-				}
-			}
-			EntityComponent->Config = TempHealthConfig;
-			EntityComponent->Config.HealthMax = DA_Building->BuildingHealth;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("DA_Building: %s not contains DA_EntityConfig! Using DefinedEntityConfig!"), *DA_Building->GetName());
-			EntityComponent->Config = DA_Building->DefinedEntityConfig;
-		}
-	}
-	else
-	{
-		EntityComponent->Config = DA_Building->DefinedEntityConfig;
-	}
-	EntityComponent->OverrideHealth(EntityComponent->Config.HealthMax);
+	Super::InitActor_Implementation();
+
+	EntityComponent->SetupDataAssetEntity(DA_Building->DA_Entity);
+	EntityComponent->SetupOverrideHealthMax(DA_Building->HealthMax);
+	EntityComponent->ImplementEntityModifiers(DA_Building->EntityModifiers);
+}
+
+void ABM::BeginActor_Implementation()
+{
+	Super::BeginActor_Implementation();
 	
 	if (HasAuthority()) AttachToActor(AttachIsland, FAttachmentTransformRules::KeepRelativeTransform);
 	else AttachIsland = Cast<AIsland>(UAdianFL::GetRootActor(this));
@@ -94,7 +76,7 @@ void ABM::Builded_Implementation()
 
 void ABM::BuildedEffects_Implementation()
 {
-	PlayEffects(true);
+	PlayCues(true);
 }
 
 void ABM::Multicast_Dismantle_Implementation()
@@ -109,7 +91,7 @@ void ABM::Dismantled_Implementation()
 
 void ABM::DismantledEffects_Implementation()
 {
-	PlayEffects(false);
+	PlayCues(false);
 }
 
 void ABM::Dismantle(UInventoryComponent* CauserInventory)
@@ -261,7 +243,7 @@ bool ABM::OnDie_Implementation(const FDamageInfo& DamageInfo)
 	return true;
 }
 
-void ABM::PlayEffects(bool Builded)
+void ABM::PlayCues(bool Builded)
 {
 	if (IsNetMode(NM_DedicatedServer)) return;
 	ensureAlways(DA_Building);
@@ -277,7 +259,7 @@ void ABM::PlayEffects(bool Builded)
 	}
 	else
 	{
-		EntityComponent->PlayDieEffects(FDamageInfo{});
+		EntityComponent->PlayDieCues(FDamageInfo{});
 	}
 }
 

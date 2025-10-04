@@ -7,6 +7,7 @@
 #include "SkyCraft/Resource.h"
 #include "SkyCraft/Components/EntityComponent.h"
 #include "SkyCraft/Structs/EntityConfigModifier.h"
+#include "SkyCraft/Structs/EntityModifier.h"
 #include "SkyCraft/Structs/InteractKeySettings.h"
 #include "SkyCraft/Structs/ResourceModifier.h"
 #include "SkyCraft/Structs/ResourceSize.h"
@@ -66,6 +67,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") UDA_EntityConfig* DA_EntityConfig = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct, EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") TArray<TInstancedStruct<FEntityConfigModifier>> EntityConfigModifiers;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::Defined", EditConditionHides), Category="Entity Config") FEntityConfig DefinedEntityConfig;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Component") UDA_Entity* DA_Entity = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Component", meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FEntityModifier>> EntityModifiers;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="DA_Resource"), Category="Resource On Destroy") TArray<FSpawnResource> SpawnResources;
 };

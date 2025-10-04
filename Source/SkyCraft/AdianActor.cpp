@@ -13,12 +13,12 @@ AAdianActor::AAdianActor()
 
 void AAdianActor::PostInitializeComponents()
 {
-	ActorInit();
+	InitActor();
 	
 	Super::PostInitializeComponents();
 }
 
-void AAdianActor::PostBeginPlay_Implementation()
+void AAdianActor::PostBeginActor_Implementation()
 {
 }
 
@@ -31,17 +31,17 @@ void AAdianActor::BeginPlay()
 
 	for (UAdianComponent* Component : Components)
 	{
-		Component->BeforeActorBeginPlay();
+		Component->BeforeBeginActor();
 	}
 	
-	ActorBeginPlay();
+	BeginActor();
 
 	for (UAdianComponent* Component : Components)
 	{
-		Component->AfterActorBeginPlay();
+		Component->AfterBeginActor();
 	}
 
-	PostBeginPlay();
+	PostBeginActor();
 }
 
 void AAdianCharacter::BeginPlay()
@@ -53,19 +53,19 @@ void AAdianCharacter::BeginPlay()
 
 	for (UAdianComponent* Component : Components)
 	{
-		Component->BeforeActorBeginPlay();
+		Component->BeforeBeginActor();
 	}
 	
-	ActorBeginPlay();
+	BeginActor();
 
 	for (UAdianComponent* Component : Components)
 	{
-		Component->AfterActorBeginPlay();
+		Component->AfterBeginActor();
 	}
 }
 
-void AAdianCharacter::ActorBeginPlay_Implementation() {}
+void AAdianCharacter::BeginActor_Implementation() {}
 
-void AAdianActor::ActorInit_Implementation() {}
+void AAdianActor::InitActor_Implementation() {}
 
-void AAdianActor::ActorBeginPlay_Implementation() {}
+void AAdianActor::BeginActor_Implementation() {}

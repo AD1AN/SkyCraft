@@ -15,7 +15,7 @@ class SKYCRAFT_API AChunkEssence : public AAdianActor
 public:
 	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
 
-	virtual void ActorBeginPlay_Implementation() override;
+	virtual void BeginActor_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable) void RandomEssence(int32& Essence, FLinearColor& EssenceColor);
 };

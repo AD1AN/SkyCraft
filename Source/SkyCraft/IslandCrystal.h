@@ -32,7 +32,7 @@ public:
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerIsland, BlueprintReadOnly) APlayerIsland* PlayerIsland = nullptr;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PlayerIsland();
 	
-	virtual void ActorBeginPlay_Implementation() override;
+	virtual void BeginActor_Implementation() override;
 	void InitializeCrystal();
 
 	UFUNCTION() void OnTargetDirection();

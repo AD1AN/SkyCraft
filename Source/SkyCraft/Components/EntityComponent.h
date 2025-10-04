@@ -4,19 +4,28 @@
 
 #include "CoreMinimal.h"
 #include "AdianComponent.h"
-#include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "SkyCraft/Enums/DropDirectionType.h"
 #include "SkyCraft/Enums/DropLocationType.h"
 #include "SkyCraft/Damage.h"
+#include "SkyCraft/Enums/DieHandle.h"
 #include "SkyCraft/Structs/DropItem.h"
 #include "SkyCraft/Structs/Essence.h"
-#include "SkyCraft/Structs/FX.h"
+#include "SkyCraft/Structs/Cue.h"
 #include "SkyCraft/Structs/RelativeBox.h"
 #include "SkyCraft/Structs/EntityEffect.h"
 #include "SkyCraft/Structs/EntityStatsModifier.h"
+#include "StructUtils/InstancedStruct.h"
 #include "EntityComponent.generated.h"
 
+struct FEntityModifier;
+struct FOverrideAttenuation;
+struct FExperimentalOverrideSoundSettings;
+struct FExperimentalOverrideDropItems;
+struct FOverrideDieCues;
+struct FOverrideDamageCues;
+struct FOverrideDieFXDefault;
+class UDA_Entity;
 struct FStaticMeshBase;
 class AEntityManager;
 class AEssenceActor;
@@ -25,40 +34,12 @@ class AGSS;
 class UNiagaraComponent;
 class UDA_EntityEffect;
 
-UENUM()
-enum class EDieHandle : uint8
-{
-	JustDestroy,
-	CustomOnDieEvent
-};
-
-UENUM()
-enum class ESoundDieLocation : uint8
-{
-	ActorOrigin,
-	RelativeLocation,
-	InCenterOfMass
-};
-
 UENUM(BlueprintType)
 enum class EEntityConfigUse : uint8
 {
 	DataAsset,
 	Defined
 };
-
-// USTRUCT(BlueprintType)
-// struct FStat
-// {
-// 	GENERATED_BODY()
-//
-// 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 BaseValue = 0;
-// 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 CurrentValue = 0;
-//
-// 	FStat() {}
-// 	
-// 	FStat(int32 DefaultValue) : BaseValue(DefaultValue), CurrentValue(DefaultValue) {}
-// };
 
 USTRUCT(BlueprintType)
 struct FStatModifier
@@ -82,13 +63,13 @@ struct FEntityConfig
 	bool bInclusiveDamageOnly = false;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
-	TArray<TObjectPtr<UDA_Damage>> InclusiveDamage;
+	TArray<TObjectPtr<UDA_DamageAction>> InclusiveDamage;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
 	FText DefaultTextForNonInclusive;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TMap<TObjectPtr<UDA_Damage>, FText> ImmuneToDamage;
+	TMap<TObjectPtr<UDA_DamageAction>, FText> ImmuneToDamage;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TMap<EDamageGlobalType, float> MultiplyDamageType;
@@ -98,16 +79,16 @@ struct FEntityConfig
 
 	//======================= FX ====================//
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Sound & Niagara | Vars: {bHaveNiagaraVars}"))
-	TArray<FFX> DamageFXDefault;
+	TArray<FCue> DamageFXDefault;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TMap<TObjectPtr<UDA_Damage>, FFXArray> DamageFX;
+	TMap<TObjectPtr<UDA_DamageAction>, FCueArray> DamageFX;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Sound & Niagara | Vars: {bHaveNiagaraVars}"))
-	TArray<FFX> DieFXDefault;
+	TArray<FCue> DieFXDefault;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TMap<TObjectPtr<UDA_Damage>, FFXArray> DieFX;
+	TMap<TObjectPtr<UDA_DamageAction>, FCueArray> DieFX;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	bool bOverrideSoundSettings = false;
@@ -183,8 +164,36 @@ public:
 	UEntityComponent();
 
 	UPROPERTY(VisibleInstanceOnly) AGSS* GSS = nullptr;
-	
 	AGSS* GetGSS();
+
+private:
+	// Should always be valid.
+	// In editor or with SetupDataAssetEntity() on InitActor().
+	UPROPERTY(EditDefaultsOnly) UDA_Entity* DA_Entity = nullptr;
+
+	// Should be used SetupOverrideHealthMax() on InitActor().
+	int32* OverrideHealthMax = nullptr;
+	
+public:
+	// Overrides damage cues.
+	FOverrideDamageCues* OverrideDamageCues = nullptr;
+
+	// Overrides die cues.
+	FOverrideDieCues* OverrideDieCues = nullptr;
+
+	// Overrides drop items.
+	FExperimentalOverrideDropItems* OverrideDropItems = nullptr;
+
+	// Overrides sound settings.
+	FOverrideAttenuation* OverrideAttenuation = nullptr;
+	
+	void SetupDataAssetEntity(UDA_Entity* InDA_Entity);
+	UDA_Entity* GetDataAssetEntity() const { return DA_Entity; }
+	void SetupOverrideHealthMax(int32& InHealthMax) { OverrideHealthMax = &InHealthMax; }
+	void ImplementEntityModifiers(TArray<TInstancedStruct<FEntityModifier>>& EntityModifiers);
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool bConfigHandledByCode = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ShowOnlyInnerProperties, EditCondition="!bConfigHandledByCode")) FEntityConfig Config;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta=(CompactNodeTitle="Health")) int32 GetHealth() const { return Health; }
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHealth(int32 NewHealth);
@@ -221,12 +230,7 @@ public:
 	void AddStatsModifier(const FEntityStatsModifier* NewStats);
 	void RemoveStatsModifier(const FEntityStatsModifier* OldStats);
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Replicated) FGameplayTagContainer Tags; // idk what for
-	
 	UPROPERTY(BlueprintReadOnly) bool bDied = false;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool bConfigHandledByCode = true;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ShowOnlyInnerProperties, EditCondition="!bConfigHandledByCode")) FEntityConfig Config;
 	
 	void DoDamage(const FDamageInfo& DamageInfo);
 	void DroppingItems(FVector OverrideLocation = FVector::ZeroVector);
@@ -237,10 +241,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void AuthDie(const FDamageInfo& DamageInfo);
 	
-	void PlayDieEffects(FDamageInfo DamageInfo);
+	void PlayDieCues(FDamageInfo DamageInfo);
 	
 private:
-	virtual void AfterActorBeginPlay_Implementation() override;
+	virtual void BeforeBeginActor_Implementation() override;
+	virtual void AfterBeginActor_Implementation() override;
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	UFUNCTION(NetMulticast, Reliable) void Multicast_OnDamage(FDamageInfo DamageInfo, int32 DamageTaken);
@@ -249,6 +254,6 @@ private:
 	
 	void SpawnDamageNumbers(FDamageInfo DamageInfo, int32 DamageTaken);
 	
-	void ImplementNiagaraVars(FFX& FX, UNiagaraComponent* NiagaraComponent);
+	void ImplementNiagaraVars(FCue& FX, UNiagaraComponent* NiagaraComponent);
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

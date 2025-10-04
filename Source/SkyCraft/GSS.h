@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
 #include "Structs/FloatMinMax.h"
-#include "Structs/FX.h"
+#include "Structs/Cue.h"
 #include "GSS.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerIslandCorruptionSettings);
@@ -78,7 +78,7 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Replicated) FRandomStream WorldSeed;
 	
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_SpawnFXAttached(FFX FX, FVector LocalLocation = FVector::ZeroVector, AActor* AttachTo = nullptr, USoundAttenuation* AttenuationSettings = nullptr);
+	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_SpawnFXAttached(FCue FX, FVector LocalLocation = FVector::ZeroVector, AActor* AttachTo = nullptr, USoundAttenuation* AttenuationSettings = nullptr);
 
 	UPROPERTY(BlueprintReadOnly, Replicated) APSS* HostPlayer = nullptr;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHostPlayer(APSS* Host);

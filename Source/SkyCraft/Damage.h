@@ -47,7 +47,7 @@ struct FDamageGlobalTypeNegate
 //==================== DataAsset Damage =======================//
 
 UCLASS(BlueprintType)
-class SKYCRAFT_API UDA_Damage : public UDataAsset
+class SKYCRAFT_API UDA_DamageAction : public UDataAsset
 {
 	GENERATED_BODY()
 
@@ -66,7 +66,7 @@ USTRUCT(BlueprintType)
 struct FDamageInfo
 {
 	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_Damage* DA_Damage = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_DamageAction* DA_DamageAction = nullptr;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) AActor* EntityDealer = nullptr;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector WorldLocation = FVector::ZeroVector;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float LinearDamage = 0;

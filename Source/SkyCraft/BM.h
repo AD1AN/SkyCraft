@@ -47,7 +47,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated) uint8 Grounded = 0;
 	UFUNCTION(BlueprintAuthorityOnly, BlueprintCallable) void AuthSetGrounded(uint8 NewGrounded);
 
-	virtual void ActorBeginPlay_Implementation() override;
+	virtual void InitActor_Implementation() override;
+	virtual void BeginActor_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) FBuildingParameters SaveBuildingParameters();
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) bool LoadBuildingParameters(FBuildingParameters BuildingParameters);
@@ -75,7 +76,7 @@ public:
 	virtual bool OnDie_Implementation(const FDamageInfo& DamageInfo) override;
 
 private:
-	void PlayEffects(bool Builded);
+	void PlayCues(bool Builded);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "FX.generated.h"
+#include "Cue.generated.h"
 
 UENUM()
 enum class ENiagaraVarType : uint8
@@ -33,7 +33,7 @@ struct FNiagaraVar
 };
 
 USTRUCT(BlueprintType)
-struct FFX
+struct FCue
 {
 	GENERATED_BODY()
 
@@ -44,9 +44,9 @@ struct FFX
 };
 
 USTRUCT(BlueprintType)
-struct FFXArray
+struct FCueArray
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Sound & Niagara | {bHaveNiagaraVars}")) TArray<FFX> FXs;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Sound & Niagara | {bHaveNiagaraVars}")) TArray<FCue> Cues;
 };
