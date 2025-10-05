@@ -4,15 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "AdianComponent.h"
-#include "Components/ActorComponent.h"
-#include "SkyCraft/Enums/DropDirectionType.h"
-#include "SkyCraft/Enums/DropLocationType.h"
 #include "SkyCraft/Damage.h"
-#include "SkyCraft/Enums/DieHandle.h"
-#include "SkyCraft/Structs/DropItem.h"
-#include "SkyCraft/Structs/Essence.h"
 #include "SkyCraft/Structs/Cue.h"
-#include "SkyCraft/Structs/RelativeBox.h"
 #include "SkyCraft/Structs/EntityEffect.h"
 #include "SkyCraft/Structs/EntityStatsModifier.h"
 #include "StructUtils/InstancedStruct.h"
@@ -21,26 +14,19 @@
 struct FReplaceDropItems;
 struct FEntityModifier;
 struct FOverrideAttenuation;
-struct FExperimentalOverrideSoundSettings;
-struct FExperimentalOverrideDropItems;
+struct FOverrideSoundSettings;
+struct FOverrideDropItems;
 struct FOverrideDieCues;
 struct FOverrideDamageCues;
 struct FOverrideDieFXDefault;
-class UDA_Entity;
 struct FStaticMeshBase;
+class UDA_Entity;
 class AEntityManager;
 class AEssenceActor;
 class UDA_Item;
 class AGSS;
 class UNiagaraComponent;
 class UDA_EntityEffect;
-
-UENUM(BlueprintType)
-enum class EEntityConfigUse : uint8
-{
-	DataAsset,
-	Defined
-};
 
 USTRUCT(BlueprintType)
 struct FStatModifier
@@ -50,99 +36,6 @@ struct FStatModifier
 	EEntityStat ModifyingStat = EEntityStat::HealthMax;
 	bool bAdditiveStat = true;
 	int32 ModifiedValue = 0;
-};
-
-USTRUCT(BlueprintType)
-struct FEntityConfig
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ClampMin="1", UIMin="1"))
-	int32 HealthMax = 404; // HealthMax should never be 0 or less!
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	bool bInclusiveDamageOnly = false;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
-	TArray<TObjectPtr<UDA_DamageAction>> InclusiveDamage;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bInclusiveDamageOnly", EditConditionHides))
-	FText DefaultTextForNonInclusive;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TMap<TObjectPtr<UDA_DamageAction>, FText> ImmuneToDamage;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	TMap<EDamageGlobalType, float> MultiplyDamageType;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	EDieHandle DieHandle = EDieHandle::JustDestroy;
-
-	//======================= FX ====================//
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Sound & Niagara | Vars: {bHaveNiagaraVars}"))
-	TArray<FCue> DamageFXDefault;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TMap<TObjectPtr<UDA_DamageAction>, FCueArray> DamageFX;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="Sound & Niagara | Vars: {bHaveNiagaraVars}"))
-	TArray<FCue> DieFXDefault;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TMap<TObjectPtr<UDA_DamageAction>, FCueArray> DieFX;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	bool bOverrideSoundSettings = false;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bOverrideSoundSettings", EditConditionHides))
-	TObjectPtr<USoundAttenuation> OverrideSoundAttenuation = nullptr;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bOverrideSoundSettings", EditConditionHides))
-	ESoundDieLocation SoundDieLocation = ESoundDieLocation::ActorOrigin;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bOverrideSoundSettings && SoundDieLocation == ESoundDieLocation::RelativeLocation", EditConditionHides))
-	FVector SoundDieRelativeLocation = FVector::ZeroVector;
-
-	//==================== Drop Items ==================//
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	bool bDropItems = false;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides, TitleProperty="Repeats: {RepeatDrop}(-{RandomMinusRepeats}) | Quantity: {Min}~{Max}"))
-	TArray<FDropItem> DropItems;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides))
-	EDropLocationType DropLocationType = EDropLocationType::ActorOrigin;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems && DropLocationType == EDropLocationType::RandomPointInBox", EditConditionHides))
-	FRelativeBox DropInRelativeBox;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems", EditConditionHides))
-	EDropDirectionType DropDirectionType = EDropDirectionType::RandomDirection;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingItems && (DropDirectionType == EDropDirectionType::LocalDirection || DropDirectionType == EDropDirectionType::WorldDirection)", EditConditionHides))
-	FVector DropDirection = FVector::ZeroVector;
-
-	//==================== Drop Essence ==================//
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	bool bDropEssence = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence", EditConditionHides))
-	FLinearColor EssenceColor = FLinearColor::White;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence", EditConditionHides))
-	EDropEssenceAmount DropEssenceAmount = EDropEssenceAmount::MinMax;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence && DropEssenceAmount == EDropEssenceAmount::MinMax", EditConditionHides))
-	FIntMinMax DropEssenceMinMax;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence && DropEssenceAmount == EDropEssenceAmount::Static", EditConditionHides))
-	int32 DropEssenceStatic;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence", EditConditionHides))
-	EDropEssenceLocationType DropEssenceLocationType = EDropEssenceLocationType::ActorOriginPlusZ;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, meta=(EditCondition="bIsDroppingEssence && DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ", EditConditionHides))
-	float DropEssenceLocationPlusZ = 50.0f;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamage, FDamageInfo, DamageInfo);
@@ -183,13 +76,13 @@ public:
 	FOverrideDieCues* OverrideDieCues = nullptr;
 
 	// Overrides drop items.
-	FExperimentalOverrideDropItems* OverrideDropItems = nullptr;
+	FOverrideDropItems* OverrideDropItems = nullptr;
 	
 	// Overrides drop items.
 	FReplaceDropItems* ReplaceDropItems = nullptr;
 
 	// Overrides sound settings.
-	FExperimentalOverrideSoundSettings* OverrideSoundSettings = nullptr;
+	FOverrideSoundSettings* OverrideSoundSettings = nullptr;
 	
 	// Overrides attenuation.
 	FOverrideAttenuation* OverrideAttenuation = nullptr;
@@ -199,9 +92,6 @@ public:
 	void SetupOverrideHealthMax(int32& InHealthMax) { OverrideHealthMax = &InHealthMax; }
 	void ImplementEntityModifiers(TArray<TInstancedStruct<FEntityModifier>>& EntityModifiers);
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool bConfigHandledByCode = true;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ShowOnlyInnerProperties, EditCondition="!bConfigHandledByCode")) FEntityConfig Config;
-
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta=(CompactNodeTitle="Health")) int32 GetHealth() const { return Health; }
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHealth(int32 NewHealth);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void OverrideHealth(int32 NewHealth);

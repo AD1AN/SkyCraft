@@ -64,7 +64,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void AuthSetPlayerIsland(APlayerIsland* NewPlayerIsland) { REP_SET(PlayerIsland, NewPlayerIsland); }
 	UPROPERTY(BlueprintAssignable) FOnPlayerIsland OnPlayerIsland;
-	UFUNCTION() void OnRep_PlayerIsland() { OnPlayerIsland.Broadcast(); }
+	UFUNCTION(BlueprintNativeEvent) void OnRep_PlayerIsland();
 	
 	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Crystal;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)

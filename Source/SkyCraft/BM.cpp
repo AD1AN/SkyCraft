@@ -9,7 +9,6 @@
 #include "RepHelpers.h"
 #include "Components/InventoryComponent.h"
 #include "DataAssets/DA_Building.h"
-#include "DataAssets/DA_EntityConfig.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -29,7 +28,6 @@ ABM::ABM()
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("StaticMeshComponent");
 	SetRootComponent(StaticMeshComponent);
 	EntityComponent = CreateDefaultSubobject<UEntityComponent>("EntityComponent");
-	EntityComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
 }
 
 void ABM::InitActor_Implementation()

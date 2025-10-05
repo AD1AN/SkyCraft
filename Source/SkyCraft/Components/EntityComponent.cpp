@@ -30,11 +30,6 @@ UEntityComponent::UEntityComponent()
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	PrimaryComponentTick.TickInterval = 0.1f;
 	SetIsReplicatedByDefault(true);
-	
-	for (EDamageGlobalType DGT : TEnumRange<EDamageGlobalType>())
-	{
-		Config.MultiplyDamageType.Add(DGT, 1.0f);
-	}
 }
 
 void UEntityComponent::BeforeBeginActor_Implementation()
@@ -243,32 +238,6 @@ void UEntityComponent::OverrideHealth(int32 NewHealth)
 	REP_SET(Health, NewHealth);
 }
 
-// void Add(UEntityComponent* EntityComponent)
-// {
-// 	ensureAlways(EntityComponent);
-// 	if (!EntityComponent) return;
-// 	
-// 	EntityComponent->HealthMax += HealthMax;
-// 	EntityComponent->Strength += Strength;
-// 	EntityComponent->PhysicalResistance += PhysicalResistance;
-// 	EntityComponent->FireResistance += FireResistance;
-// 	EntityComponent->ColdResistance += ColdResistance;
-// 	EntityComponent->PoisonResistance += PoisonResistance;
-// }
-// 	
-// void Remove(UEntityComponent* EntityComponent)
-// {
-// 	ensureAlways(EntityComponent);
-// 	if (!EntityComponent) return;
-// 	
-// 	EntityComponent->HealthMax -= HealthMax;
-// 	EntityComponent->Strength -= Strength;
-// 	EntityComponent->PhysicalResistance -= PhysicalResistance;
-// 	EntityComponent->FireResistance -= FireResistance;
-// 	EntityComponent->ColdResistance -= ColdResistance;
-// 	EntityComponent->PoisonResistance -= PoisonResistance;
-// }
-
 void UEntityComponent::Multicast_OnZeroDamage_Implementation(FDamageInfo DamageInfo)
 {
 	SpawnDamageNumbers(DamageInfo, 0);
@@ -323,7 +292,7 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 
 	if (DamageInfo.DA_DamageAction->bIsPercentage)
 	{
-		DamageTaken = Config.HealthMax * DamageTaken / 100;
+		DamageTaken = HealthMax * DamageTaken / 100;
 	}
 
 	// TODO: Need a better system for handling Strength for PlayerNormal.
@@ -337,9 +306,9 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 		DamageTaken += PlayerNormal->PSS->Strength - 1;
 	}
 	
-	if (Config.bInclusiveDamageOnly)
+	if (DA_Entity->bInclusiveDamageAction)
 	{
-		if (!Config.InclusiveDamage.Contains(DamageInfo.DA_DamageAction))
+		if (!DA_Entity->InclusiveDamageAction.Contains(DamageInfo.DA_DamageAction))
 		{
 			if (DamageInfo.DA_DamageAction->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
 			return;
@@ -347,16 +316,11 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 	}
 	else
 	{
-		if (Config.ImmuneToDamage.Find(DamageInfo.DA_DamageAction))
+		if (DA_Entity->ImmuneToDamageAction.Find(DamageInfo.DA_DamageAction))
 		{
 			if (DamageInfo.DA_DamageAction->bShowDamageNumbers) Multicast_OnZeroDamage(DamageInfo);
 			return;
 		}
-	}
-	
-	if (float* FoundMD = Config.MultiplyDamageType.Find(DamageInfo.DA_DamageAction->DamageGlobalType))
-	{
-		DamageTaken = DamageTaken * (*FoundMD);
 	}
 	
 	if (DamageTaken <= 0)
@@ -463,7 +427,7 @@ AEssenceActor* UEntityComponent::DroppingEssence(ACharacter* Character, FVector 
 	FTransform EssenceTransform;
 	if (DA_Entity->DropEssenceLocationType == EDropEssenceLocationType::ActorOriginPlusZ)
 	{
-		EssenceTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0,Config.DropEssenceLocationPlusZ));
+		EssenceTransform.SetLocation(GetOwner()->GetActorLocation() + FVector(0,0, DA_Entity->DropEssenceLocationPlusZ));
 	}
 	else EssenceTransform.SetLocation(OverrideLocation);
 
@@ -506,7 +470,7 @@ void UEntityComponent::AuthDie(const FDamageInfo& DamageInfo)
 
 	Multicast_OnDie(DamageInfo);
 	
-	if (Config.DieHandle == EDieHandle::JustDestroy)
+	if (DA_Entity->DieHandle == EDieHandle::JustDestroy)
 	{
 		DroppingItems();
 		GetOwner()->Destroy();
@@ -588,8 +552,8 @@ void UEntityComponent::Multicast_OnDie_Implementation(FDamageInfo DamageInfo)
 
 float UEntityComponent::HealthRatio()
 {
-	if (Config.HealthMax == 0) return 0.0f; // Prevent division by zero
-	return static_cast<float>(Health) / static_cast<float>(Config.HealthMax);
+	if (HealthMax == 0) return 0.0f; // Prevent division by zero
+	return static_cast<float>(Health) / static_cast<float>(HealthMax);
 }
 
 void UEntityComponent::PlayDieCues(FDamageInfo DamageInfo)

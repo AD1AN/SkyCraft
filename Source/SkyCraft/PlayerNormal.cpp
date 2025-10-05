@@ -23,8 +23,6 @@ APlayerNormal::APlayerNormal(const FObjectInitializer& ObjectInitializer) : Supe
 	PrimaryActorTick.bCanEverTick = true;
 	
 	EntityComponent = CreateDefaultSubobject<UEntityComponent>("EntityComponent");
-	EntityComponent->Config.HealthMax = 1000;
-	EntityComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
 	
 	HealthRegenComponent = CreateDefaultSubobject<UHealthRegenComponent>("HealthRegenComponent");
 	HungerComponent = CreateDefaultSubobject<UHungerComponent>("HungerComponent");

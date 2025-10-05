@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "CharacterBio.h"
-#include "Essence.h"
 #include "SkyCraft/Enums/Casta.h"
 #include "SkyCraft/Enums/PlayerForm.h"
+#include "SkyCraft/Structs/Slot.h"
 #include "SS_Player.generated.h"
 
 class UDA_Item;

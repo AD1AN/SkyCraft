@@ -10,7 +10,6 @@
 #include "SkyCraft/Components/InteractComponent.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "Components/GrowingResourcesComponent.h"
-#include "DataAssets/DA_EntityConfig.h"
 #include "Net/UnrealNetwork.h"
 
 AResource::AResource()
@@ -81,9 +80,6 @@ void AResource::BeginActor_Implementation()
 	}
 	
 	StaticMeshComponent->GetAssetUserData<UAUD_SkyTags>()->DA_SkyTags.Append(DA_Resource->SkyTags);
-
-	// TODO: add dropitems override, remove below old garbage
-	EntityComponent->Config.DropItems = CurrentSize.DropItems;
 	
 	if (HasAuthority())
 	{

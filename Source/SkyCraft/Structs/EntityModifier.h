@@ -1,6 +1,11 @@
 ﻿#pragma once
 
+#include "SkyCraft/Structs/DropItem.h"
+#include "SkyCraft/Structs/RelativeBox.h"
 #include "SkyCraft/Components/EntityComponent.h"
+#include "SkyCraft/Enums/DieHandle.h"
+#include "SkyCraft/Enums/DropLocationType.h"
+#include "SkyCraft/Enums/DropDirectionType.h"
 #include "EntityModifier.generated.h"
 
 USTRUCT(BlueprintType)
@@ -40,7 +45,7 @@ struct FOverrideDieCues : public FEntityModifier
 
 /* Fully overrides DropItems for entire entity. */
 USTRUCT(BlueprintType, DisplayName="Override Drop Items")
-struct FExperimentalOverrideDropItems : public FEntityModifier
+struct FOverrideDropItems : public FEntityModifier
 {
 	GENERATED_BODY()
 
@@ -98,7 +103,7 @@ struct FOverrideAttenuation : public FEntityModifier
 };
 
 USTRUCT(BlueprintType, DisplayName="Override Sound Settings")
-struct FExperimentalOverrideSoundSettings : public FEntityModifier
+struct FOverrideSoundSettings : public FEntityModifier
 {
 	GENERATED_BODY()
 

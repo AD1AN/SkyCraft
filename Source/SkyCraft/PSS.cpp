@@ -22,6 +22,11 @@ void APSS::BeginPlay()
 {
 	Super::BeginPlay();
 	GSS = GetWorld()->GetGameState<AGSS>();
+}g
+
+void APSS::OnRep_PlayerIsland_Implementation()
+{
+	OnPlayerIsland.Broadcast();
 }
 
 int32 APSS::SetEssence(int32 NewEssence)

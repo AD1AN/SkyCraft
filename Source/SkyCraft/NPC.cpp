@@ -22,9 +22,6 @@ ANPC::ANPC()
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	
 	EntityComponent = CreateDefaultSubobject<UEntityComponent>("EntityComponent");
-	EntityComponent->Config.DieHandle = EDieHandle::CustomOnDieEvent;
-	EntityComponent->Config.DropDirectionType = EDropDirectionType::RandomDirection;
-	EntityComponent->Config.DropLocationType = EDropLocationType::ActorOrigin;
 	
 	SuffocationComponent = CreateDefaultSubobject<USuffocationComponent>(TEXT("SuffocationComponent"));
 	SuffocationComponent->PrimaryComponentTick.TickInterval = 15;

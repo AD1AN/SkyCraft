@@ -6,7 +6,6 @@
 #include "Engine/DataAsset.h"
 #include "SkyCraft/Resource.h"
 #include "SkyCraft/Components/EntityComponent.h"
-#include "SkyCraft/Structs/EntityConfigModifier.h"
 #include "SkyCraft/Structs/EntityModifier.h"
 #include "SkyCraft/Structs/InteractKeySettings.h"
 #include "SkyCraft/Structs/ResourceModifier.h"
@@ -62,12 +61,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="bMaxFloorSlope")) float MaxFloorSlope = 45.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(TitleProperty="{InteractKey} | {Text}")) TArray<FInteractKeySettings> InteractKeys;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) bool OverlapCollision = false;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Config") EEntityConfigUse EntityConfigUse = EEntityConfigUse::DataAsset;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") UDA_EntityConfig* DA_EntityConfig = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(ExcludeBaseStruct, EditCondition="EntityConfigUse == EEntityConfigUse::DataAsset", EditConditionHides), Category="Entity Config") TArray<TInstancedStruct<FEntityConfigModifier>> EntityConfigModifiers;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="EntityConfigUse == EEntityConfigUse::Defined", EditConditionHides), Category="Entity Config") FEntityConfig DefinedEntityConfig;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Component") UDA_Entity* DA_Entity = nullptr;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Entity Component", meta=(ExcludeBaseStruct)) TArray<TInstancedStruct<FEntityModifier>> EntityModifiers;
 

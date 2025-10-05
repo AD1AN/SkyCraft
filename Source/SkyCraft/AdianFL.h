@@ -199,16 +199,11 @@ public:
 		return Result;
 	}
 
-	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "HealthMax", BlueprintAutocast), Category="AdianFL")
-	static int32 GetMaxHealth(const FEntityConfig& InHealthComponentConfig)
-	{
-		return InHealthComponentConfig.HealthMax;
-	}
-
 	UFUNCTION(BlueprintPure, meta=(CompactNodeTitle = "HealthMax"), Category="AdianFL")
 	static int32 GetMaxHealthComponent(const UEntityComponent* InEntityComponent)
 	{
-		return InEntityComponent ? InEntityComponent->HealthMax : 403;
+		ensureAlways(InEntityComponent);
+		return InEntityComponent ? InEntityComponent->HealthMax : 1;
 	}
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
