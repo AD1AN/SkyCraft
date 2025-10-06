@@ -29,7 +29,7 @@ class SKYCRAFT_API APlayerIsland : public AIsland, public IEssenceInterface
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UNiagaraComponent* NiagaraWind = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) UNiagaraComponent* NiagaraWind;
 	
 	APlayerIsland();
 
@@ -119,10 +119,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent) void OnRep_PawnIslandControl();
 	
 	UPROPERTY(BlueprintAssignable) FOnIsCrystal OnIsCrystal;
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, ReplicatedUsing=OnRep_bIsCrystal, meta=(ExposeOnSpawn)) bool bIsCrystal = true;
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void OnRep_bIsCrystal();
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void SetIsCrystal(bool newCrystal) { REP_SET(bIsCrystal, newCrystal); }
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_bIsCrystal, meta=(ExposeOnSpawn)) bool bIsCrystal = true;
+	UFUNCTION(BlueprintNativeEvent) void OnRep_bIsCrystal();
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIsCrystal(bool newCrystal) { REP_SET(bIsCrystal, newCrystal); }
 
 	float PreviousIslandSize = 0;
 	virtual void OnRep_IslandSize() override;

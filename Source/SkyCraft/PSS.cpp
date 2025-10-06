@@ -22,7 +22,7 @@ void APSS::BeginPlay()
 {
 	Super::BeginPlay();
 	GSS = GetWorld()->GetGameState<AGSS>();
-}g
+}
 
 void APSS::OnRep_PlayerIsland_Implementation()
 {

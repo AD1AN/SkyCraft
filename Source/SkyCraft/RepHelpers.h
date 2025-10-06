@@ -89,10 +89,9 @@ FORCEINLINE void RepNotify_ProcessEvent(UObject* const Object, UFunction* Functi
         FName const RepNotifyFuncName = RepNotify_GetFunctionName(ThisClass::StaticClass(), (int32)ThisClass::ENetFields_Private::PropertyName); \
         if (!RepNotifyFuncName.IsNone()) \
         { \
-            if (UFunction* const RepNotifyFunc = ThisClass::StaticClass()->FindFunctionByName(RepNotifyFuncName)) \
+            if (UFunction* const RepNotifyFunc = this->FindFunction(RepNotifyFuncName)) \
             { \
                 checkf(RepNotifyFunc->NumParms <= 1, TEXT("REP_NOTIFY does not support rep notifies with more than one parameter.")); \
-                \
                 RepNotify_ProcessEvent(this, RepNotifyFunc, __VA_ARGS__); \
             } \
         } \

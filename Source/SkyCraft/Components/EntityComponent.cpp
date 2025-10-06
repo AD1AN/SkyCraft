@@ -248,6 +248,15 @@ void UEntityComponent::DoDamage(const FDamageInfo& DamageInfo)
 	ensureAlways(DamageInfo.DA_DamageAction);
 	if (!DamageInfo.DA_DamageAction) return;
 
+	if (DamageInfo.EntityDealer)
+	{
+		if (UEntityComponent* DealerEntityComponent = DamageInfo.EntityDealer->FindComponentByClass<UEntityComponent>())
+		{
+			// Reversed because of conditions.
+			if (DealerEntityComponent->DA_Entity->EntityTag.MatchesAny(DA_Entity->ImmuneToEntities)) return;
+		}
+	}
+	
 	if (GetOwner()->IsA(ACharacter::StaticClass()) && DamageInfo.DA_DamageAction->HitMass > 0)
 	{
 		ACharacter* Character = Cast<ACharacter>(GetOwner());

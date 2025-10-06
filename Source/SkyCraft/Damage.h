@@ -6,6 +6,8 @@
 #include "Engine/DataAsset.h"
 #include "Damage.generated.h"
 
+class UDA_Entity;
+
 UENUM(BlueprintType)
 enum class EDamageGlobalType : uint8
 {
@@ -66,8 +68,8 @@ USTRUCT(BlueprintType)
 struct FDamageInfo
 {
 	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_DamageAction* DA_DamageAction = nullptr;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) AActor* EntityDealer = nullptr;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_DamageAction* DA_DamageAction = nullptr; // Always expected.
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) AActor* EntityDealer = nullptr; // Optional.
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector WorldLocation = FVector::ZeroVector;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float LinearDamage = 0;
 };

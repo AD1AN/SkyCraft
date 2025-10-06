@@ -30,7 +30,7 @@ public:
 	int32 HealthMax = 404; // HealthMax should be more than 0 (Zero)!
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FGameplayTagContainer EntityTag;
+	FGameplayTag EntityTag;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FGameplayTagContainer ImmuneToEntities;
