@@ -4,6 +4,7 @@
 #include "AdianFL.h"
 #include "Island.h"
 #include "NiagaraComponent.h"
+#include "NiagaraSystem.h"
 #include "Components/InventoryComponent.h"
 #include "Components/SphereComponent.h"
 #include "SkyCraft/Components/InteractComponent.h"

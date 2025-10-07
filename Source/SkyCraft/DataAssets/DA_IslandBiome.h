@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "SkyCraft/Structs/Uint8MinMax.h"
+#include "SkyCraft/Structs/FloatMinMax.h"
 #include "DA_IslandBiome.generated.h"
 
 class ANPC;
 class UDA_Resource;
+class UDA_Foliage;
 
 USTRUCT(BlueprintType)
 struct FIslandNPC

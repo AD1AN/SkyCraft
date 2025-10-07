@@ -68,151 +68,6 @@ void APlayerIsland::StartIsland()
 	InitialGenerateComplete(_ID);
 }
 
-void APlayerIsland::SetIslandSize(float NewSize)
-{
-	PreviousIslandSize = IslandSize;
-	IslandSize = NewSize;
-	OnRep_IslandSize();
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, IslandSize, this);
-}
-
-void APlayerIsland::OnRep_TargetDirection()
-{
-	OnTargetDirection.Broadcast();
-	NiagaraWind->SetVariableFloat("YawDirection", TargetDirection.ToOrientationRotator().Yaw - 90);
-}
-
-void APlayerIsland::OnRep_TargetSpeed()
-{
-	NiagaraWind->SetFloatParameter("TargetSpeedRatio", TargetSpeedRatio());
-	OnTargetSpeed.Broadcast();
-}
-
-void APlayerIsland::OnRep_IslandSize()
-{
-	if (!IslandStarted) return;
-	if (!bIsCrystal)
-	{
-		OnIslandSize.Broadcast();
-		return;
-	}
-	
-	// TODO: store Terrain EditedVertices by location and apply to new terrain.
-	DestroyIslandGeometry();
-	
-	const FIslandData _ID = GenerateIsland();
-	ResizeGenerateComplete(_ID);
-	if (IslandSize < PreviousIslandSize) OnIslandShrink();
-	OnIslandSize.Broadcast();
-}
-
-void APlayerIsland::ResizeGenerateComplete(const FIslandData& _ID)
-{
-	ID = _ID;
-	bIDGenerated = true;
-	OnIDGenerated.Broadcast();
-	
-	for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
-	{
-		CliffsComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
-	}
-	if (HasAuthority())
-	{
-		for (int32 i = 0; i < 4; ++i)
-		{
-			UTerrainChunk* TerrainChunk = NewObject<UTerrainChunk>(this);
-			TerrainChunk->RegisterComponent();
-			TerrainChunks.Add(TerrainChunk);
-		}
-		SpawnFoliageComponents();
-	}
-	
-	PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
-	PMC_Main->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
-
-	if (DA_IslandBiome)
-	{
-		if (DA_IslandBiome->TopMaterial) PMC_Main->SetMaterial(0, DA_IslandBiome->TopMaterial);
-		if (DA_IslandBiome->BottomMaterial) PMC_Main->SetMaterial(1, DA_IslandBiome->BottomMaterial);
-	}
-	
-	bIsGenerating = false;
-	bFullGenerated = true;
-	bIsGenerating = false;
-	OnFullGenerated.Broadcast();
-}
-
-void APlayerIsland::DestroyIslandGeometry()
-{
-	if (bIsGenerating)
-	{
-		CancelAsyncGenerate();
-	}
-	
-	for (int32 i = FoliageComponents.Num() - 1; i >= 0; --i)
-	{
-		if (IsValid(FoliageComponents[i])) FoliageComponents[i]->DestroyComponent();
-		FoliageComponents.RemoveAt(i);
-	}
-	for (int32 i = TerrainChunks.Num() - 1; i >= 0; --i)
-	{
-		if (IsValid(TerrainChunks[i])) TerrainChunks[i]->DestroyComponent();
-	}
-	if (bFullGenerated)
-	{
-		PMC_Main->ClearAllMeshSections();
-		for (auto& CliffComponent : CliffsComponents)
-		{
-			CliffComponent->ClearInstances();
-		}
-		ID = {};
-	}
-}
-
-void APlayerIsland::OnRep_bIsCrystal_Implementation()
-{
-	if (!IslandStarted) return;
-	
-	if (bIsCrystal)
-	{
-		const FIslandData _ID = GenerateIsland();
-		ResizeGenerateComplete(_ID);
-		if (HasAuthority()) GenerateLOD(INDEX_NONE); // Generate AlwaysLOD
-	}
-	else
-	{
-		DestroyIslandGeometry();
-		DestroyLODs();
-		if (HasAuthority()) SetIslandSize(0.01f);
-	}
-	OnIsCrystal.Broadcast();
-}
-
-void APlayerIsland::AuthAddDenizen(APSS* Denizen)
-{
-	if (!IsValid(Denizen)) return;
-	Denizens.AddUnique(Denizen);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerIsland, Denizens, this);
-}
-
-void APlayerIsland::AuthRemoveDenizen(APSS* Denizen)
-{
-	if (!IsValid(Denizen)) return;
-	Denizens.RemoveSingle(Denizen);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerIsland, Denizens, this);
-}
-
-void APlayerIsland::AuthEmptyDenizens()
-{
-	Denizens.Empty();
-	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerIsland, Denizens, this);
-}
-
-int32 APlayerIsland::GetIslandSizeNum()
-{
-	return FMath::RoundToInt(FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(1.0f, 100.0f), IslandSize));
-}
-
 void APlayerIsland::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -266,7 +121,7 @@ void APlayerIsland::Tick(float DeltaSeconds)
 			}
 
 			TArray<ACorruptionSpawnPoint*> CorruptionSpawnPoints;
-			int32 SpawnPoints = FMath::RoundToInt((1 + IslandSize) * GSS->PlayerIslandsCorruptionScale) * 10;
+			int32 SpawnPoints = FMath::RoundToInt((1 + IslandSize) * 10 * GSS->PlayerIslandsCorruptionScale);
 			for (int32 i = 0; i < SpawnPoints; i++)
 			{
 				FTransform SpawnTransform;
@@ -362,6 +217,154 @@ void APlayerIsland::Tick(float DeltaSeconds)
 			}
 		}
 	}
+}
+
+void APlayerIsland::SetIslandSize(float NewSize)
+{
+	PreviousIslandSize = IslandSize;
+	IslandSize = NewSize;
+	OnRep_IslandSize();
+	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, IslandSize, this);
+}
+
+void APlayerIsland::OnRep_TargetDirection()
+{
+	OnTargetDirection.Broadcast();
+	NiagaraWind->SetVariableFloat("YawDirection", TargetDirection.ToOrientationRotator().Yaw - 90);
+}
+
+void APlayerIsland::OnRep_TargetSpeed()
+{
+	NiagaraWind->SetFloatParameter("TargetSpeedRatio", TargetSpeedRatio());
+	OnTargetSpeed.Broadcast();
+}
+
+void APlayerIsland::OnRep_IslandSize()
+{
+	if (!IslandStarted) return;
+	if (!bIsCrystal)
+	{
+		OnIslandSize.Broadcast();
+		return;
+	}
+	
+	// TODO: store Terrain EditedVertices by location and apply to new terrain.
+	DestroyIslandGeometry();
+	
+	const FIslandData _ID = GenerateIsland();
+	ResizeGenerateComplete(_ID);
+	if (IslandSize < PreviousIslandSize) OnIslandShrink();
+	OnIslandSize.Broadcast();
+}
+
+void APlayerIsland::ResizeGenerateComplete(const FIslandData& _ID)
+{
+	ID = _ID;
+	bIDGenerated = true;
+	OnIDGenerated.Broadcast();
+	
+	for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
+	{
+		CliffsComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
+	}
+	if (HasAuthority())
+	{
+		for (int32 i = 0; i < 4; ++i)
+		{
+			UTerrainChunk* TerrainChunk = NewObject<UTerrainChunk>(this);
+			TerrainChunk->RegisterComponent();
+			TerrainChunks.Add(TerrainChunk);
+		}
+		SpawnFoliageComponents();
+	}
+	
+	PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
+	PMC_Main->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
+
+	if (DA_IslandBiome)
+	{
+		if (DA_IslandBiome->TopMaterial) PMC_Main->SetMaterial(0, DA_IslandBiome->TopMaterial);
+		if (DA_IslandBiome->BottomMaterial) PMC_Main->SetMaterial(1, DA_IslandBiome->BottomMaterial);
+	}
+	
+	bIsGenerating = false;
+	bFullGenerated = true;
+	bIsGenerating = false;
+	OnFullGenerated.Broadcast();
+}
+
+void APlayerIsland::DestroyIslandGeometry()
+{
+	if (bIsGenerating) CancelAsyncGenerate();
+	
+	for (int32 i = FoliageComponents.Num() - 1; i >= 0; --i)
+	{
+		if (IsValid(FoliageComponents[i])) FoliageComponents[i]->DestroyComponent();
+		FoliageComponents.RemoveAt(i);
+	}
+	
+	for (int32 i = TerrainChunks.Num() - 1; i >= 0; --i)
+	{
+		if (IsValid(TerrainChunks[i])) TerrainChunks[i]->DestroyComponent();
+	}
+	
+	if (bFullGenerated)
+	{
+		PMC_Main->ClearAllMeshSections();
+		for (auto& CliffComponent : CliffsComponents)
+		{
+			CliffComponent->ClearInstances();
+		}
+		ID = {};
+	}
+}
+
+void APlayerIsland::OnRep_bIsCrystal_Implementation()
+{
+	if (!IslandStarted) return;
+	
+	if (bIsCrystal)
+	{
+		const FIslandData _ID = GenerateIsland();
+		ResizeGenerateComplete(_ID);
+		// Changing collision updates NavMesh.
+		PMC_Main->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		if (HasAuthority()) GenerateLOD(INDEX_NONE); // Generate AlwaysLOD
+	}
+	else
+	{
+		DestroyIslandGeometry();
+		// Changing collision updates NavMesh.
+		PMC_Main->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		DestroyLODs();
+		if (HasAuthority()) SetIslandSize(0.01f);
+	}
+	OnIsCrystal.Broadcast();
+}
+
+void APlayerIsland::AuthAddDenizen(APSS* Denizen)
+{
+	if (!IsValid(Denizen)) return;
+	Denizens.AddUnique(Denizen);
+	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerIsland, Denizens, this);
+}
+
+void APlayerIsland::AuthRemoveDenizen(APSS* Denizen)
+{
+	if (!IsValid(Denizen)) return;
+	Denizens.RemoveSingle(Denizen);
+	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerIsland, Denizens, this);
+}
+
+void APlayerIsland::AuthEmptyDenizens()
+{
+	Denizens.Empty();
+	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerIsland, Denizens, this);
+}
+
+int32 APlayerIsland::GetIslandSizeNum()
+{
+	return FMath::RoundToInt(FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(1.0f, 100.0f), IslandSize));
 }
 
 void APlayerIsland::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

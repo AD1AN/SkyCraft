@@ -1,6 +1,7 @@
 // ADIAN Copyrighted
 
 #include "GSS.h"
+#include "GIS.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"

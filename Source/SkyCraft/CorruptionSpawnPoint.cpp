@@ -5,7 +5,6 @@
 #include "GSS.h"
 #include "Island.h"
 #include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "NPC.h"
 #include "PlayerIsland.h"
 #include "Components/AudioComponent.h"
@@ -58,7 +57,7 @@ void ACorruptionSpawnPoint::Multicast_StartEffects_Implementation()
 void ACorruptionSpawnPoint::SpawnNPC()
 {
 	FTransform SpawnTransform;
-	SpawnTransform.SetLocation(GetActorLocation() + FVector(0.0f, 0.0f, 50.0f));
+	SpawnTransform.SetLocation(GetActorLocation() + FVector(0.0f, 0.0f, 120.0f));
 	ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(ClassNPC, SpawnTransform);
 	SpawnedNPC->Island = AttachToIsland;
 	if (AttachToIsland->bPlayerIsland) SpawnedNPC->IslandCrystal = Cast<APlayerIsland>(AttachToIsland)->IslandCrystal;
