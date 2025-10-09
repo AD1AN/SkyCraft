@@ -13,32 +13,54 @@ AAdianActor::AAdianActor()
 
 void AAdianActor::PostInitializeComponents()
 {
-	InitActor();
-	
+	OnPostInitializeComponents();
 	Super::PostInitializeComponents();
-}
-
-void AAdianActor::PostBeginActor_Implementation()
-{
 }
 
 void AAdianActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (HasAuthority()) AdianActorLifeCycle();
+}
+
+void AAdianActor::PostNetInit()
+{
+	Super::PostNetInit();
+
+	if (!HasAuthority() && !bReplicationInitialized)
+	{
+		bReplicationInitialized = true;
+		AdianActorLifeCycle();
+	}
+}
+
+void AAdianActor::OnPostInitializeComponents_Implementation() {}
+void AAdianActor::InitActor_Implementation() {}
+void AAdianActor::PreBeginActor_Implementation() {}
+void AAdianActor::BeginActor_Implementation() {}
+void AAdianActor::PostBeginActor_Implementation() {}
+
+void AAdianActor::AdianActorLifeCycle()
+{
+	InitActor();
+	PreBeginActor();
 	
 	TInlineComponentArray<UAdianComponent*> Components;
 	GetComponents(Components);
 
 	for (UAdianComponent* Component : Components)
 	{
-		Component->BeforeBeginActor();
+		Component->BeginComponent();
 	}
+	
+	bCalledBeginComponents = true;
 	
 	BeginActor();
 
 	for (UAdianComponent* Component : Components)
 	{
-		Component->AfterBeginActor();
+		Component->PostBeginComponent();
 	}
 
 	PostBeginActor();
@@ -53,19 +75,15 @@ void AAdianCharacter::BeginPlay()
 
 	for (UAdianComponent* Component : Components)
 	{
-		Component->BeforeBeginActor();
+		Component->BeginComponent();
 	}
 	
 	BeginActor();
 
 	for (UAdianComponent* Component : Components)
 	{
-		Component->AfterBeginActor();
+		Component->PostBeginComponent();
 	}
 }
 
 void AAdianCharacter::BeginActor_Implementation() {}
-
-void AAdianActor::InitActor_Implementation() {}
-
-void AAdianActor::BeginActor_Implementation() {}

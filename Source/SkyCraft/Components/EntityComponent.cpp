@@ -32,9 +32,9 @@ UEntityComponent::UEntityComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-void UEntityComponent::BeforeBeginActor_Implementation()
+void UEntityComponent::BeginComponent_Implementation()
 {
-	Super::BeforeBeginActor_Implementation();
+	Super::BeginComponent_Implementation();
 
 #if WITH_EDITOR
 	if (DA_Entity->bUseOverrideHealthMax && OverrideHealthMax == nullptr)
@@ -47,9 +47,9 @@ void UEntityComponent::BeforeBeginActor_Implementation()
 	REP_SET(HealthMax, DefaultHealthMax);
 }
 
-void UEntityComponent::AfterBeginActor_Implementation()
+void UEntityComponent::PostBeginComponent_Implementation()
 {
-	Super::AfterBeginActor_Implementation();
+	Super::PostBeginComponent_Implementation();
 	
 	// If Health is not loaded then set with HealthMax.
 	if (Health <= 0) REP_SET(Health, HealthMax);

@@ -141,8 +141,8 @@ public:
 	void PlayDieCues(FDamageInfo DamageInfo);
 	
 private:
-	virtual void BeforeBeginActor_Implementation() override;
-	virtual void AfterBeginActor_Implementation() override;
+	virtual void BeginComponent_Implementation() override;
+	virtual void PostBeginComponent_Implementation() override;
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	UFUNCTION(NetMulticast, Reliable) void Multicast_OnDamage(FDamageInfo DamageInfo, int32 DamageTaken);

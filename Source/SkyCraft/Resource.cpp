@@ -35,13 +35,10 @@ AResource::AResource()
 
 void AResource::OnSpawnLogic_Implementation() {}
 
-void AResource::InitActor_Implementation()
+void AResource::PreBeginActor_Implementation()
 {
-	Super::InitActor_Implementation();
-	ensureAlways(DA_Resource);
-	if (!DA_Resource) return;
-	ensureAlways(DA_Resource->Size.IsValidIndex(ResourceSize));
-	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
+	check(DA_Resource);
+	check(DA_Resource->Size.IsValidIndex(ResourceSize));
 
 	EntityComponent->SetupDataAssetEntity(DA_Resource->DA_Entity);
 	EntityComponent->SetupOverrideHealthMax(DA_Resource->Size[ResourceSize].Health);
@@ -51,11 +48,6 @@ void AResource::InitActor_Implementation()
 
 void AResource::BeginActor_Implementation()
 {
-	Super::BeginActor_Implementation();
-	ensureAlways(DA_Resource);
-	if (!DA_Resource) return;
-	ensureAlways(DA_Resource->Size.IsValidIndex(ResourceSize));
-	if (!DA_Resource->Size.IsValidIndex(ResourceSize)) return;
 	CurrentSize = DA_Resource->Size[ResourceSize];
 
 	ensureAlways(CurrentSize.StaticMeshes.IsValidIndex(SM_Variety));

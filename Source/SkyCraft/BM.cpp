@@ -30,10 +30,8 @@ ABM::ABM()
 	EntityComponent = CreateDefaultSubobject<UEntityComponent>("EntityComponent");
 }
 
-void ABM::InitActor_Implementation()
+void ABM::PreBeginActor_Implementation()
 {
-	Super::InitActor_Implementation();
-
 	EntityComponent->SetupDataAssetEntity(DA_Building->DA_Entity);
 	EntityComponent->SetupOverrideHealthMax(DA_Building->HealthMax);
 	EntityComponent->ImplementEntityModifiers(DA_Building->EntityModifiers);
@@ -41,8 +39,6 @@ void ABM::InitActor_Implementation()
 
 void ABM::BeginActor_Implementation()
 {
-	Super::BeginActor_Implementation();
-	
 	if (HasAuthority()) AttachToActor(AttachIsland, FAttachmentTransformRules::KeepRelativeTransform);
 	else AttachIsland = Cast<AIsland>(UAdianFL::GetRootActor(this));
 }

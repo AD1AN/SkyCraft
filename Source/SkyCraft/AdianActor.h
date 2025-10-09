@@ -18,22 +18,34 @@ class SKYCRAFT_API AAdianActor : public AActor
 	
 public:
 	AAdianActor();
-	
+
+	bool bReplicationInitialized = false;
+	bool bCalledBeginComponents = false;
+
 	virtual void PostInitializeComponents() override;
+	UFUNCTION(BlueprintNativeEvent) void OnPostInitializeComponents();
 
 protected:
-	// Called before BeginActor.
+	
+	// Called first. In PostInitializeComponents.
 	UFUNCTION(BlueprintNativeEvent) void InitActor();
+	
+	// Called after InitActor but before components BeginComponent.
+	UFUNCTION(BlueprintNativeEvent) void PreBeginActor();
 
-	// Called after InitActor.
+	// Called after PreBeginActor.
 	UFUNCTION(BlueprintNativeEvent) void BeginActor();
 
 	// Called after BeginActor.
 	UFUNCTION(BlueprintNativeEvent) void PostBeginActor();
 	
 private:
-	// Calls new functions in order. Do not override or call this method directly. Use BeginActor instead.
+	// Calls new AdianActorLifeCycle. Do not override or call this method directly. Use BeginActor instead.
 	virtual void BeginPlay() final override;
+	
+	virtual void PostNetInit() final override;
+
+	void AdianActorLifeCycle();
 };
 
 UCLASS(Blueprintable)
@@ -46,6 +58,6 @@ protected:
 	UFUNCTION(BlueprintNativeEvent) void BeginActor();
 
 private:
-	// Calls new functions in order. Do not override or call this method directly. Use BeginActor instead.
+	// Calls new life cycle. Do not override or call this method directly. Use BeginActor instead.
 	virtual void BeginPlay() final override;
 };

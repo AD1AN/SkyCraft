@@ -47,7 +47,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated) uint8 Grounded = 0;
 	UFUNCTION(BlueprintAuthorityOnly, BlueprintCallable) void AuthSetGrounded(uint8 NewGrounded);
 
-	virtual void InitActor_Implementation() override;
+	// virtual void InitActor_Implementation() override;
+	virtual void PreBeginActor_Implementation() override;
 	virtual void BeginActor_Implementation() override;
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, BlueprintAuthorityOnly) FBuildingParameters SaveBuildingParameters();

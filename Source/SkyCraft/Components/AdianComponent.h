@@ -16,8 +16,8 @@ public:
 	UAdianComponent();
 	
 	// FIXME: These functions are not called if component spawned at runtime.
-	UFUNCTION(BlueprintNativeEvent) void BeforeBeginActor();
-	UFUNCTION(BlueprintNativeEvent) void AfterBeginActor();
+	UFUNCTION(BlueprintNativeEvent) void BeginComponent();
+	UFUNCTION(BlueprintNativeEvent) void PostBeginComponent();
 
 private:
 	// Do not override or call this method directly. Use Before/After BeginActor instead.

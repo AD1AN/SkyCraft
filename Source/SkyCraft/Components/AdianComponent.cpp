@@ -14,12 +14,12 @@ void UAdianComponent::BeginPlay()
 	// Do nothing.
 }
 
-void UAdianComponent::BeforeBeginActor_Implementation()
+void UAdianComponent::BeginComponent_Implementation()
 {
 	
 }
 
-void UAdianComponent::AfterBeginActor_Implementation()
+void UAdianComponent::PostBeginComponent_Implementation()
 {
 	
 }

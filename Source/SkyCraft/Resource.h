@@ -41,8 +41,9 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent) void OnSpawnLogic();
 
-	virtual void InitActor_Implementation() override;
+	virtual void PreBeginActor_Implementation() override;
 	virtual void BeginActor_Implementation() override;
+
 	void GrowUp();
 	void GrowInto(UDA_Resource* NewResource);
 	virtual void ServerInteract(FInteractIn InteractIn, FInteractOut& InteractOut) override;
