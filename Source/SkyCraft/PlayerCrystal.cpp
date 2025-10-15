@@ -4,12 +4,24 @@
 #include "GSS.h"
 #include "PSS.h"
 #include "Components/InventoryComponent.h"
+#include "Components/SkySpringArmComponent.h"
 #include "Enums/ItemType.h"
 #include "Net/UnrealNetwork.h"
 
 APlayerCrystal::APlayerCrystal()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
+	SkySpringArmComponent = CreateDefaultSubobject<USkySpringArmComponent>("SkySpringArmComponent");
+	SkySpringArmComponent->SetupAttachment(RootComponent);
+	SkySpringArmComponent->SetRelativeLocation(FVector(0, 0, 80));
+	SkySpringArmComponent->TargetArmLength = 300.0f;
+	SkySpringArmComponent->TargetArmLengthInitial = 300.0f;
+	SkySpringArmComponent->ProbeSize = 12.0f;
+	SkySpringArmComponent->bDoCollisionTest = false;
+	SkySpringArmComponent->bEnableCameraRotationLag = true;
+	SkySpringArmComponent->CameraRotationLagSpeed = 5.0f;
+	SkySpringArmComponent->ComponentTags.Add("MainSkySpringArm");
 
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>("InventoryComponent");
 	InventoryComponent->ComponentTags.Add("Inventory");
@@ -20,6 +32,18 @@ APlayerCrystal::APlayerCrystal()
 	EquipmentInventoryComponent->DropInItemTypes = {EItemType::Item, EItemType::ItemComponent};
 }
 
+void APlayerCrystal::Client_SetLookRotation_Implementation(FRotator NewLookRotation)
+{
+	LookRotation = NewLookRotation;
+	SkySpringArmComponent->SetPreviousDesiredRotation(LookRotation);
+}
+
+void APlayerCrystal::Multicast_SetLookRotation_Implementation(FRotator NewLookRotation)
+{
+	LookRotation = NewLookRotation;
+	SkySpringArmComponent->SetWorldRotation(LookRotation);
+}
+
 void APlayerCrystal::BeginPlay()
 {
 	GSS = GetWorld()->GetGameState<AGSS>();
@@ -28,6 +52,8 @@ void APlayerCrystal::BeginPlay()
 
 void APlayerCrystal::Tick(float DeltaTime)
 {
+	if (IsLocallyControlled()) SkySpringArmComponent->SetWorldRotation(LookRotation); // Should be first.
+	
 	Super::Tick(DeltaTime);
 }
 

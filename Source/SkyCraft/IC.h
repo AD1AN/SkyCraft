@@ -18,6 +18,7 @@ class SKYCRAFT_API AIC : public AActor
 
 public:
 	AIC();
+	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_PlayerNormal, meta=(ExposeOnSpawn)) APlayerNormal* PlayerNormal = nullptr;
 	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) bool Main = true;
 	UPROPERTY(BlueprintReadOnly, Replicated, meta=(ExposeOnSpawn)) UDA_Item* DA_Item = nullptr;

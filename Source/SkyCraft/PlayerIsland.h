@@ -33,6 +33,8 @@ public:
 	
 	APlayerIsland();
 
+	int32 ID = 0;
+
 	virtual void BeginPlay() override;
 	virtual void StartIsland() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -50,7 +52,7 @@ public:
 		return Essence;
 	}
 
-	// ~BEGIN: Movement
+	// >>>>>>>>>>>>>>>>>>>>>>>> Movement
 	UPROPERTY(BlueprintAssignable) FOnStopIsland OnStopIsland;
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_StopIsland) bool bStopIsland = false;
 	UFUNCTION() void OnRep_StopIsland() { OnStopIsland.Broadcast(); }
@@ -109,7 +111,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated) float CurrentSpeed;
 	
 	UPROPERTY(BlueprintReadOnly) FVector PreviousLocation;
-	// ~END: Movement
+	// <<<<<<<<<<<<<<<<<<<<<<<<< Movement
 	
 	UPROPERTY(BlueprintAssignable) FOnIslandCrystal OnIslandCrystal;
 	UPROPERTY(ReplicatedUsing=OnRep_IslandCrystal, BlueprintReadOnly) AIslandCrystal* IslandCrystal = nullptr;
@@ -150,7 +152,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure) int32 GetIslandSizeNum();
 	
 private:
-	// ~Begin IEssenceInterface
+	// >>>>>>>>>>>>>>>>>>>>>> IEssenceInterface
 	virtual int32 OverrideEssence_Implementation(int32 NewEssence) override { return SetEssence(NewEssence); }
 	virtual int32 FetchEssence_Implementation() override { return GetEssence(); }
 	virtual void AddEssence_Implementation(AActor* Sender, int32 AddEssence, bool& bFullyAdded) override
@@ -159,7 +161,7 @@ private:
 		bFullyAdded = true;
 	}
 	virtual bool DoesConsumeEssenceActor_Implementation() override { return true; }
-	// ~End IEssenceInterface
+	// <<<<<<<<<<<<<<<<<<<<<<< IEssenceInterface
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

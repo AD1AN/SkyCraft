@@ -10,6 +10,7 @@
 #include "Components/HealthRegenComponent.h"
 #include "Components/HungerComponent.h"
 #include "Components/InventoryComponent.h"
+#include "Components/SkySpringArmComponent.h"
 #include "DataAssets/DA_Item.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
@@ -21,6 +22,7 @@
 APlayerNormal::APlayerNormal(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	
 	EntityComponent = CreateDefaultSubobject<UEntityComponent>("EntityComponent");
 	
@@ -34,6 +36,18 @@ APlayerNormal::APlayerNormal(const FObjectInitializer& ObjectInitializer) : Supe
 	EquipmentInventoryComponent = CreateDefaultSubobject<UInventoryComponent>("EquipmentInventoryComponent");
 	EquipmentInventoryComponent->Slots.AddDefaulted(4);
 	EquipmentInventoryComponent->DropInItemTypes = {EItemType::Item, EItemType::ItemComponent};
+
+	SkySpringArmComponent = CreateDefaultSubobject<USkySpringArmComponent>("SkySpringArmComponent");
+	SkySpringArmComponent->SetupAttachment(RootComponent);
+	SkySpringArmComponent->SetRelativeLocation(FVector(0, 0, 55.0f));
+	SkySpringArmComponent->TargetArmLength = 250.0f;
+	SkySpringArmComponent->TargetArmLengthInitial = 250.0f;
+	SkySpringArmComponent->SocketOffset = FVector(0, 50.0f, 0);
+	SkySpringArmComponent->ProbeSize = 12.0f;
+	SkySpringArmComponent->bEnableCameraLag = true;
+	SkySpringArmComponent->CameraLagSpeed = 10.0f;
+	SkySpringArmComponent->CameraLagMaxDistance = 100.0f;
+	SkySpringArmComponent->ComponentTags.Add("MainSkySpringArm");
 
 	SM_Head = CreateDefaultSubobject<USkeletalMeshComponent>("SM_Head");
 	SM_Head->SetupAttachment(GetMesh());
@@ -72,10 +86,6 @@ APlayerNormal::APlayerNormal(const FObjectInitializer& ObjectInitializer) : Supe
 	SM_Feet->bComponentUseFixedSkelBounds = true;
 }
 
-void APlayerNormal::OnRep_Island()
-{
-}
-
 void APlayerNormal::BeginActor_Implementation()
 {
 	Super::BeginActor_Implementation();
@@ -96,6 +106,37 @@ void APlayerNormal::OnRep_PSS_Implementation()
 	
 	InitialUpdateEquipmentSlots();
 	EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
+}
+
+void APlayerNormal::Tick(float DeltaSeconds)
+{
+	SkySpringArmComponent->SetWorldRotation(LookRotation); // Should be always first.
+	
+	Super::Tick(DeltaSeconds);
+
+	if (IsLocallyControlled()) Server_SyncLookRotation(LookRotation);
+}
+
+void APlayerNormal::OnRep_Island() {}
+
+void APlayerNormal::Server_SyncLookRotation_Implementation(FRotator NewLookRotation)
+{
+	NewLookRotation.Pitch = FRotator::NormalizeAxis(NewLookRotation.Pitch);
+	NewLookRotation.Yaw = FRotator::NormalizeAxis(NewLookRotation.Yaw);
+	Multicast_SyncLookRotation(NewLookRotation);
+}
+
+void APlayerNormal::Multicast_SyncLookRotation_Implementation(FRotator NewLookRotation)
+{
+	if (IsLocallyControlled()) return;
+	LookRotation = NewLookRotation;
+	// It will be used in tick.
+}
+
+void APlayerNormal::Multicast_SetLookRotation_Implementation(FRotator NewLookRotation)
+{
+	LookRotation = NewLookRotation;
+	SkySpringArmComponent->SetWorldRotation(LookRotation);
 }
 
 void APlayerNormal::CharacterStart_Implementation()
@@ -223,6 +264,37 @@ void APlayerNormal::OnHunger()
 	}
 }
 
+void APlayerNormal::Server_SetQSI_Implementation(bool bIsMainQSI, int32 QSI)
+{
+	if (bIsMainQSI)
+	{
+		MainQSI = QSI;
+		StoredMainQSI = QSI;
+	}
+	else
+	{
+		SecondQSI = QSI;
+		StoredSecondQSI = QSI;
+	}
+}
+
+void APlayerNormal::Server_SetBothQSI_Implementation(int32 NewMainQSI, int32 NewSecondQSI, bool bStore)
+{
+	MainQSI = NewMainQSI;
+	SecondQSI = NewSecondQSI;
+	
+	if (bStore)
+	{
+		StoredMainQSI = NewMainQSI;
+		StoredSecondQSI = NewSecondQSI;
+	}
+}
+
+void APlayerNormal::Server_SpawnIC_Implementation(bool bIsMainQSI)
+{
+	Server_ReceiveSpawnIC(bIsMainQSI);
+}
+
 void APlayerNormal::OnRep_HandsFull()
 {
 	OnHandsFull.Broadcast();
@@ -234,6 +306,11 @@ void APlayerNormal::SetHandsFull(bool bHandsFull, AActor* Actor)
 	HandsFullActor = Actor;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerNormal, HandsFull, this);
 	OnHandsFull.Broadcast();
+}
+
+void APlayerNormal::Multicast_LoadInPhantomAnim_Implementation()
+{
+	LoadInPhantomAnim();
 }
 
 void APlayerNormal::OnRep_AnimLoopUpperBody()
@@ -323,6 +400,9 @@ void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PSS, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PlayerPhantom, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, MainQSI, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, SecondQSI, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, HandsFull, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, Stamina, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, AnimLoopUpperBody, Params);

@@ -15,7 +15,6 @@ class SKYCRAFT_API USkySpringArmComponent : public USpringArmComponent
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float TargetArmLengthInitial;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) float TargetArmLengthInitial = 0.0f;
 	UFUNCTION(BlueprintCallable) void SetPreviousDesiredRotation(FRotator Rotation);
 };

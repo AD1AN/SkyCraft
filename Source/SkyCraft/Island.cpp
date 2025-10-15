@@ -101,8 +101,8 @@ void AIsland::OnConstruction(const FTransform& Transform)
 	for (UInstancedStaticMeshComponent* ISM : CliffsComponents) if (IsValid(ISM)) ISM->DestroyComponent();
 	CliffsComponents.Empty();
 	if (IsValid(PMC_Main)) PMC_Main->ClearAllMeshSections();
-	ID.TopVertices.Empty();
-	ID.TopVerticesAxis.Empty();
+	IslandData.TopVertices.Empty();
+	IslandData.TopVerticesAxis.Empty();
 	Seed.Reset();
 	const FIslandData _ID = GenerateIsland();
 	InitialGenerateComplete(_ID);
@@ -165,8 +165,8 @@ void AIsland::StartIsland()
 	}
 	else
 	{
-		const FIslandData _ID = GenerateIsland();
-		InitialGenerateComplete(_ID);
+		const FIslandData _IslandData = GenerateIsland();
+		InitialGenerateComplete(_IslandData);
 	}
 	IslandStarted = true;
 }
@@ -191,7 +191,7 @@ void AIsland::StartAsyncGenerate()
 FIslandData AIsland::GenerateIsland()
 {
 	Seed.Reset();
-	FIslandData _ID;
+	FIslandData _IslandData;
 	FVector2D FromZeroToOne = FVector2D(0, 1);
 	
 	// Scale parameters by IslandSize
@@ -226,16 +226,16 @@ FIslandData AIsland::GenerateIsland()
 		float X = FMath::Cos(i * Angle) * RandomRadius;
 		float Y = FMath::Sin(i * Angle) * RandomRadius;
 
-		_ID.KeyShapePoints.Add(FVector2D(X, Y));
+		_IslandData.KeyShapePoints.Add(FVector2D(X, Y));
 	}
 	
 	// Interpolate Shape Points
-	for (int32 i = 0; i < _ID.KeyShapePoints.Num(); ++i)
+	for (int32 i = 0; i < _IslandData.KeyShapePoints.Num(); ++i)
 	{
-		const FVector2D& CurrentPoint = _ID.KeyShapePoints[i];
-		const FVector2D& NextPoint = _ID.KeyShapePoints[(i + 1) % _ID.KeyShapePoints.Num()];
+		const FVector2D& CurrentPoint = _IslandData.KeyShapePoints[i];
+		const FVector2D& NextPoint = _IslandData.KeyShapePoints[(i + 1) % _IslandData.KeyShapePoints.Num()];
 
-		_ID.AllShapePoints.Add(CurrentPoint);
+		_IslandData.AllShapePoints.Add(CurrentPoint);
 
 		float SegmentLength = FVector2D::Distance(CurrentPoint, NextPoint);
 		if (SegmentLength > InterpShapePointLength)
@@ -245,19 +245,19 @@ FIslandData AIsland::GenerateIsland()
 
 			for (int32 j = 1; j <= NumInterpolatedPoints; ++j)
 			{
-				_ID.InterpShapePoints.Add(CurrentPoint + Step * j);
-				_ID.AllShapePoints.Add(CurrentPoint + Step * j);
+				_IslandData.InterpShapePoints.Add(CurrentPoint + Step * j);
+				_IslandData.AllShapePoints.Add(CurrentPoint + Step * j);
 			}
 		}
 	}
 
 	// Generate Cliff instances on AllShapePoints
 	float CliffScale = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(0.25f, 1.0f), IslandSize);
-	for (int32 i = 0; i < _ID.AllShapePoints.Num(); ++i)
+	for (int32 i = 0; i < _IslandData.AllShapePoints.Num(); ++i)
 	{
-		const FVector2D& CurrentPoint = _ID.AllShapePoints[i];
-		const FVector2D& PrevPoint = _ID.AllShapePoints[(i - 1 + _ID.AllShapePoints.Num()) % _ID.AllShapePoints.Num()];
-		const FVector2D& NextPoint = _ID.AllShapePoints[(i + 1) % _ID.AllShapePoints.Num()];
+		const FVector2D& CurrentPoint = _IslandData.AllShapePoints[i];
+		const FVector2D& PrevPoint = _IslandData.AllShapePoints[(i - 1 + _IslandData.AllShapePoints.Num()) % _IslandData.AllShapePoints.Num()];
+		const FVector2D& NextPoint = _IslandData.AllShapePoints[(i + 1) % _IslandData.AllShapePoints.Num()];
 
 		// Compute the forward direction vector
 		FVector2D ForwardDir = (NextPoint - PrevPoint).GetSafeNormal();
@@ -269,13 +269,13 @@ FIslandData AIsland::GenerateIsland()
 		
 		if (!CliffsComponents.IsEmpty())
 		{
-			_ID.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, CliffsComponents.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
+			_IslandData.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, CliffsComponents.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
 		}
 	}
 	
 	// Generate TopVertices
-	_ID.TopVertices.Reserve(Resolution * Resolution);
-	_ID.TopUVs.Reserve(Resolution * Resolution);
+	_IslandData.TopVertices.Reserve(Resolution * Resolution);
+	_IslandData.TopUVs.Reserve(Resolution * Resolution);
 	int32 HalfResolution = Resolution / 2;
 	int32 CurrentVertexIndex = 0;
 	const float VertexOffset = (Resolution * CellSize) / 2;
@@ -284,15 +284,15 @@ FIslandData AIsland::GenerateIsland()
 		for (int32 Y = 0; Y < Resolution; ++Y)
 		{
 			FVector2D Vertex(X * CellSize - VertexOffset, Y * CellSize - VertexOffset);
-			if (IsInsideShape(Vertex, _ID.KeyShapePoints))
+			if (IsInsideShape(Vertex, _IslandData.KeyShapePoints))
 			{
-				_ID.TopVerticesAxis.Add(FVector2D(X, Y));
+				_IslandData.TopVerticesAxis.Add(FVector2D(X, Y));
 				FVertexData VertexData;
 				VertexData.VertexIndex = CurrentVertexIndex++;
 				VertexData.TerrainChunkIndex = TerrainChunkIndex(X,Y,HalfResolution);
-				_ID.TopVerticesMap.Add(X * Resolution + Y, VertexData);
-				_ID.TopVertices.Add(FVector(Vertex, 0));
-				_ID.TopUVs.Add(FVector2D(Vertex.X / (Resolution - 1), Vertex.Y / (Resolution - 1)));
+				_IslandData.TopVerticesMap.Add(X * Resolution + Y, VertexData);
+				_IslandData.TopVertices.Add(FVector(Vertex, 0));
+				_IslandData.TopUVs.Add(FVector2D(Vertex.X / (Resolution - 1), Vertex.Y / (Resolution - 1)));
 			}
 		}
 	}
@@ -305,9 +305,9 @@ FIslandData AIsland::GenerateIsland()
 		{
 			for (int32 Y = Offset-3; Y <= Offset+3; ++Y)
 			{
-				if (FVertexData* VertexData = _ID.TopVerticesMap.Find(X * Resolution + Y))
+				if (FVertexData* VertexData = _IslandData.TopVerticesMap.Find(X * Resolution + Y))
 				{
-					_ID.DeadVerticesMap.Add(X * Resolution + Y, VertexData->VertexIndex);
+					_IslandData.DeadVerticesMap.Add(X * Resolution + Y, VertexData->VertexIndex);
 				}
 			}
 		}
@@ -320,23 +320,23 @@ FIslandData AIsland::GenerateIsland()
 	else if (ShapeRadius >= 2500) EdgeThickness = 4;
 	else if (ShapeRadius >= 5000) EdgeThickness = 5;
 	else if (ShapeRadius >= 8000) EdgeThickness = 6;
-	for (int32 i = 0; i < _ID.TopVertices.Num(); ++i)
+	for (int32 i = 0; i < _IslandData.TopVertices.Num(); ++i)
 	{
-		if (IsEdgeVertex(_ID.TopVertices[i], _ID.TopVerticesMap, EdgeThickness))
+		if (IsEdgeVertex(_IslandData.TopVertices[i], _IslandData.TopVerticesMap, EdgeThickness))
 		{
-			_ID.EdgeTopVerticesMap.Add(_ID.TopVerticesAxis[i].X * Resolution + _ID.TopVerticesAxis[i].Y);
+			_IslandData.EdgeTopVerticesMap.Add(_IslandData.TopVerticesAxis[i].X * Resolution + _IslandData.TopVerticesAxis[i].Y);
 		}
 	}
 
 	// TopVertices Random Height
-	for (int32 i = 0; i < _ID.TopVertices.Num(); ++i)
+	for (int32 i = 0; i < _IslandData.TopVertices.Num(); ++i)
 	{
-		const int32 VertexKey = _ID.TopVerticesAxis[i].X * Resolution + _ID.TopVerticesAxis[i].Y;
-		if (!_ID.EdgeTopVerticesMap.Contains(VertexKey) && !_ID.DeadVerticesMap.Contains(VertexKey))
+		const int32 VertexKey = _IslandData.TopVerticesAxis[i].X * Resolution + _IslandData.TopVerticesAxis[i].Y;
+		if (!_IslandData.EdgeTopVerticesMap.Contains(VertexKey) && !_IslandData.DeadVerticesMap.Contains(VertexKey))
 		{
-			const float SmallNoise = SeededNoise2D(_ID.TopVertices[i].X * SmallNoiseScale, _ID.TopVertices[i].Y * SmallNoiseScale, Seed.GetInitialSeed()) * SmallNoiseStrength + SmallNoiseHeight;
-			const float BigNoise = SeededNoise2D(_ID.TopVertices[i].X * BigNoiseScale, _ID.TopVertices[i].Y * BigNoiseScale, Seed.GetInitialSeed() + 1) * BigNoiseStrength + BigNoiseHeight;
-			_ID.TopVertices[i].Z = BigNoise + SmallNoise;
+			const float SmallNoise = SeededNoise2D(_IslandData.TopVertices[i].X * SmallNoiseScale, _IslandData.TopVertices[i].Y * SmallNoiseScale, Seed.GetInitialSeed()) * SmallNoiseStrength + SmallNoiseHeight;
+			const float BigNoise = SeededNoise2D(_IslandData.TopVertices[i].X * BigNoiseScale, _IslandData.TopVertices[i].Y * BigNoiseScale, Seed.GetInitialSeed() + 1) * BigNoiseStrength + BigNoiseHeight;
+			_IslandData.TopVertices[i].Z = BigNoise + SmallNoise;
 		}
 	}
 	
@@ -350,15 +350,15 @@ FIslandData AIsland::GenerateIsland()
             int32 BL = (X - 1) * Resolution + Y;
             int32 BR = X * Resolution + Y;
 
-            if (_ID.TopVerticesMap.Contains(TL) && _ID.TopVerticesMap.Contains(TR) &&
-                _ID.TopVerticesMap.Contains(BL) && _ID.TopVerticesMap.Contains(BR))
+            if (_IslandData.TopVerticesMap.Contains(TL) && _IslandData.TopVerticesMap.Contains(TR) &&
+                _IslandData.TopVerticesMap.Contains(BL) && _IslandData.TopVerticesMap.Contains(BR))
             {
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[TL].VertexIndex);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[BL].VertexIndex);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[BR].VertexIndex);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[TL].VertexIndex);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[BR].VertexIndex);
-                _ID.TopTriangles.Add(_ID.TopVerticesMap[TR].VertexIndex);
+                _IslandData.TopTriangles.Add(_IslandData.TopVerticesMap[TL].VertexIndex);
+                _IslandData.TopTriangles.Add(_IslandData.TopVerticesMap[BL].VertexIndex);
+                _IslandData.TopTriangles.Add(_IslandData.TopVerticesMap[BR].VertexIndex);
+                _IslandData.TopTriangles.Add(_IslandData.TopVerticesMap[TL].VertexIndex);
+                _IslandData.TopTriangles.Add(_IslandData.TopVerticesMap[BR].VertexIndex);
+                _IslandData.TopTriangles.Add(_IslandData.TopVerticesMap[TR].VertexIndex);
             }
         }
     }
@@ -368,17 +368,17 @@ FIslandData AIsland::GenerateIsland()
 	const float VerticalRandomRange = ShapeRadius * BottomRandomVertical;
 	
 	// Add BottomVertices
-	const int32 KeyShapePointsNum = _ID.KeyShapePoints.Num();
+	const int32 KeyShapePointsNum = _IslandData.KeyShapePoints.Num();
 	for (int32 i = 0; i < KeyShapePointsNum; ++i)
 	{
-		_ID.BottomVertices.Add(FVector(_ID.KeyShapePoints[i], 0));
+		_IslandData.BottomVertices.Add(FVector(_IslandData.KeyShapePoints[i], 0));
 	}
 
 	// Number of interpolated bottom loops
 	const int32 NumLoops = 6;
 
 	// Interpolate bottom loops with Randomization
-	const int32 BottomVerticesNum = _ID.BottomVertices.Num();
+	const int32 BottomVerticesNum = _IslandData.BottomVertices.Num();
 	float BottomVertexZ;
 	if (bPlayerIsland) BottomVertexZ = -ShapeRadius * 1.3f;
 	else BottomVertexZ = Seed.FRandRange(-ShapeRadius, -ShapeRadius * 2.5f);
@@ -387,7 +387,7 @@ FIslandData AIsland::GenerateIsland()
 	    float InterpolationFactor = static_cast<float>(LoopIndex) / (NumLoops + 1);
 	    for (int32 i = 0; i < BottomVerticesNum; ++i)
 	    {
-	        FVector StartPosition = _ID.BottomVertices[i];
+	        FVector StartPosition = _IslandData.BottomVertices[i];
 	        FVector EndPosition(0, 0, BottomVertexZ);
 	        FVector InterpolatedPosition = FMath::Lerp(StartPosition, EndPosition, InterpolationFactor);
 
@@ -396,12 +396,12 @@ FIslandData AIsland::GenerateIsland()
 	        InterpolatedPosition.Y += Seed.FRandRange(-HorizontalRandomRange, HorizontalRandomRange);
 	        InterpolatedPosition.Z += Seed.FRandRange(-VerticalRandomRange, VerticalRandomRange);
 
-	        _ID.BottomVertices.Add(InterpolatedPosition);
+	        _IslandData.BottomVertices.Add(InterpolatedPosition);
 	    }
 	}
 
 	// Add Bottom Vertex
-	const int32 BottomVertexIndex = _ID.BottomVertices.Add(FVector(0, 0, BottomVertexZ));
+	const int32 BottomVertexIndex = _IslandData.BottomVertices.Add(FVector(0, 0, BottomVertexZ));
 
 	// Create BottomTriangles between loops
 	for (int32 LoopIndex = 0; LoopIndex < NumLoops; ++LoopIndex)
@@ -418,13 +418,13 @@ FIslandData AIsland::GenerateIsland()
 	        int32 NextLoopNIndex = NextBase + (i + 1) % BottomVerticesNum;
 
 	        // Create Two Triangles for Each Quad
-	        _ID.BottomTriangles.Add(CurrentLoopIndex);
-	        _ID.BottomTriangles.Add(CurrentLoopNIndex);
-	        _ID.BottomTriangles.Add(NextLoopNIndex);
+	        _IslandData.BottomTriangles.Add(CurrentLoopIndex);
+	        _IslandData.BottomTriangles.Add(CurrentLoopNIndex);
+	        _IslandData.BottomTriangles.Add(NextLoopNIndex);
 
-	        _ID.BottomTriangles.Add(CurrentLoopIndex);
-	        _ID.BottomTriangles.Add(NextLoopNIndex);
-	        _ID.BottomTriangles.Add(NextLoopIndex);
+	        _IslandData.BottomTriangles.Add(CurrentLoopIndex);
+	        _IslandData.BottomTriangles.Add(NextLoopNIndex);
+	        _IslandData.BottomTriangles.Add(NextLoopIndex);
 	    }
 	}
 
@@ -435,23 +435,23 @@ FIslandData AIsland::GenerateIsland()
 	    int32 CurrentLoopIndex = LastLoopBase + i;
 	    int32 CurrentLoopNIndex = LastLoopBase + (i + 1) % BottomVerticesNum;
 
-	    _ID.BottomTriangles.Add(CurrentLoopIndex);
-	    _ID.BottomTriangles.Add(CurrentLoopNIndex);
-	    _ID.BottomTriangles.Add(BottomVertexIndex);
+	    _IslandData.BottomTriangles.Add(CurrentLoopIndex);
+	    _IslandData.BottomTriangles.Add(CurrentLoopNIndex);
+	    _IslandData.BottomTriangles.Add(BottomVertexIndex);
 	}
 
 	// Generate BottomUVs
-	for (const FVector& Vertex : _ID.BottomVertices)
+	for (const FVector& Vertex : _IslandData.BottomVertices)
 	{
-		_ID.BottomUVs.Add(FVector2D(Vertex.X, Vertex.Y) * BottomUVScale);
+		_IslandData.BottomUVs.Add(FVector2D(Vertex.X, Vertex.Y) * BottomUVScale);
 	}
 	if (!bLoadFromSave) // If load then do it in LoadIsland()
 	{
-		CalculateNormalsAndTangents(_ID.TopVertices, _ID.TopTriangles, _ID.TopUVs, _ID.TopNormals, _ID.TopTangents);
+		CalculateNormalsAndTangents(_IslandData.TopVertices, _IslandData.TopTriangles, _IslandData.TopUVs, _IslandData.TopNormals, _IslandData.TopTangents);
 	}
-	CalculateNormalsAndTangents(_ID.BottomVertices, _ID.BottomTriangles, _ID.BottomUVs, _ID.BottomNormals, _ID.BottomTangents);
+	CalculateNormalsAndTangents(_IslandData.BottomVertices, _IslandData.BottomTriangles, _IslandData.BottomUVs, _IslandData.BottomNormals, _IslandData.BottomTangents);
 
-	return _ID;
+	return _IslandData;
 }
 
 void AIsland::InitialGenerateComplete(const FIslandData& _ID)
@@ -459,9 +459,9 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 #if WITH_EDITOR
 	if (bOnConstruction)
 	{
-		ID = _ID;
-		PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
-		PMC_Main->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
+		IslandData = _ID;
+		PMC_Main->CreateMeshSection(0, IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopNormals, IslandData.TopUVs, {}, IslandData.TopTangents, true);
+		PMC_Main->CreateMeshSection(1, IslandData.BottomVertices, IslandData.BottomTriangles, IslandData.BottomNormals, IslandData.BottomUVs, {}, IslandData.BottomTangents, true);
 		for (int32 i = 0; i < _ID.GeneratedCliffs.Num(); ++i)
 		{
 			CliffsComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
@@ -483,7 +483,7 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 #endif
 	
 	if (!IsValid(this)) return;
-	ID = _ID;
+	IslandData = _ID;
 	bIDGenerated = true;
 	OnIDGenerated.Broadcast();
 	
@@ -522,8 +522,8 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 		LoadedLowestLOD = ServerLOD;
 	}
 	
-	PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
-	PMC_Main->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
+	PMC_Main->CreateMeshSection(0, IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopNormals, IslandData.TopUVs, {}, IslandData.TopTangents, true);
+	PMC_Main->CreateMeshSection(1, IslandData.BottomVertices, IslandData.BottomTriangles, IslandData.BottomNormals, IslandData.BottomUVs, {}, IslandData.BottomTangents, true);
 	
 	FNavigationSystem::UpdateComponentData(*PMC_Main);
 
@@ -606,7 +606,7 @@ void AIsland::TerrainSmooth(FVector_NetQuantize Location, float Radius, float Sm
 	float Sum = 0.0f;
 	for (const int32 VertexIndex : VerticesToSmooth)
 	{
-		const float Height = ID.TopVertices[VertexIndex].Z;
+		const float Height = IslandData.TopVertices[VertexIndex].Z;
 		VerticesHeights.Add(Height);
 		Sum += Height;
 	}
@@ -614,7 +614,7 @@ void AIsland::TerrainSmooth(FVector_NetQuantize Location, float Radius, float Sm
     for (const int32& VertexIndex : VerticesToSmooth)
     {
             float AverageHeight = Sum / VerticesToSmooth.Num();
-            float SmoothedHeight = FMath::Lerp(ID.TopVertices[VertexIndex].Z, AverageHeight, SmoothFactor);
+            float SmoothedHeight = FMath::Lerp(IslandData.TopVertices[VertexIndex].Z, AverageHeight, SmoothFactor);
             
             NewHeights.Add(SmoothedHeight);
     }
@@ -622,11 +622,11 @@ void AIsland::TerrainSmooth(FVector_NetQuantize Location, float Radius, float Sm
 	int32 i = 0;
     for (const int32& VertexIndex : VerticesToSmooth)
     {
-        ID.TopVertices[VertexIndex].Z = NewHeights[i];
+        IslandData.TopVertices[VertexIndex].Z = NewHeights[i];
         FEditedVertex EditedVertex;
         EditedVertex.VertexIndex = VertexIndex;
         EditedVertex.SetHeight(NewHeights[i], MinTerrainHeight, MaxTerrainHeight);
-    	if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
+    	if (const FVertexData* VertexData = IslandData.TopVerticesMap.Find(IslandData.TopVerticesAxis[VertexIndex].X * Resolution + IslandData.TopVerticesAxis[VertexIndex].Y))
     	{
     		if (TerrainChunks.IsValidIndex(VertexData->TerrainChunkIndex) && TerrainChunks[VertexData->TerrainChunkIndex])
     		{
@@ -636,8 +636,8 @@ void AIsland::TerrainSmooth(FVector_NetQuantize Location, float Radius, float Sm
     	}
     	++i;
     }
-    CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
-    PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
+    CalculateNormalsAndTangents(IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopUVs, IslandData.TopNormals, IslandData.TopTangents);
+    PMC_Main->UpdateMeshSection(0, IslandData.TopVertices, IslandData.TopNormals, IslandData.TopUVs, {}, IslandData.TopTangents);
 }
 
 void AIsland::TerrainEdit(FVector_NetQuantize Location, float Radius, float Strength)
@@ -648,17 +648,17 @@ void AIsland::TerrainEdit(FVector_NetQuantize Location, float Radius, float Stre
 	else SmoothVertices(FoundVertices, 0.15f);
 	for (const int32& VertexIndex : FoundVertices)
 	{
-		FVector VertexPos = ID.TopVertices[VertexIndex];
+		FVector VertexPos = IslandData.TopVertices[VertexIndex];
 		const float Distance = FVector::Dist2D(VertexPos, Location); // Ignore Z for radial distance
 
 		// Normalize distance (0.0 at center, 1.0 at edge)
 		const float NormalizedDistance = FMath::Clamp(Distance / Radius, 0.0f, 1.0f);
 		const float FalloffStrength = Strength * (1.0f - FMath::SmoothStep(0.0f, 1.0f, NormalizedDistance));
 		FEditedVertex EditedVertex;
-		EditedVertex.SetHeight(ID.TopVertices[VertexIndex].Z + FalloffStrength, MinTerrainHeight, MaxTerrainHeight);
-		ID.TopVertices[VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
+		EditedVertex.SetHeight(IslandData.TopVertices[VertexIndex].Z + FalloffStrength, MinTerrainHeight, MaxTerrainHeight);
+		IslandData.TopVertices[VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
 		EditedVertex.VertexIndex = VertexIndex;
-		if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
+		if (const FVertexData* VertexData = IslandData.TopVerticesMap.Find(IslandData.TopVerticesAxis[VertexIndex].X * Resolution + IslandData.TopVerticesAxis[VertexIndex].Y))
 		{
 			if (TerrainChunks.IsValidIndex(VertexData->TerrainChunkIndex) && TerrainChunks[VertexData->TerrainChunkIndex])
 			{
@@ -667,8 +667,8 @@ void AIsland::TerrainEdit(FVector_NetQuantize Location, float Radius, float Stre
 			}
 		}
 	}
-	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
-	PMC_Main->UpdateMeshSection(0, ID.TopVertices, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents);
+	CalculateNormalsAndTangents(IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopUVs, IslandData.TopNormals, IslandData.TopTangents);
+	PMC_Main->UpdateMeshSection(0, IslandData.TopVertices, IslandData.TopNormals, IslandData.TopUVs, {}, IslandData.TopTangents);
 	PMC_Main->ClearCollisionConvexMeshes(); // For NavMesh update.
 }
 
@@ -690,10 +690,10 @@ TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius
 		for (int32 Y = MinY; Y <= MaxY; ++Y)
 		{
 			const int32 Key = X * Resolution + Y;
-			if (const FVertexData* VertexData = ID.TopVerticesMap.Find(Key))
+			if (const FVertexData* VertexData = IslandData.TopVerticesMap.Find(Key))
 			{
-				if (ID.EdgeTopVerticesMap.Contains(Key) || ID.DeadVerticesMap.Contains(Key)) continue;
-				if (FVector::DistSquared(ID.TopVertices[VertexData->VertexIndex], Location) <= RadiusSqr)
+				if (IslandData.EdgeTopVerticesMap.Contains(Key) || IslandData.DeadVerticesMap.Contains(Key)) continue;
+				if (FVector::DistSquared(IslandData.TopVertices[VertexData->VertexIndex], Location) <= RadiusSqr)
 				{
 					FoundVertices.Add(VertexData->VertexIndex);
 					// DrawDebugPoint(GetWorld(), GetActorLocation()+VertexLocation, 13.0f, FColor::Red, false, 15.0f);
@@ -714,7 +714,7 @@ void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float Smooth
 	float Sum = 0.0f;
 	for (const int32 VertexIndex : VerticesToSmooth)
 	{
-		const float Height = ID.TopVertices[VertexIndex].Z;
+		const float Height = IslandData.TopVertices[VertexIndex].Z;
 		VerticesHeights.Add(Height);
 		Sum += Height;
 	}
@@ -722,7 +722,7 @@ void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float Smooth
 	for (const int32& VertexIndex : VerticesToSmooth)
 	{
 		float AverageHeight = Sum / VerticesToSmooth.Num();
-		float SmoothedHeight = FMath::Lerp(ID.TopVertices[VertexIndex].Z, AverageHeight, SmoothFactor);
+		float SmoothedHeight = FMath::Lerp(IslandData.TopVertices[VertexIndex].Z, AverageHeight, SmoothFactor);
             
 		NewHeights.Add(SmoothedHeight);
 	}
@@ -730,11 +730,11 @@ void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float Smooth
 	int32 i = 0;
 	for (const int32& VertexIndex : VerticesToSmooth)
 	{
-		ID.TopVertices[VertexIndex].Z = NewHeights[i];
+		IslandData.TopVertices[VertexIndex].Z = NewHeights[i];
 		FEditedVertex EditedVertex;
 		EditedVertex.VertexIndex = VertexIndex;
 		EditedVertex.SetHeight(NewHeights[i], MinTerrainHeight, MaxTerrainHeight);
-		if (const FVertexData* VertexData = ID.TopVerticesMap.Find(ID.TopVerticesAxis[VertexIndex].X * Resolution + ID.TopVerticesAxis[VertexIndex].Y))
+		if (const FVertexData* VertexData = IslandData.TopVerticesMap.Find(IslandData.TopVerticesAxis[VertexIndex].X * Resolution + IslandData.TopVerticesAxis[VertexIndex].Y))
 		{
 			if (TerrainChunks.IsValidIndex(VertexData->TerrainChunkIndex) && TerrainChunks[VertexData->TerrainChunkIndex])
 			{
@@ -798,11 +798,11 @@ void AIsland::LoadIsland()
 		if (TerrainChunks[i]->EditedVertices.IsEmpty()) continue;
 		for (const FEditedVertex& EditedVertex : TerrainChunks[i]->EditedVertices)
 		{
-			ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
+			IslandData.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
 		}
 		++i;
 	}
-	CalculateNormalsAndTangents(ID.TopVertices, ID.TopTriangles, ID.TopUVs, ID.TopNormals, ID.TopTangents);
+	CalculateNormalsAndTangents(IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopUVs, IslandData.TopNormals, IslandData.TopTangents);
 	SS_Island.TerrainChunks.Empty();
 }
 
@@ -850,10 +850,10 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 		while (Attempts < 30)
 		{
 			// Pick a random triangle
-			const int32 TriangleIndex = Seed.RandRange(0, ID.TopTriangles.Num() / 3 - 1) * 3;
-			const FVector& V0 = ID.TopVertices[ID.TopTriangles[TriangleIndex]];
-			const FVector& V1 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 1]];
-			const FVector& V2 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 2]];
+			const int32 TriangleIndex = Seed.RandRange(0, IslandData.TopTriangles.Num() / 3 - 1) * 3;
+			const FVector& V0 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex]];
+			const FVector& V1 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex + 1]];
+			const FVector& V2 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex + 2]];
 
 			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 			
@@ -862,7 +862,7 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 			{
 				const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / CellSize);
 				const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / CellSize);
-				if (ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
+				if (IslandData.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
 				{
 					++Attempts;
 					continue;
@@ -961,16 +961,16 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 		while (Attempts < 30 && SpawnedNPCs < SpawnsByIslandSize)
 		{
 			// Pick a random triangle
-			const int32 TriangleIndex = Seed.RandRange(0, ID.TopTriangles.Num() / 3 - 1) * 3;
-			const FVector& V0 = ID.TopVertices[ID.TopTriangles[TriangleIndex]];
-			const FVector& V1 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 1]];
-			const FVector& V2 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 2]];
+			const int32 TriangleIndex = Seed.RandRange(0, IslandData.TopTriangles.Num() / 3 - 1) * 3;
+			const FVector& V0 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex]];
+			const FVector& V1 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex + 1]];
+			const FVector& V2 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex + 2]];
 			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 
 			// Avoid Island Edge
 			const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / CellSize);
 			const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / CellSize);
-			if (ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
+			if (IslandData.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
 			{
 				++Attempts;
 				continue;
@@ -1381,11 +1381,11 @@ void AIsland::IslandDebugs()
 {
 	if (DebugAllVertices)
 	{
-		for (int32 i = 0; i < ID.TopVertices.Num(); ++i)
+		for (int32 i = 0; i < IslandData.TopVertices.Num(); ++i)
 		{
 			// Get the absolute values of the x and y components to determine dominance
-			float AbsX = FMath::Abs(ID.TopVerticesAxis[i].X);
-			float AbsY = FMath::Abs(ID.TopVerticesAxis[i].Y);
+			float AbsX = FMath::Abs(IslandData.TopVerticesAxis[i].X);
+			float AbsY = FMath::Abs(IslandData.TopVerticesAxis[i].Y);
 
 			// Calculate the total for normalization
 			float Total = AbsX + AbsY;
@@ -1397,13 +1397,13 @@ void AIsland::IslandDebugs()
 			// Create the color based on the intensities
 			FColor MixedColor = FColor((uint8)RedIntensity, (uint8)GreenIntensity, 0);
 			
-			DrawDebugPoint(GetWorld(), GetActorLocation()+ID.TopVertices[i], 5.0f, MixedColor, false, 10.0f);
+			DrawDebugPoint(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], 5.0f, MixedColor, false, 10.0f);
 		}
 	}
 
 	if (DebugKeyShapePoints)
 	{
-		for (FVector2D ShapePoint : ID.KeyShapePoints)
+		for (FVector2D ShapePoint : IslandData.KeyShapePoints)
 		{
 			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(ShapePoint, 250.0f), 10.0f, FColor::Yellow, false, 10.0f);
 		}
@@ -1411,7 +1411,7 @@ void AIsland::IslandDebugs()
 	
 	if (DebugInterpShapePoints)
 	{
-		for (FVector2D InterpShapePoint : ID.InterpShapePoints)
+		for (FVector2D InterpShapePoint : IslandData.InterpShapePoints)
 		{
 			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(InterpShapePoint, 250.0f), 10.0f, FColor::Red, false, 10.0f);
 		}
@@ -1419,24 +1419,24 @@ void AIsland::IslandDebugs()
 	
 	if (DebugEdgeVertices)
 	{
-		for (TPair<int32, int32>& Pair : ID.EdgeTopVerticesMap)
+		for (TPair<int32, int32>& Pair : IslandData.EdgeTopVerticesMap)
 		{
-			const FVector Vertex = ID.TopVertices[Pair.Value];
+			const FVector Vertex = IslandData.TopVertices[Pair.Value];
 			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(Vertex.X, Vertex.Y, 100.0f), 5.0f, FColor::Blue, false, 10.0f);
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Edge Vertices: %d"), ID.EdgeTopVerticesMap.Num());
+		UE_LOG(LogTemp, Warning, TEXT("Edge Vertices: %d"), IslandData.EdgeTopVerticesMap.Num());
 	}
 	
 	if (DebugNormalsTangents)
 	{
-		for (int32 i = 0; i < ID.TopVertices.Num(); i++)
+		for (int32 i = 0; i < IslandData.TopVertices.Num(); i++)
 		{
-			DrawDebugLine(GetWorld(), GetActorLocation()+ID.TopVertices[i], GetActorLocation()+ID.TopVertices[i] + ID.TopNormals[i] * 100.0f, FColor::Green, false, 10.0f, 0, 1.0f);
-			DrawDebugLine(GetWorld(), GetActorLocation()+ID.TopVertices[i], GetActorLocation()+ID.TopVertices[i] + ID.TopTangents[i].TangentX * 100.0f, FColor::Blue, false, 10.0f, 0, 1.0f);
+			DrawDebugLine(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], GetActorLocation()+IslandData.TopVertices[i] + IslandData.TopNormals[i] * 100.0f, FColor::Green, false, 10.0f, 0, 1.0f);
+			DrawDebugLine(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], GetActorLocation()+IslandData.TopVertices[i] + IslandData.TopTangents[i].TangentX * 100.0f, FColor::Blue, false, 10.0f, 0, 1.0f);
 		}
 	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("Vertices: %d, Triangles: %d"), ID.TopVertices.Num(), ID.TopTriangles.Num() / 3);
+	UE_LOG(LogTemp, Warning, TEXT("Vertices: %d, Triangles: %d"), IslandData.TopVertices.Num(), IslandData.TopTriangles.Num() / 3);
 }
 #endif
 

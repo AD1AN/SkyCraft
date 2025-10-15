@@ -129,17 +129,17 @@ void APlayerIsland::Tick(float DeltaSeconds)
 				while (Attempts < 50)
 				{
 					// Pick a random triangle
-					const int32 TriangleIndex = Seed.RandRange(0, ID.TopTriangles.Num() / 3 - 1) * 3;
-					const FVector& V0 = ID.TopVertices[ID.TopTriangles[TriangleIndex]];
-					const FVector& V1 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 1]];
-					const FVector& V2 = ID.TopVertices[ID.TopTriangles[TriangleIndex + 2]];
+					const int32 TriangleIndex = Seed.RandRange(0, IslandData.TopTriangles.Num() / 3 - 1) * 3;
+					const FVector& V0 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex]];
+					const FVector& V1 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex + 1]];
+					const FVector& V2 = IslandData.TopVertices[IslandData.TopTriangles[TriangleIndex + 2]];
 
 					FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 					
 					// Avoid Island Edge
 					const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + (Resolution * CellSize) / 2) / CellSize);
 					const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + (Resolution * CellSize) / 2) / CellSize);
-					if (ID.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
+					if (IslandData.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
 					{
 						++Attempts;
 						continue;
@@ -259,7 +259,7 @@ void APlayerIsland::OnRep_IslandSize()
 
 void APlayerIsland::ResizeGenerateComplete(const FIslandData& _ID)
 {
-	ID = _ID;
+	IslandData = _ID;
 	bIDGenerated = true;
 	OnIDGenerated.Broadcast();
 	
@@ -278,8 +278,8 @@ void APlayerIsland::ResizeGenerateComplete(const FIslandData& _ID)
 		SpawnFoliageComponents();
 	}
 	
-	PMC_Main->CreateMeshSection(0, ID.TopVertices, ID.TopTriangles, ID.TopNormals, ID.TopUVs, {}, ID.TopTangents, true);
-	PMC_Main->CreateMeshSection(1, ID.BottomVertices, ID.BottomTriangles, ID.BottomNormals, ID.BottomUVs, {}, ID.BottomTangents, true);
+	PMC_Main->CreateMeshSection(0, IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopNormals, IslandData.TopUVs, {}, IslandData.TopTangents, true);
+	PMC_Main->CreateMeshSection(1, IslandData.BottomVertices, IslandData.BottomTriangles, IslandData.BottomNormals, IslandData.BottomUVs, {}, IslandData.BottomTangents, true);
 
 	if (DA_IslandBiome)
 	{
@@ -315,7 +315,7 @@ void APlayerIsland::DestroyIslandGeometry()
 		{
 			CliffComponent->ClearInstances();
 		}
-		ID = {};
+		IslandData = {};
 	}
 }
 

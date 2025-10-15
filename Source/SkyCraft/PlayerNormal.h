@@ -12,6 +12,8 @@
 #include "Interfaces/PlayerFormInterface.h"
 #include "PlayerNormal.generated.h"
 
+class APlayerPhantom;
+class USkySpringArmComponent;
 class UInventoryComponent;
 class UEntityComponent;
 class UHealthComponent;
@@ -27,6 +29,9 @@ class APSS;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHandsFull);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterStarted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMainQSI, int32, MainHand);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSecondQSI, int32, SecondHand);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerPhantom);
 
 UCLASS()
 class SKYCRAFT_API APlayerNormal : public AAdianCharacter, public IPlayerFormInterface, public IIslandInterface, public IEssenceInterface
@@ -38,35 +43,67 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UHungerComponent> HungerComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UInventoryComponent> InventoryComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UInventoryComponent> EquipmentInventoryComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkySpringArmComponent> SkySpringArmComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Head;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Outfit;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Hands;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> SM_Feet;
 	
 	APlayerNormal(const FObjectInitializer& ObjectInitializer);
-
+	
 	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
-
+	
+	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
+	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
+	
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Island)
 	AIsland* Island = nullptr; // The island under feet. Changes on SetBase().
 	UFUNCTION() void OnRep_Island();
+
+	UPROPERTY(BlueprintAssignable) FOnPlayerPhantom OnPlayerPhantom;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_PlayerPhantom) APlayerPhantom* PlayerPhantom = nullptr;
+	UFUNCTION() void OnRep_PlayerPhantom() { OnPlayerPhantom.Broadcast(); }
+
+	// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Look Rotation
+	UPROPERTY(BlueprintReadWrite) FRotator LookRotation = FRotator::ZeroRotator;
+	UFUNCTION(Reliable, NetMulticast, BlueprintCallable) void Multicast_SetLookRotation(FRotator NewLookRotation);
+	UFUNCTION(Unreliable, Server) void Server_SyncLookRotation(FRotator NewLookRotation);
+	UFUNCTION(Unreliable, NetMulticast) void Multicast_SyncLookRotation(FRotator NewLookRotation);
+	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Look Rotation
+
+	// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Main/Second Hands
+	UPROPERTY(BlueprintAssignable) FOnMainQSI OnMainQSI;
+	UPROPERTY(BlueprintAssignable) FOnSecondQSI OnSecondQSI;
+	
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_MainQSI) int32 MainQSI = -1;
+	UFUNCTION() void OnRep_MainQSI() { OnMainQSI.Broadcast(MainQSI); }
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_SecondQSI) int32 SecondQSI = -1;
+	UFUNCTION() void OnRep_SecondQSI() { OnSecondQSI.Broadcast(SecondQSI); }
+	int32 StoredMainQSI = -1; // Server-only.
+	int32 StoredSecondQSI = -1; // Server-only.
+
+	UFUNCTION(Reliable, Server, BlueprintCallable) void Server_SetQSI(bool bIsMainQSI, int32 QSI);
+	UFUNCTION(Reliable, Server, BlueprintCallable) void Server_SetBothQSI(int32 NewMainQSI, int32 NewSecondQSI, bool bStore = true);
+
+	UFUNCTION(Reliable, Server, BlueprintCallable) void Server_SpawnIC(bool bIsMainQSI);
+	UFUNCTION(BlueprintImplementableEvent, meta=(DisplayName="Server_SpawnIC")) void Server_ReceiveSpawnIC(bool bIsMainQSI);
 	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnHandsFull OnHandsFull;
+	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_HandsFull) bool HandsFull = false;
 	UFUNCTION() void OnRep_HandsFull();
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHandsFull(bool bHandsFull, AActor* Actor);
 	UPROPERTY(BlueprintReadWrite) AActor* HandsFullActor = nullptr;
+	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Main/Second Hands
+
+	UFUNCTION(Reliable, NetMulticast) void Multicast_LoadInPhantomAnim();
+	UFUNCTION(BlueprintImplementableEvent) void LoadInPhantomAnim();
 
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_AnimLoopUpperBody) UAnimSequenceBase* AnimLoopUpperBody = nullptr;
 	UFUNCTION() void OnRep_AnimLoopUpperBody();
 	UPROPERTY(BlueprintReadOnly) bool bAnimLoopUpperBody = false;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnimLoopUpperBody(UAnimSequenceBase* Sequence);
 	
-	virtual void BeginActor_Implementation() override;
-	
-	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
-	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
-
 	// Called ONCE from BeginActor or OnRep_PSS.
 	UFUNCTION(BlueprintNativeEvent) void CharacterStart();
 
@@ -100,6 +137,9 @@ public:
 	}
 
 private:
+	virtual void BeginActor_Implementation() override;
+	virtual void Tick(float DeltaSeconds) override;
+	
 	// ~Begin IPlayerFormInterface
 	virtual bool isPlayerForm() const override { return true; }
 	virtual UInventoryComponent* GetPlayerInventory() const override { return InventoryComponent.Get(); }

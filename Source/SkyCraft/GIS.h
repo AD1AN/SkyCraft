@@ -6,6 +6,7 @@
 #include "AdvancedFriendsGameInstance.h"
 #include "GIS.generated.h"
 
+class ULocalSettings;
 class APCS;
 class APSS;
 
@@ -14,7 +15,9 @@ class SKYCRAFT_API UGIS : public UAdvancedFriendsGameInstance
 {
 	GENERATED_BODY()
 	
-public:	
+public:
+	UPROPERTY(BlueprintReadWrite) TObjectPtr<ULocalSettings> LocalSettings;
+	
 	UGIS(FObjectInitializer const & ObjectInitializerRef) : Super(ObjectInitializerRef){}
 
 	UPROPERTY(BlueprintReadOnly) APCS* PCS = nullptr;

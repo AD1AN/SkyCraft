@@ -4,12 +4,22 @@
 #include "GSS.h"
 #include "PSS.h"
 #include "Components/InventoryComponent.h"
+#include "Components/SkySpringArmComponent.h"
 #include "Enums/ItemType.h"
 #include "Net/UnrealNetwork.h"
 
 APlayerDead::APlayerDead()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
+	SkySpringArmComponent = CreateDefaultSubobject<USkySpringArmComponent>("SkySpringArmComponent");
+	SkySpringArmComponent->SetupAttachment(RootComponent);
+	SkySpringArmComponent->TargetArmLength = 300.0f;
+	SkySpringArmComponent->TargetArmLengthInitial = 300.0f;
+	SkySpringArmComponent->ProbeSize = 12.0f;
+	SkySpringArmComponent->bEnableCameraRotationLag = true;
+	SkySpringArmComponent->CameraRotationLagSpeed = 5.0f;
+	SkySpringArmComponent->ComponentTags.Add("MainSkySpringArm");
 
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>("InventoryComponent");
 	InventoryComponent->ComponentTags.Add("Inventory");
@@ -35,12 +45,28 @@ void APlayerDead::BeginPlay()
 
 void APlayerDead::Tick(float DeltaTime)
 {
+	if (IsLocallyControlled()) SkySpringArmComponent->SetWorldRotation(LookRotation); // Should be first.
+
 	Super::Tick(DeltaTime);
+
+	
 }
 
 void APlayerDead::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+void APlayerDead::Client_SetLookRotation_Implementation(FRotator NewLookRotation)
+{
+	LookRotation = NewLookRotation;
+	SkySpringArmComponent->SetPreviousDesiredRotation(LookRotation);
+}
+
+void APlayerDead::Multicast_SetLookRotation_Implementation(FRotator NewLookRotation)
+{
+	LookRotation = NewLookRotation;
+	SkySpringArmComponent->SetWorldRotation(LookRotation);
 }
 
 int32 APlayerDead::OverrideEssence_Implementation(int32 NewEssence)

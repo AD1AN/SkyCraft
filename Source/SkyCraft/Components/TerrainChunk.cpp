@@ -42,11 +42,11 @@ void UTerrainChunk::OnRep_EditedVertices()
 	
 	for (FEditedVertex& EditedVertex : EditedVertices)
 	{
-		if (!Island->ID.TopVertices.IsValidIndex(EditedVertex.VertexIndex)) continue;
-		Island->ID.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(Island->MinTerrainHeight, Island->MaxTerrainHeight);
+		if (!Island->IslandData.TopVertices.IsValidIndex(EditedVertex.VertexIndex)) continue;
+		Island->IslandData.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(Island->MinTerrainHeight, Island->MaxTerrainHeight);
 	}
-	Island->CalculateNormalsAndTangents(Island->ID.TopVertices, Island->ID.TopTriangles, Island->ID.TopUVs, Island->ID.TopNormals, Island->ID.TopTangents);
-	Island->PMC_Main->UpdateMeshSection(0, Island->ID.TopVertices, Island->ID.TopNormals, Island->ID.TopUVs, {}, Island->ID.TopTangents);
+	Island->CalculateNormalsAndTangents(Island->IslandData.TopVertices, Island->IslandData.TopTriangles, Island->IslandData.TopUVs, Island->IslandData.TopNormals, Island->IslandData.TopTangents);
+	Island->PMC_Main->UpdateMeshSection(0, Island->IslandData.TopVertices, Island->IslandData.TopNormals, Island->IslandData.TopUVs, {}, Island->IslandData.TopTangents);
 }
 
 void UTerrainChunk::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

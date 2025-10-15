@@ -42,7 +42,7 @@ void UFoliageHISM::StartComponent()
 		return;
 	}
 	Island->FoliageComponents.AddUnique(this);
-	Generate_InitialInstances(Island->ID);
+	Generate_InitialInstances(Island->IslandData);
 	AddInstances(InitialInstances, false,false,false);
 	if (Island->bLoadFromSave)
 	{
@@ -343,9 +343,9 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
 
         // Find 3 closest Vertices
         TArray<TPair<int32, float>> ClosestVertices; // Pair of VertexIndex and DistanceSquared
-        for (const TPair<int32, FVertexData>& VertexEntry : Island->ID.TopVerticesMap)
+        for (const TPair<int32, FVertexData>& VertexEntry : Island->IslandData.TopVerticesMap)
         {
-            FVector VertexPosition = Island->ID.TopVertices[VertexEntry.Value.VertexIndex];
+            FVector VertexPosition = Island->IslandData.TopVertices[VertexEntry.Value.VertexIndex];
             float DistanceSquared = FVector2D::DistSquared(
                 FVector2D(VertexPosition.X, VertexPosition.Y),
                 FVector2D(RandomDynamicInstanceLocation.X, RandomDynamicInstanceLocation.Y));
@@ -370,9 +370,9 @@ void UFoliageHISM::AddInSphere(FVector_NetQuantize Location, float Radius)
         }
 
         // Retrieve the positions of the three closest vertices
-        FVector V0 = Island->ID.TopVertices[ClosestVertices[0].Key];
-        FVector V1 = Island->ID.TopVertices[ClosestVertices[1].Key];
-        FVector V2 = Island->ID.TopVertices[ClosestVertices[2].Key];
+        FVector V0 = Island->IslandData.TopVertices[ClosestVertices[0].Key];
+        FVector V1 = Island->IslandData.TopVertices[ClosestVertices[1].Key];
+        FVector V2 = Island->IslandData.TopVertices[ClosestVertices[2].Key];
   
         // Calculate Z height of the candidate based on the triangle
     	FVector BarycentricCoords = FMath::ComputeBaryCentric2D(

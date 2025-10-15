@@ -1,12 +1,21 @@
 // ADIAN Copyrighted
 
 #include "PSS.h"
+
+#include "LoadingScreen.h"
+#include "PCS.h"
+#include "PlayerIsland.h"
 #include "RepHelpers.h"
+#include "Blueprint/UserWidget.h"
 #include "Net/UnrealNetwork.h"
 #include "SkyCraft/Components/InteractComponent.h"
 #include "Interfaces/Interact_CPP.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/Core/PushModel/PushModel.h"
 #include "SkyCraft/GSS.h"
+#include "SkyCraft/GIS.h"
+#include "SkyCraft/GMS.h"
+#include "SkyCraft/LocalSettings.h"
 
 #define LOCTEXT_NAMESPACE "PSS"
 
@@ -21,12 +30,88 @@ APSS::APSS()
 void APSS::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (HasAuthority()) GMS = GetWorld()->GetAuthGameMode<AGMS>();
+	GIS = GetWorld()->GetGameInstance<UGIS>();
 	GSS = GetWorld()->GetGameState<AGSS>();
+	PCS = Cast<APCS>(GetOwner()); // Server & Owner(can be null due network).
+
+	if (HasAuthority()) OwnerStartLoginPlayer(); // Server-Owner entry.
+	// TODO: Check OnRep_Owner for behaviour. and maybe add here for client as well.
+}
+
+void APSS::OnRep_Owner() // Client-Owner entry.
+{
+	PCS = Cast<APCS>(GetOwner());
+	OwnerStartLoginPlayer();
+}
+
+void APSS::OwnerStartLoginPlayer()
+{
+	if (!PCS || !PCS->IsLocalController()) return;
+	if (bOwnerStartedLoginPlayer) return;
+	bOwnerStartedLoginPlayer = true;
+	GIS->PCS = PCS;
+	GIS->PSS = this;
+	PCS->PSS = this;
+	ALoadingScreen* LoadingScreen = Cast<ALoadingScreen>(UGameplayStatics::GetActorOfClass(GetWorld(), ALoadingScreen::StaticClass()));
+	LoadingScreen->PlayerStateStartsLoginPlayer(this);
+	// EnableInput(PCS);
+	W_PlayerState = CreateWidget(PCS, WidgetPlayerState);
+	W_PlayerState->AddToViewport(10000);
+	CharacterBio = GIS->LocalSettings->CharacterBio;
+	Server_StartLoginPlayer(CharacterBio);
+}
+
+void APSS::Server_StartLoginPlayer_Implementation(FCharacterBio InCharacterBio)
+{
+	CharacterBio = InCharacterBio;
+	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, CharacterBio, this);
+	
+	GMS->LoginPlayer(PCS);
+	
+	REP_SET(ServerLoggedIn, true);
+	ForceNetUpdate();
+}
+
+void APSS::Server_ClientLoggedIn_Implementation()
+{
+	REP_SET(ClientLoggedIn, true);
+	ForceNetUpdate();
 }
 
 void APSS::OnRep_PlayerIsland_Implementation()
 {
 	OnPlayerIsland.Broadcast();
+}
+
+void APSS::Client_ReplicateSavedPlayers_Implementation(const TArray<FString>& Keys, const TArray<FSS_Player>& Values)
+{
+	AssembleSavedPlayers(Keys, Values);
+}
+
+void APSS::Multicast_ReplicateSavedPlayers_Implementation(const TArray<FString>& Keys, const TArray<FSS_Player>& Values)
+{
+	if (HasAuthority()) return; // Except server.
+	AssembleSavedPlayers(Keys, Values);
+}
+
+void APSS::Multicast_SetPlayerIsland_Implementation(APlayerIsland* InPlayerIsland)
+{
+	REP_SET(PlayerIsland, InPlayerIsland);
+	if (HasAuthority())
+	{
+		if (IsValid(PlayerIsland)) PlayerIsland->AuthAddDenizen(this);
+	}
+}
+
+void APSS::AssembleSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values)
+{
+	GSS->SavedPlayers.Empty(Keys.Num());
+	for (int32 i = 0; i < Keys.Num(); ++i)
+	{
+		GSS->SavedPlayers.Add(Keys[i], Values[i]);
+	}
 }
 
 int32 APSS::SetEssence(int32 NewEssence)
@@ -181,6 +266,30 @@ void APSS::Client_GlobalWarning_Implementation(const FText& Text)
 	GlobalWarning(Text);
 }
 
+void APSS::Client_ReceiveMessagePlayer_Implementation(const FString& Sender, const FString& Message)
+{
+	ReceiveMessagePlayer(Sender, Message);
+}
+
+void APSS::Client_ReceiveMessageWorld_Implementation(const FString& Message)
+{
+	ReceiveMessageWorld(Message);
+}
+
+void APSS::Server_SendMessage_Implementation(const FString& Message)
+{
+	for (auto& Player : GSS->ConnectedPlayers)
+	{
+		Player->Client_ReceiveMessagePlayer(GetPlayerName(), Message);
+	}
+}
+
+bool APSS::IsLocalState()
+{
+	if (IsValid(PCS)) return PCS->IsLocalController();
+	else return false;
+}
+
 void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -188,7 +297,10 @@ void APSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
-	
+
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, PCS, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, ServerLoggedIn, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, ClientLoggedIn, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, SteamID, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, CharacterBio, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APSS, Casta, Params);

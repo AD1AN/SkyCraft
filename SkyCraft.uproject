@@ -536,6 +536,10 @@
 		{
 			"Name": "CommonUI",
 			"Enabled": true
+		},
+		{
+			"Name": "MassInsights",
+			"Enabled": false
 		}
 	],
 	"TargetPlatforms": [

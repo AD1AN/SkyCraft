@@ -10,13 +10,17 @@
 #include "Enums/PlayerForm.h"
 #include "GameFramework/PlayerState.h"
 #include "Structs/CharacterBio.h"
+#include "Structs/SS_Player.h"
 #include "PSS.generated.h"
 
+class AGMS;
+class UGIS;
+class AGSS;
+class APCS;
 class APlayerCrystal;
 class APlayerNormal;
 class APlayerPhantom;
 class APlayerDead;
-class AGSS;
 class UDA_Craft;
 class UDA_Item;
 class UDA_AnalyzeEntity;
@@ -31,6 +35,8 @@ enum class EStatLevel : uint8
 	EssenceVessel
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnServerLoggedIn);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnClientLoggedIn);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerIsland);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEssence);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLearnedCraftItems);
@@ -44,11 +50,33 @@ class SKYCRAFT_API APSS : public APlayerState
 	GENERATED_BODY()
 	
 public:
+	TObjectPtr<UGIS> GIS;
 	TObjectPtr<AGSS> GSS;
+	TObjectPtr<AGMS> GMS;
+	UPROPERTY(ReplicatedUsing=OnRep_PCS, BlueprintReadOnly) APCS* PCS = nullptr;
+	UFUNCTION(BlueprintImplementableEvent) void OnRep_PCS();
+
+	virtual void OnRep_Owner() override;
+
+	bool bOwnerStartedLoginPlayer = false;
+	void OwnerStartLoginPlayer();
+
+	UPROPERTY(BlueprintAssignable) FOnServerLoggedIn OnServerLoggedIn;
+	UPROPERTY(BlueprintAssignable) FOnClientLoggedIn OnClientLoggedIn;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_ServerLoggedIn) bool ServerLoggedIn = false;
+	UFUNCTION() void OnRep_ServerLoggedIn() { if (IsLocalState()) OnServerLoggedIn.Broadcast(); }
+	UPROPERTY(ReplicatedUsing=OnRep_ClientLoggedIn) bool ClientLoggedIn = false;
+	UFUNCTION() void OnRep_ClientLoggedIn() { OnClientLoggedIn.Broadcast(); }
 	
 	APSS();
 
 	virtual void BeginPlay() override;
+	UFUNCTION(Reliable, Server) void Server_StartLoginPlayer(FCharacterBio InCharacterBio);
+	UFUNCTION(Reliable, Server) void Server_ClientLoggedIn();
+	
+	UPROPERTY(EditDefaultsOnly) TSubclassOf<UUserWidget> WidgetPlayerState;
+	UPROPERTY(BlueprintReadOnly) TObjectPtr<UUserWidget> W_PlayerState;
 
 	UPROPERTY(Replicated, BlueprintReadOnly) FString SteamID = "";
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
@@ -61,10 +89,11 @@ public:
 	void AuthSetCasta(ECasta NewCasta) { REP_SET(Casta, NewCasta); }
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerIsland, BlueprintReadOnly) APlayerIsland* PlayerIsland = nullptr;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AuthSetPlayerIsland(APlayerIsland* NewPlayerIsland) { REP_SET(PlayerIsland, NewPlayerIsland); }
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetPlayerIsland(APlayerIsland* NewPlayerIsland) { REP_SET(PlayerIsland, NewPlayerIsland); }
 	UPROPERTY(BlueprintAssignable) FOnPlayerIsland OnPlayerIsland;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PlayerIsland();
+
+	UFUNCTION(Reliable, NetMulticast) void Multicast_SetPlayerIsland(APlayerIsland* InPlayerIsland);
 	
 	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Crystal;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
@@ -79,6 +108,10 @@ public:
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerPhantom* PlayerSpirit = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerDead* PlayerDead = nullptr;
 
+	UFUNCTION(Reliable, Client) void Client_ReplicateSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
+	UFUNCTION(Reliable, NetMulticast) void Multicast_ReplicateSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
+	void AssembleSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
+
 	UPROPERTY(BlueprintAssignable) FOnEssence OnEssence;
 private:
 	UPROPERTY(ReplicatedUsing=OnRep_Essence) int32 Essence;
@@ -88,7 +121,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta=(CompactNodeTitle="E")) int32 GetEssence() { return Essence; }
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) int32 SetEssence(int32 NewEssence);
 
-	// ~BEGIN: Enhancement Stats
+	// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Enhancement Stats
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnStatEnhanced OnStatEnhanced;
 	
 	UPROPERTY(BlueprintReadWrite, Replicated) int32 StaminaMax = 100;
@@ -108,7 +141,7 @@ public:
 	UFUNCTION() void OnRep_EssenceVesselLevel() { OnStatEnhanced.Broadcast(EStatLevel::EssenceVessel); }
 	
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void StatLevelUp(EStatLevel StatLevel);
-	// ~END: Enhancement Stats
+	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Enhancement Stats
 	
 	// Return the Pawn that is currently controlled.
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -163,6 +196,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Client, Reliable, meta=(AutoCreateRefTerm="Text"))
 	void Client_GlobalWarning(const FText& Text);
+	
+	UFUNCTION(Reliable, Server) void Server_SendMessage(const FString& Message);
+
+	UFUNCTION(Reliable, Client) void Client_ReceiveMessagePlayer(const FString& Sender, const FString& Message);
+	UFUNCTION(BlueprintImplementableEvent) void ReceiveMessagePlayer(const FString& Sender, const FString& Message);
+
+	UFUNCTION(Reliable, Client) void Client_ReceiveMessageWorld(const FString& Message);
+	UFUNCTION(BlueprintImplementableEvent) void ReceiveMessageWorld(const FString& Message);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure) bool IsLocalState();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

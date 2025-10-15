@@ -94,7 +94,7 @@ public:
 	UPROPERTY(VisibleInstanceOnly) bool AsyncGenerateCanceled = false;
 	FThreadSafeBool bIsGenerating = false;
 
-	UPROPERTY(BlueprintReadOnly) FIslandData ID;
+	UPROPERTY(BlueprintReadOnly) FIslandData IslandData;
 	
 	UPROPERTY(EditAnywhere) int32 ShapePoints = 20;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) float ShapeRadius = 1000.0f;

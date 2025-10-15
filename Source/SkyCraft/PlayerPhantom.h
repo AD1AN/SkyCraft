@@ -16,18 +16,23 @@ class SKYCRAFT_API APlayerPhantom : public ACharacter, public IPlayerFormInterfa
 {
 	GENERATED_BODY()
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkySpringArmComponent> SkySpringArmComponent;
 	
 	APlayerPhantom();
 
 	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
 	UPROPERTY(Replicated, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
 
+	UPROPERTY(BlueprintReadWrite) FRotator LookRotation = FRotator::ZeroRotator;
+	UFUNCTION(Reliable, NetMulticast, BlueprintCallable) void Multicast_SetLookRotation(FRotator NewLookRotation);
+	
 	UPROPERTY(Replicated, BlueprintReadWrite, meta=(ExposeOnSpawn)) bool bEstrayPhantom = false;
 	UPROPERTY(Replicated, BlueprintReadWrite, meta=(ExposeOnSpawn)) APlayerNormal* PlayerNormal = nullptr;
 
-	virtual void BeginPlay() override;
-	
 private:
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+
 	// ~Begin IPlayerFormInterface
 	virtual bool isPlayerForm() const override { return true; }
 	virtual UInventoryComponent* GetPlayerInventory() const override { return IsValid(PlayerNormal) ? PlayerNormal->InventoryComponent.Get() : nullptr; }

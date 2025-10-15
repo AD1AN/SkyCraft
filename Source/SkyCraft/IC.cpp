@@ -10,9 +10,9 @@ AIC::AIC()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.TickGroup = TG_DuringPhysics;
 	bReplicates = true;
+	bAlwaysRelevant = true;
 	SetNetUpdateFrequency(1);
 	SetMinNetUpdateFrequency(1);
-	bAlwaysRelevant = true;
 }
 
 void AIC::OnRep_PlayerNormal_Implementation() // Only Clients

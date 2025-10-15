@@ -8,6 +8,7 @@
 #include "Interfaces/PlayerFormInterface.h"
 #include "PlayerDead.generated.h"
 
+class USkySpringArmComponent;
 class APSS;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeadEssence);
 
@@ -17,6 +18,7 @@ class SKYCRAFT_API APlayerDead : public APawn, public IPlayerFormInterface, publ
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkySpringArmComponent> SkySpringArmComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UInventoryComponent> InventoryComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UInventoryComponent> EquipmentInventoryComponent;
 
@@ -25,16 +27,20 @@ public:
 	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
 	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
 	UFUNCTION(BlueprintImplementableEvent) void OnRep_PSS();
+
+	UPROPERTY(BlueprintReadWrite) FRotator LookRotation = FRotator::ZeroRotator;
+	UFUNCTION(Reliable, Client, BlueprintCallable) void Client_SetLookRotation(FRotator NewLookRotation);
+	UFUNCTION(Reliable, NetMulticast, BlueprintCallable) void Multicast_SetLookRotation(FRotator NewLookRotation);
 	
 	UPROPERTY(BlueprintAssignable) FOnDeadEssence OnDeadEssence;
 	UPROPERTY(ReplicatedUsing=OnRep_DeadEssence, BlueprintReadWrite) int32 DeadEssence;
 	UFUNCTION() void OnRep_DeadEssence() { OnDeadEssence.Broadcast(); }
 
+private:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-private:
 	UFUNCTION() void TryDestroyDead_Inventory(int32 SlotIndex);
 	UFUNCTION() void TryDestroyDead();
 	

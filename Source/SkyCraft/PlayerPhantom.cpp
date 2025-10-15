@@ -1,19 +1,44 @@
 // ADIAN Copyrighted
 
 #include "PlayerPhantom.h"
-
 #include "GSS.h"
 #include "PSS.h"
+#include "Components/SkySpringArmComponent.h"
 #include "Net/UnrealNetwork.h"
 
 APlayerPhantom::APlayerPhantom()
 {
+	SkySpringArmComponent = CreateDefaultSubobject<USkySpringArmComponent>("SkySpringArmComponent");
+	SkySpringArmComponent->SetupAttachment(RootComponent);
+	SkySpringArmComponent->TargetArmLength = 300.0f;
+	SkySpringArmComponent->TargetArmLengthInitial = 300.0f;
+	SkySpringArmComponent->ProbeSize = 25.0f;
+	SkySpringArmComponent->bEnableCameraLag = true;
+	SkySpringArmComponent->bEnableCameraRotationLag = true;
+	SkySpringArmComponent->CameraLagSpeed = 5.0f;
+	SkySpringArmComponent->CameraRotationLagSpeed = 5.0f;
+	SkySpringArmComponent->CameraLagMaxDistance = 300.0f;
+	SkySpringArmComponent->ComponentTags.Add("MainSkySpringArm");
+}
+
+void APlayerPhantom::Multicast_SetLookRotation_Implementation(FRotator NewLookRotation)
+{
+	LookRotation = NewLookRotation;
+	SkySpringArmComponent->SetWorldRotation(LookRotation);
 }
 
 void APlayerPhantom::BeginPlay()
 {
 	GSS = GetWorld()->GetGameState<AGSS>();
 	Super::BeginPlay();
+}
+
+void APlayerPhantom::Tick(float DeltaSeconds)
+{
+	if (IsLocallyControlled()) SkySpringArmComponent->SetWorldRotation(LookRotation); // Should be first.
+	
+	Super::Tick(DeltaSeconds);
+	
 }
 
 int32 APlayerPhantom::OverrideEssence_Implementation(int32 NewEssence)

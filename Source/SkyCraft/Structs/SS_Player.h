@@ -21,7 +21,7 @@ struct FSS_PF_Normal
 {
 	GENERATED_BODY()
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 AttachedToIA;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FTransform Transform;
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FTransform Transform; // Location can be relative or world. Rotation and scale - intact.
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FRotator LookRotation;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) bool bPhantomSpawned = false;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 MainQSI = 0;
@@ -33,9 +33,9 @@ USTRUCT(BlueprintType)
 struct FSS_PF_Phantom
 {
 	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) bool bEstraySpirit = false;
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) bool bIsEstrayPhantom = false;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 AttachedToIA;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FVector Location;
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FVector Location; // Can be relative or world.
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FRotator LookRotation;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 EstrayEssence;
 };

@@ -18,6 +18,7 @@ public class SkyCraft : ModuleRules
 			"NetCore",
 			"UMG",
 			"AdvancedSessions",
+			"AdvancedSteamSessions",
 			"ProceduralMeshComponent",
 			"Slate",
 			"SlateCore",

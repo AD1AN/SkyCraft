@@ -15,6 +15,8 @@ class SKYCRAFT_API APCS : public APlayerController
 
 public:
 	UPROPERTY(BlueprintReadOnly) APSS* PSS = nullptr;
+
+	virtual void PostInitializeComponents() override;
 	
 	virtual void BeginPlay() override;
 	virtual void PawnLeavingGame() override;
@@ -24,4 +26,5 @@ public:
 	virtual void AcknowledgePossession(APawn* P) override;
 	virtual void OnUnPossess() override;
 	UFUNCTION(Client, Reliable) void Client_OnUnPossess();
+	
 };
