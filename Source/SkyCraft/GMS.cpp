@@ -103,6 +103,7 @@ void AGMS::LoginPlayer(APCS* PCS)
 		NewPlayer.PlayerName = PCS->PSS->GetPlayerName();
 		NewPlayer.CharacterBio = PCS->PSS->CharacterBio;
 		NewPlayer.FirstWorldJoin = FDateTime::Now();
+		NewPlayer.Casta = GSS->NewPlayersCasta;
 		GSS->SavedPlayers.Add(PCS->PSS->SteamID, NewPlayer);
 
 		TArray<FString> Keys;
@@ -261,7 +262,42 @@ void AGMS::LoadPlayer(APCS* PCS, FSS_Player SS)
 
 void AGMS::PlayerFirstWorldSpawn(APCS* PCS)
 {
-	
+	if (GSS->NewPlayersCasta == ECasta::Archon)
+	{
+		FTransform SpawnIslandTransform;
+		SpawnIslandTransform.SetLocation(GetPlayerIslandWorldOrigin());
+		APlayerIsland* SpawnedPlayerIsland = GetWorld()->SpawnActorDeferred<APlayerIsland>(GSS->PlayerIslandClass, SpawnIslandTransform);
+		SpawnedPlayerIsland->ID = ID_PlayerIsland++;
+		SpawnedPlayerIsland->bIsCrystal = GSS->bNewPlayersCastaArchonCrystal;
+		SpawnedPlayerIsland->IslandSize = 0.0f;
+		SpawnedPlayerIsland->AuthSetArchonSteamID(PCS->PSS->SteamID);
+		SpawnedPlayerIsland->AuthSetArchonPSS(PCS->PSS);
+		SpawnedPlayerIsland->FinishSpawning(SpawnIslandTransform);
+		PlayerIslands.Add(SpawnedPlayerIsland);
+
+		PCS->PSS->Multicast_SetPlayerIsland(SpawnedPlayerIsland);
+		BornPlayerCrystal(PCS);
+	}
+	else if (GSS->NewPlayersCasta == ECasta::Denizen)
+	{
+		if (PlayerIslands.IsEmpty())
+		{
+			PCS->PSS->Casta = ECasta::Estray;
+			return PlayerFirstWorldSpawn(PCS); // Redirect to Estray spawn.
+		}
+		APlayerIsland* RandomPlayerIsland = PlayerIslands[FMath::RandRange(0, PlayerIslands.Num() - 1)];
+		PCS->PSS->Multicast_SetPlayerIsland(RandomPlayerIsland);
+		BornPlayerCrystal(PCS);
+	}
+	else // Estray
+	{
+		FTransform SpawnEstrayTransform;
+		SpawnEstrayTransform.SetLocation(GetPlayerIslandWorldOrigin());
+		APlayerPhantom* SpawnedPlayerPhantom = GetWorld()->SpawnActorDeferred<APlayerPhantom>(GSS->PlayerPhantomClass, SpawnEstrayTransform, PCS);
+		SpawnedPlayerPhantom->bEstrayPhantom = true;
+		SpawnedPlayerPhantom->FinishSpawning(SpawnEstrayTransform);
+		PCS->Possess(SpawnedPlayerPhantom);
+	}
 }
 
 void AGMS::SendMessageWorld(FString PlayerName, FText TextMessage)
@@ -271,6 +307,16 @@ void AGMS::SendMessageWorld(FString PlayerName, FText TextMessage)
 	{
 		PSS->Client_ReceiveMessageWorld(MessageWorld);
 	}
+}
+
+FVector AGMS::GetPlayerIslandWorldOrigin()
+{
+	check(GSS);
+	FVector SpawnIsland;
+	SpawnIsland.X = FMath::RandRange(-GSS->PlayerIslandSpawnXY, GSS->PlayerIslandSpawnXY);
+	SpawnIsland.Y = FMath::RandRange(-GSS->PlayerIslandSpawnXY, GSS->PlayerIslandSpawnXY);
+	SpawnIsland.Z = FMath::RandRange(GSS->PlayerIslandSpawnZ.Min, GSS->PlayerIslandSpawnZ.Max);
+	return SpawnIsland;
 }
 
 APlayerIsland* AGMS::FindPlayerIsland(int32 ID)

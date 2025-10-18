@@ -3,6 +3,8 @@
 #include "SkyCraft/Enums/InteractKey.h"
 #include "CurrentProlonged.generated.h"
 
+class APSS;
+
 USTRUCT(BlueprintType)
 struct FCurrentProlonged
 {
@@ -15,5 +17,5 @@ struct FCurrentProlonged
 	APawn* Pawn = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	class APSS* PSS = nullptr;
+	APSS* PSS = nullptr;
 };

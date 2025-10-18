@@ -9,6 +9,7 @@
 #include "Structs/SS_Player.h"
 #include "GSS.generated.h"
 
+class APlayerIsland;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerIslandCorruptionSettings);
 
 class ANPC;
@@ -36,6 +37,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) bool bAllowJoinViaPresence = true;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) bool bAllowJoinViaPresenceFriendsOnly = true;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) bool bShouldAdvertise = true;
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) ECasta NewPlayersCasta;
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) bool bNewPlayersCastaArchonCrystal = true;
 	
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) int32 ChunkRenderRange = 10;
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly) float ChunkSize = 100000;
@@ -78,7 +82,7 @@ public:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(BlueprintReadWrite, Replicated) FRandomStream WorldSeed;
-	UPROPERTY(BlueprintReadOnly) TMap<FString, FSS_Player> SavedPlayers;
+	UPROPERTY(BlueprintReadWrite) TMap<FString, FSS_Player> SavedPlayers;
 	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_SpawnFXAttached(FCue FX, FVector LocalLocation = FVector::ZeroVector, AActor* AttachTo = nullptr, USoundAttenuation* AttenuationSettings = nullptr);
 
@@ -87,6 +91,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetTraversalAltitude(FFloatMinMax newTraversalAltitude);
 
 	// >>>>>>>>>>>>>>>>>>>>>>>>>>>> Blueprint Classes
+	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<APlayerIsland> PlayerIslandClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class AEssenceActor> EssenceActorClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class ADamageNumbers> DamageNumbersClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") USoundAttenuation* NormalAttenuationClass = nullptr;

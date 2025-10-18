@@ -8,9 +8,6 @@ struct FCharacterBio
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName CharacterName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool Gender = true; // True = Male, False = Female
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -30,8 +27,7 @@ struct FCharacterBio
 
 	FORCEINLINE bool operator==(const FCharacterBio& Other) const
 	{
-		return CharacterName == Other.CharacterName
-			&& Gender == Other.Gender
+		return Gender == Other.Gender
 			&& HairStyle == Other.HairStyle
 			&& HairColor == Other.HairColor
 			&& EyeColor == Other.EyeColor

@@ -13,6 +13,7 @@
 #include "Structs/SS_Player.h"
 #include "PSS.generated.h"
 
+class UWidgetPlayerState;
 class AGMS;
 class UGIS;
 class AGSS;
@@ -56,6 +57,7 @@ public:
 	UPROPERTY(ReplicatedUsing=OnRep_PCS, BlueprintReadOnly) APCS* PCS = nullptr;
 	UFUNCTION(BlueprintImplementableEvent) void OnRep_PCS();
 
+	virtual void BeginPlay() override;
 	virtual void OnRep_Owner() override;
 
 	bool bOwnerStartedLoginPlayer = false;
@@ -71,12 +73,11 @@ public:
 	
 	APSS();
 
-	virtual void BeginPlay() override;
 	UFUNCTION(Reliable, Server) void Server_StartLoginPlayer(FCharacterBio InCharacterBio);
 	UFUNCTION(Reliable, Server) void Server_ClientLoggedIn();
 	
-	UPROPERTY(EditDefaultsOnly) TSubclassOf<UUserWidget> WidgetPlayerState;
-	UPROPERTY(BlueprintReadOnly) TObjectPtr<UUserWidget> W_PlayerState;
+	UPROPERTY(EditDefaultsOnly) TSubclassOf<UWidgetPlayerState> ClassWidgetPlayerState;
+	UPROPERTY(BlueprintReadOnly) TObjectPtr<UWidgetPlayerState> WidgetPlayerState;
 
 	UPROPERTY(Replicated, BlueprintReadOnly) FString SteamID = "";
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
@@ -197,7 +198,7 @@ public:
 	UFUNCTION(BlueprintCallable, Client, Reliable, meta=(AutoCreateRefTerm="Text"))
 	void Client_GlobalWarning(const FText& Text);
 	
-	UFUNCTION(Reliable, Server) void Server_SendMessage(const FString& Message);
+	UFUNCTION(Reliable, Server, BlueprintCallable) void Server_SendMessage(const FString& Message);
 
 	UFUNCTION(Reliable, Client) void Client_ReceiveMessagePlayer(const FString& Sender, const FString& Message);
 	UFUNCTION(BlueprintImplementableEvent) void ReceiveMessagePlayer(const FString& Sender, const FString& Message);

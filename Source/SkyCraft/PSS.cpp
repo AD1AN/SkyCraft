@@ -1,7 +1,6 @@
 // ADIAN Copyrighted
 
 #include "PSS.h"
-
 #include "LoadingScreen.h"
 #include "PCS.h"
 #include "PlayerIsland.h"
@@ -16,6 +15,7 @@
 #include "SkyCraft/GIS.h"
 #include "SkyCraft/GMS.h"
 #include "SkyCraft/LocalSettings.h"
+#include "Widgets/WidgetPlayerState.h"
 
 #define LOCTEXT_NAMESPACE "PSS"
 
@@ -31,34 +31,34 @@ void APSS::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (HasAuthority()) GMS = GetWorld()->GetAuthGameMode<AGMS>();
 	GIS = GetWorld()->GetGameInstance<UGIS>();
 	GSS = GetWorld()->GetGameState<AGSS>();
-	PCS = Cast<APCS>(GetOwner()); // Server & Owner(can be null due network).
-
-	if (HasAuthority()) OwnerStartLoginPlayer(); // Server-Owner entry.
-	// TODO: Check OnRep_Owner for behaviour. and maybe add here for client as well.
+	GMS = GetWorld()->GetAuthGameMode<AGMS>();
+	
+	OwnerStartLoginPlayer();
 }
 
-void APSS::OnRep_Owner() // Client-Owner entry.
+void APSS::OnRep_Owner() // Client if Owner is replicates late.
 {
-	PCS = Cast<APCS>(GetOwner());
-	OwnerStartLoginPlayer();
+	if (HasActorBegunPlay()) OwnerStartLoginPlayer();
 }
 
 void APSS::OwnerStartLoginPlayer()
 {
-	if (!PCS || !PCS->IsLocalController()) return;
+	if (GetOwner() == nullptr) return; // Can be null due network.
+	PCS = Cast<APCS>(GetOwner()); // Can be Server or Client-Owner.
+	if (!PCS) return;
+	PCS->PSS = this;
+
+	if (!PCS->IsLocalController()) return; // Only Owner.
 	if (bOwnerStartedLoginPlayer) return;
 	bOwnerStartedLoginPlayer = true;
 	GIS->PCS = PCS;
 	GIS->PSS = this;
-	PCS->PSS = this;
 	ALoadingScreen* LoadingScreen = Cast<ALoadingScreen>(UGameplayStatics::GetActorOfClass(GetWorld(), ALoadingScreen::StaticClass()));
 	LoadingScreen->PlayerStateStartsLoginPlayer(this);
-	// EnableInput(PCS);
-	W_PlayerState = CreateWidget(PCS, WidgetPlayerState);
-	W_PlayerState->AddToViewport(10000);
+	WidgetPlayerState = CreateWidget<UWidgetPlayerState>(PCS, ClassWidgetPlayerState);
+	WidgetPlayerState->AddToViewport(10000);
 	CharacterBio = GIS->LocalSettings->CharacterBio;
 	Server_StartLoginPlayer(CharacterBio);
 }

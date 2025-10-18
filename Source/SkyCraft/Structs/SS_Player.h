@@ -57,8 +57,8 @@ struct FSS_Player
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FCharacterBio CharacterBio;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) FDateTime FirstWorldJoin;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 PlayTime;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) ECasta Casta;
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 ID_IA; // PlayerIsland belongs to.
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) ECasta Casta = ECasta::Estray;
+	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 ID_IA = -1; // PlayerIsland belongs to.
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) EPlayerForm PlayerForm;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) int32 Essence;
 	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) TArray<FSlot> Inventory;

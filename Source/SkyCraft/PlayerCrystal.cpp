@@ -11,6 +11,9 @@
 APlayerCrystal::APlayerCrystal()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	SceneRootComponent = CreateDefaultSubobject<USceneComponent>("SceneRootComponent");
+	SetRootComponent(SceneRootComponent);
 	
 	SkySpringArmComponent = CreateDefaultSubobject<USkySpringArmComponent>("SkySpringArmComponent");
 	SkySpringArmComponent->SetupAttachment(RootComponent);

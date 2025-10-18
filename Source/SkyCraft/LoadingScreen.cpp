@@ -5,7 +5,7 @@
 #include "Island.h"
 #include "LocalSettings.h"
 #include "PCS.h"
-#include "SkyCraft/Widgets/LoadingScreenWidget.h"
+#include "SkyCraft/Widgets/WidgetLoadingScreen.h"
 #include "Blueprint/UserWidget.h"
 #include "SkyCraft/PSS.h"
 #include "SkyCraft/GIS.h"
@@ -27,27 +27,27 @@ void ALoadingScreen::PostInitializeComponents()
 		return;
 	}
 	
-	W_LoadingScreen = CreateWidget<ULoadingScreenWidget>(GetWorld(), WidgetLoadingScreen);
-	W_LoadingScreen->LoadingScreen = this;
-	W_LoadingScreen->AddToViewport(1000000);
+	WidgetLoadingScreen = CreateWidget<UWidgetLoadingScreen>(GetWorld(), ClassWidgetLoadingScreen);
+	WidgetLoadingScreen->LoadingScreen = this;
+	WidgetLoadingScreen->AddToViewport(1000000);
 
 	UGameplayStatics::SetSoundMixClassOverride(this, SoundMixModifier, SoundClass, 0, 1, 0);
 	UGameplayStatics::PushSoundMixModifier(this, SoundMixModifier);
 
-	W_LoadingScreen->SetLoadingStage(0);
+	WidgetLoadingScreen->SetLoadingStage(0);
 }
 
 void ALoadingScreen::PlayerStateStartsLoginPlayer(APSS* InPSS)
 {
 	PSS = InPSS;
 	PSS->OnServerLoggedIn.AddDynamic(this, &ALoadingScreen::OnServerLoggedIn);
-	W_LoadingScreen->SetLoadingStage(1);
+	WidgetLoadingScreen->SetLoadingStage(1);
 }
 
 void ALoadingScreen::OnServerLoggedIn()
 {
 	// Add here func for fast debug.
-	W_LoadingScreen->SetLoadingStage(2);
+	WidgetLoadingScreen->SetLoadingStage(2);
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ALoadingScreen::LoadIslands, 3.0f);
 }
@@ -73,7 +73,7 @@ void ALoadingScreen::LoadIslands()
 			FoundAllIslands.Add(Island);
 		}
 	}
-	W_LoadingScreen->SetLoadingStage(3);
+	WidgetLoadingScreen->SetLoadingStage(3);
 	CheckIsLoaded();
 }
 
@@ -97,15 +97,15 @@ void ALoadingScreen::CheckIsLoaded()
 {
 	if (!LoadingIslands.IsEmpty()) return;
 
-	W_LoadingScreen->SetLoadingStage(4);
+	WidgetLoadingScreen->SetLoadingStage(4);
 	PSS->OnClientLoggedIn.AddDynamic(this, &ALoadingScreen::OnClientLoggedIn);
 	PSS->Server_ClientLoggedIn();
 }
 
 void ALoadingScreen::OnClientLoggedIn()
 {
-	W_LoadingScreen->OnFinishCompleted.AddDynamic(this, &ALoadingScreen::WidgetFinished);
-	W_LoadingScreen->FinishLoadingScreen();
+	WidgetLoadingScreen->OnFinishCompleted.AddDynamic(this, &ALoadingScreen::WidgetFinished);
+	WidgetLoadingScreen->FinishLoadingScreen();
 	PSS->EnableInput(PSS->PCS);
 	PSS->PCS->EnableInput(PSS->PCS);
 	
@@ -115,6 +115,6 @@ void ALoadingScreen::OnClientLoggedIn()
 
 void ALoadingScreen::WidgetFinished()
 {
-	W_LoadingScreen->RemoveFromParent();
+	WidgetLoadingScreen->RemoveFromParent();
 	Destroy();
 }

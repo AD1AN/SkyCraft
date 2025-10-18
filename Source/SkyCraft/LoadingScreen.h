@@ -7,7 +7,7 @@
 #include "LoadingScreen.generated.h"
 
 class AIsland;
-class ULoadingScreenWidget;
+class UWidgetLoadingScreen;
 class APSS;
 
 UCLASS()
@@ -20,12 +20,12 @@ public:
 	
 	ALoadingScreen();
 
-	UPROPERTY(EditDefaultsOnly) TSubclassOf<ULoadingScreenWidget> WidgetLoadingScreen;
-	UPROPERTY() TObjectPtr<ULoadingScreenWidget> W_LoadingScreen;
+	UPROPERTY(EditInstanceOnly) TSubclassOf<UWidgetLoadingScreen> ClassWidgetLoadingScreen;
+	UPROPERTY() TObjectPtr<UWidgetLoadingScreen> WidgetLoadingScreen;
 
-	UPROPERTY(EditDefaultsOnly) TObjectPtr<USoundMix> SoundMixModifier;
-	UPROPERTY(EditDefaultsOnly) TObjectPtr<USoundClass> SoundClass;
-	UPROPERTY(EditDefaultsOnly) float SoundFadeInTime = 2;
+	UPROPERTY(EditInstanceOnly) TObjectPtr<USoundMix> SoundMixModifier;
+	UPROPERTY(EditInstanceOnly) TObjectPtr<USoundClass> SoundClass;
+	UPROPERTY(EditInstanceOnly) float SoundFadeInTime = 2;
 
 	UPROPERTY(BlueprintReadOnly) TArray<AIsland*> FoundAllIslands;
 	UPROPERTY(BlueprintReadOnly) TArray<AIsland*> LoadingIslands;

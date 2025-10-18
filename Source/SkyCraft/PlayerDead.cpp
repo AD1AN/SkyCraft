@@ -5,12 +5,19 @@
 #include "PSS.h"
 #include "Components/InventoryComponent.h"
 #include "Components/SkySpringArmComponent.h"
+#include "Components/SphereComponent.h"
 #include "Enums/ItemType.h"
 #include "Net/UnrealNetwork.h"
 
 APlayerDead::APlayerDead()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	SphereRootComponent = CreateDefaultSubobject<USphereComponent>("SphereRootComponent");
+	SetRootComponent(SphereRootComponent);
+	SphereRootComponent->InitSphereRadius(30);
+	SphereRootComponent->CanCharacterStepUpOn = ECB_No;
+	SphereRootComponent->SetCollisionProfileName("PlayerDead");
 	
 	SkySpringArmComponent = CreateDefaultSubobject<USkySpringArmComponent>("SkySpringArmComponent");
 	SkySpringArmComponent->SetupAttachment(RootComponent);

@@ -9,6 +9,7 @@
 #include "Structs/SS_Player.h"
 #include "GMS.generated.h"
 
+class APlayerCrystal;
 class APlayerIsland;
 class APSS;
 class APCS;
@@ -38,7 +39,12 @@ public:
 	int32 NumEditorClients = 0;
 #endif
 
-	TArray<APlayerIsland*> PlayerIslands;
+	UPROPERTY(BlueprintReadOnly) TArray<APlayerIsland*> PlayerIslands;
+
+	// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ID for saving/loading.
+	UPROPERTY(BlueprintReadWrite) int32 ID_Building = 0;
+	UPROPERTY(BlueprintReadWrite) int32 ID_PlayerIsland = 0;
+	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< IDs for saving/loading.
 	
 	UPROPERTY(BlueprintReadOnly) TArray<ANavMeshBoundsVolume*> Unused_NMBV;
 	UFUNCTION(BlueprintCallable) ANavMeshBoundsVolume* NMBV_Use(AActor* ActorAttach, FVector Scale = FVector(200,200,50));
@@ -65,10 +71,12 @@ public:
 	UFUNCTION(BlueprintCallable) void LoadPlayer(APCS* PCS, FSS_Player SS);
 
 	void PlayerFirstWorldSpawn(APCS* PCS);
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) APlayerCrystal* BornPlayerCrystal(APCS* PCS); // Called on FirstWorldSpawn or PlayerNormal death or PhantomEstray return to Island.
 
 	UFUNCTION(BlueprintCallable) void SendMessageWorld(FString PlayerName, FText TextMessage);
 
-	APlayerIsland* FindPlayerIsland(int32 ID);
+	FVector GetPlayerIslandWorldOrigin();
+	UFUNCTION(BlueprintCallable, BlueprintPure) APlayerIsland* FindPlayerIsland(int32 ID);
 
 	UFUNCTION(BlueprintCallable) AResource* SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD = -1);
 	UFUNCTION(BlueprintCallable) APlayerNormal* SpawnPlayerNormal(FVector Location, FRotator Rotation, AActor* InOwner, APSS* PSS, TArray<FSlot> InitialInventory, TArray<FSlot> InitialEquipment);

@@ -8,6 +8,7 @@
 #include "Interfaces/PlayerFormInterface.h"
 #include "PlayerDead.generated.h"
 
+class USphereComponent;
 class USkySpringArmComponent;
 class APSS;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeadEssence);
@@ -18,6 +19,7 @@ class SKYCRAFT_API APlayerDead : public APawn, public IPlayerFormInterface, publ
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USphereComponent> SphereRootComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<USkySpringArmComponent> SkySpringArmComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UInventoryComponent> InventoryComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly) TObjectPtr<UInventoryComponent> EquipmentInventoryComponent;
