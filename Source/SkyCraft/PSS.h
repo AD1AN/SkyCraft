@@ -73,8 +73,11 @@ public:
 	
 	APSS();
 
-	UFUNCTION(Reliable, Server) void Server_StartLoginPlayer(FCharacterBio InCharacterBio);
+	UFUNCTION(Reliable, Server) void Server_LoginPlayer(FCharacterBio InCharacterBio);
+	void LoadPlayer(FSS_Player& PlayerSave);
 	UFUNCTION(Reliable, Server) void Server_ClientLoggedIn();
+
+	UFUNCTION(BlueprintCallable) void SavePlayer();
 	
 	UPROPERTY(EditDefaultsOnly) TSubclassOf<UWidgetPlayerState> ClassWidgetPlayerState;
 	UPROPERTY(BlueprintReadOnly) TObjectPtr<UWidgetPlayerState> WidgetPlayerState;
@@ -106,12 +109,8 @@ public:
 
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerCrystal* PlayerCrystal = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerNormal* PlayerNormal = nullptr;
-	UPROPERTY(Replicated, BlueprintReadWrite) APlayerPhantom* PlayerSpirit = nullptr;
+	UPROPERTY(Replicated, BlueprintReadWrite) APlayerPhantom* PlayerPhantom = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerDead* PlayerDead = nullptr;
-
-	UFUNCTION(Reliable, Client) void Client_ReplicateSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
-	UFUNCTION(Reliable, NetMulticast) void Multicast_ReplicateSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
-	void AssembleSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
 
 	UPROPERTY(BlueprintAssignable) FOnEssence OnEssence;
 private:

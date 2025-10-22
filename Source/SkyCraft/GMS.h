@@ -6,9 +6,10 @@
 #include "GameFramework/GameModeBase.h"
 #include "Structs/Coords.h"
 #include "Structs/SS_Island.h"
-#include "Structs/SS_Player.h"
 #include "GMS.generated.h"
 
+class UGIS;
+class UWorldSave;
 class APlayerCrystal;
 class APlayerIsland;
 class APSS;
@@ -29,29 +30,22 @@ class SKYCRAFT_API AGMS : public AGameModeBase
 public:
 	AGMS();
 
-	UPROPERTY() AGSS* GSS = nullptr;
-	UPROPERTY() UNavigationSystemV1* NavSystem = nullptr;
+	UPROPERTY() TObjectPtr<UGIS> GIS;
+	UPROPERTY() TObjectPtr<AGSS> GSS;
+	UPROPERTY() TObjectPtr<UNavigationSystemV1> NavSystem;
 	
-	// Key: Hashed Coords
-	UPROPERTY(BlueprintReadWrite) TMap<int32, FSS_Island> SavedIslands;
+	UPROPERTY(BlueprintReadOnly) TObjectPtr<UWorldSave> WorldSave;
 
 #if WITH_EDITORONLY_DATA
 	int32 NumEditorClients = 0;
 #endif
 
 	UPROPERTY(BlueprintReadOnly) TArray<APlayerIsland*> PlayerIslands;
-
-	// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ID for saving/loading.
-	UPROPERTY(BlueprintReadWrite) int32 ID_Building = 0;
-	UPROPERTY(BlueprintReadWrite) int32 ID_PlayerIsland = 0;
-	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< IDs for saving/loading.
 	
 	UPROPERTY(BlueprintReadOnly) TArray<ANavMeshBoundsVolume*> Unused_NMBV;
 	UFUNCTION(BlueprintCallable) ANavMeshBoundsVolume* NMBV_Use(AActor* ActorAttach, FVector Scale = FVector(200,200,50));
 	UFUNCTION(BlueprintCallable) void NMBV_Unuse(ANavMeshBoundsVolume* NMBV);
-
-	UPROPERTY(BlueprintReadWrite, VisibleInstanceOnly) TMap<FString, FSS_Player> SavedPlayers; // Key: SteamID
-
+	
 	UPROPERTY(BlueprintReadOnly) TArray<AChunkIsland*> SpawnedChunkIslands;
 	UPROPERTY(BlueprintReadOnly) TArray<FCoords> SpawnedChunkIslandsCoords;
 
@@ -63,15 +57,20 @@ public:
 		return DA_IslandBiomes[RandomIndex];
 	}
 
-	UFUNCTION(BlueprintImplementableEvent) void StartWorld();
+	UFUNCTION(BlueprintNativeEvent) void StartWorld();
 	bool bWorldStarted = false;
 
+	FString LoadWorldName;
+
+	UFUNCTION(BlueprintNativeEvent) void LoadWorld(); // Called only in StartWorld.
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void SaveWorld(); // Called from EscapeMenu/AutoSave/Debug Button.
+
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
-	UFUNCTION(BlueprintCallable) void LoginPlayer(APCS* PCS);
-	UFUNCTION(BlueprintCallable) void LoadPlayer(APCS* PCS, FSS_Player SS);
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
 
 	void PlayerFirstWorldSpawn(APCS* PCS);
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) APlayerCrystal* BornPlayerCrystal(APCS* PCS); // Called on FirstWorldSpawn or PlayerNormal death or PhantomEstray return to Island.
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) APlayerCrystal* BornPlayerCrystal(APCS* PCS); // Called on FirstWorldSpawn / PlayerNormal Death / PhantomEstray Return.
 
 	UFUNCTION(BlueprintCallable) void SendMessageWorld(FString PlayerName, FText TextMessage);
 

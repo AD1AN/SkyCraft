@@ -8,6 +8,7 @@
 #include "GMS.h"
 #include "GSS.h"
 #include "NPC.h"
+#include "WorldSave.h"
 #include "AI/NavigationSystemBase.h"
 #include "Components/GrowingResourcesComponent.h"
 #include "Components/EntityComponent.h"
@@ -1087,14 +1088,10 @@ void AIsland::LoadBuildings()
 void AIsland::SaveIsland()
 {
 	if (!bIslandCanSave) return;
-	TArray<FSS_IslandLOD> SS_IslandLODs = SaveLODs();
-	TArray<FSS_Building> SS_Buildings = SaveBuildings();
-	TArray<FSS_DroppedItem> SS_DroppedItems = SaveDroppedItems();
-	TArray<FSS_Foliage> SS_Foliage = SaveFoliage();
-	SS_Island.IslandLODs = SS_IslandLODs;
-	SS_Island.Buildings = SS_Buildings;
-	SS_Island.DroppedItems = SS_DroppedItems;
-	SS_Island.Foliage = SS_Foliage;
+	SS_Island.IslandLODs = SaveLODs();
+	SS_Island.Buildings = SaveBuildings();
+	SS_Island.DroppedItems = SaveDroppedItems();
+	SS_Island.Foliage = SaveFoliage();
 	
 	for (auto& TerrainChunk : TerrainChunks)
 	{
@@ -1103,8 +1100,7 @@ void AIsland::SaveIsland()
 	}
 	
 	if (bPlayerIsland) return; // Do not save PlayerIsland in SavedIslands.
-	if (!IsValid(GSS) && !IsValid(GSS->GMS)) return;
-	GSS->GMS->SavedIslands.Add(HashCombine(GetTypeHash(Coords.X),GetTypeHash(Coords.Y)), SS_Island);
+	GSS->GMS->WorldSave->SavedIslands.Add(HashCombine(GetTypeHash(Coords.X),GetTypeHash(Coords.Y)), SS_Island);
 }
 
 TArray<FSS_IslandLOD> AIsland::SaveLODs()

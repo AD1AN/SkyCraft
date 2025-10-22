@@ -8,6 +8,7 @@
 #include "Interfaces/PlayerFormInterface.h"
 #include "PlayerPhantom.generated.h"
 
+class APlayerIsland;
 class APlayerNormal;
 class APSS;
 
@@ -22,6 +23,8 @@ public:
 
 	UPROPERTY(BlueprintReadOnly) class AGSS* GSS = nullptr;
 	UPROPERTY(Replicated, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
+
+	UPROPERTY(BlueprintReadWrite) APlayerIsland* ParentPlayerIsland; // TODO: Fully implement this feature in blueprint.
 
 	UPROPERTY(BlueprintReadWrite) FRotator LookRotation = FRotator::ZeroRotator;
 	UFUNCTION(Reliable, NetMulticast, BlueprintCallable) void Multicast_SetLookRotation(FRotator NewLookRotation);

@@ -4,21 +4,22 @@
 #include "AdvancedSessionsLibrary.h"
 #include "EngineUtils.h"
 #include "GSS.h"
+#include "GIS.h"
 #include "Island.h"
 #include "NavigationSystem.h"
 #include "PCS.h"
-#include "PlayerCrystal.h"
 #include "PlayerDead.h"
 #include "PlayerIsland.h"
 #include "PlayerNormal.h"
 #include "PlayerPhantom.h"
 #include "PSS.h"
 #include "Resource.h"
+#include "WorldSave.h"
 #include "Components/BrushComponent.h"
 #include "DataAssets/DA_Resource.h"
+#include "Kismet/GameplayStatics.h"
 #include "SkyCraft/Components/InventoryComponent.h"
 #include "NavMesh/NavMeshBoundsVolume.h"
-#include "SkyCraft/Components/HungerComponent.h"
 #include "Net/Core/PushModel/PushModel.h"
 
 #define LOCTEXT_NAMESPACE "GMS"
@@ -27,237 +28,148 @@ AGMS::AGMS(){}
 
 APlayerController* AGMS::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {
-	if (!bWorldStarted)
-	{
-		GSS = GetGameState<AGSS>();
-		GSS->GMS = this;
-		NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-		for (TActorIterator<ANavMeshBoundsVolume> It(GetWorld()); It; ++It)
-		{
-			Unused_NMBV.Add(*It);
-		}
-		StartWorld();
-		bWorldStarted = true;
-	}
+	if (!bWorldStarted) StartWorld();
 	return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 }
 
-void AGMS::LoginPlayer(APCS* PCS)
+void AGMS::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
-	if (PCS->IsLocalController()) GSS->SetHostPlayer(PCS->PSS);
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 	
-	FBPUniqueNetId PlayerUniqueNetId;
-	FString SteamID;
-	UAdvancedSessionsLibrary::GetUniqueNetID(PCS, PlayerUniqueNetId);
-	UAdvancedSessionsLibrary::UniqueNetIdToString(PlayerUniqueNetId, SteamID);
-	PCS->PSS->AuthSetSteamID(SteamID);
-	
-#if WITH_EDITOR
-	// For editor: change PlayerIDs to editor names.
-	if (PCS->IsLocalController())
-	{
-		PCS->PSS->AuthSetSteamID("Server");
-		PCS->PSS->SetPlayerName("Server");
-	}
-	else
-	{
-		NumEditorClients++;
-		FString ClientName = FString::Printf(TEXT("Client %d"), NumEditorClients);
-		PCS->PSS->AuthSetSteamID(ClientName);
-		PCS->PSS->SetPlayerName(ClientName);
-	}
-#endif
-
-	// Found in SavedPlayers
-	if (FSS_Player* FoundSavedPlayer = GSS->SavedPlayers.Find(PCS->PSS->SteamID))
-	{
-		// Login player is changed name or character bio.
-		if (FoundSavedPlayer->PlayerName != PCS->PSS->GetPlayerName() || FoundSavedPlayer->CharacterBio != PCS->PSS->CharacterBio)
-		{
-			FoundSavedPlayer->PlayerName = PCS->PSS->GetPlayerName();
-			FoundSavedPlayer->CharacterBio = PCS->PSS->CharacterBio;
-			
-			TArray<FString> Keys;
-			SavedPlayers.GetKeys(Keys);
-			TArray<FSS_Player> Values;
-			SavedPlayers.GenerateValueArray(Values);
-		
-			PCS->PSS->Multicast_ReplicateSavedPlayers(Keys, Values);
-		}
-		else // Login player is the same.
-		{
-			TArray<FString> Keys;
-			SavedPlayers.GetKeys(Keys);
-			TArray<FSS_Player> Values;
-			SavedPlayers.GenerateValueArray(Values);
-			
-			PCS->PSS->Client_ReplicateSavedPlayers(Keys, Values);
-		}
-
-		LoadPlayer(PCS, *FoundSavedPlayer);
-		if (!PCS->IsLocalController()) SendMessageWorld(PCS->PSS->GetPlayerName(), LOCTEXT("PlayerJoinWorld", "joined the world."));
-	}
-	else
-	{
-		FSS_Player NewPlayer;
-		NewPlayer.PlayerName = PCS->PSS->GetPlayerName();
-		NewPlayer.CharacterBio = PCS->PSS->CharacterBio;
-		NewPlayer.FirstWorldJoin = FDateTime::Now();
-		NewPlayer.Casta = GSS->NewPlayersCasta;
-		GSS->SavedPlayers.Add(PCS->PSS->SteamID, NewPlayer);
-
-		TArray<FString> Keys;
-		SavedPlayers.GetKeys(Keys);
-		TArray<FSS_Player> Values;
-		SavedPlayers.GenerateValueArray(Values);
-		
-		PCS->PSS->Multicast_ReplicateSavedPlayers(Keys, Values);
-		
-		PlayerFirstWorldSpawn(PCS);
-	}
+	APSS* PSS = Cast<APSS>(NewPlayer->PlayerState);
+	GSS->ConnectedPlayers.Add(PSS);
+	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, ConnectedPlayers, GSS);
+	GSS->OnConnectedPlayers.Broadcast();
 }
 
-void AGMS::LoadPlayer(APCS* PCS, FSS_Player SS)
+void AGMS::Logout(AController* Exiting)
 {
+	Super::Logout(Exiting);
+	APCS* PCS = Cast<APCS>(Exiting);
 	APSS* PSS = PCS->PSS;
 
-	PSS->AuthSetCasta(SS.Casta);
-	PSS->StaminaLevel = SS.StaminaLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StaminaLevel, PSS);
-	PSS->StrengthLevel = SS.StrengthLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StrengthLevel, PSS);
-	PSS->EssenceFlowLevel = SS.EssenceFlowLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceFlowLevel, PSS);
-	PSS->EssenceVesselLevel = SS.EssenceVesselLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceVesselLevel, PSS);
+	GSS->ConnectedPlayers.Remove(PSS);
+	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, ConnectedPlayers, GSS);
+	GSS->OnConnectedPlayers.Broadcast();
+}
 
-	PSS->StaminaMax = (SS.StaminaLevel * GSS->StaminaPerLevel) + (PSS->StaminaMax - 1);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StaminaMax, PSS);
-	PSS->Strength = SS.StrengthLevel * GSS->StrengthPerLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Strength, PSS);
-	PSS->EssenceFlow = SS.EssenceFlowLevel * GSS->EssenceFlowPerLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceFlow, PSS);
-	PSS->EssenceVessel = (SS.EssenceVesselLevel * GSS->EssenceVesselPerLevel) + (PSS->EssenceVessel - 3000);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceVessel, PSS);
+void AGMS::StartWorld_Implementation()
+{
+	bWorldStarted = true;
+	GSS = GetGameState<AGSS>();
+	GIS = GetGameInstance<UGIS>();
+	GSS->GMS = this;
+	NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	for (TActorIterator<ANavMeshBoundsVolume> It(GetWorld()); It; ++It) Unused_NMBV.Add(*It);
 
-	PSS->AuthSetPlayerForm(SS.PlayerForm);
-	PSS->SetEssence(SS.Essence);
-	PSS->AnalyzedEntities = SS.AnalyzedEntities;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedEntities, PSS);
-	PSS->AnalyzedItems = SS.AnalyzedItems;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedItems, PSS);
-
-	APlayerIsland* FoundPlayerIsland = FindPlayerIsland(SS.ID_IA);
-	PSS->Multicast_SetPlayerIsland(FoundPlayerIsland);
-
-	if (PSS->PlayerIsland->ArchonSteamID == PSS->SteamID)
-	{
-		PSS->PlayerIsland->AuthSetArchonPSS(PSS);
-	}
-
-	// If player in Crystal form.
-	if (SS.PlayerForm == EPlayerForm::Crystal)
-	{
-		FTransform PlayerCrystalTransform;
-		APlayerCrystal* SpawnedPlayerCrystal = GetWorld()->SpawnActorDeferred<APlayerCrystal>(APlayerCrystal::StaticClass(), PlayerCrystalTransform, PCS);
-		SpawnedPlayerCrystal->PSS = PSS;
-		SpawnedPlayerCrystal->InventoryComponent->Slots = SS.Inventory;
-		SpawnedPlayerCrystal->EquipmentInventoryComponent->Slots = SS.Equipment;
-		SpawnedPlayerCrystal->PreservedHunger = SS.PF_Island.Hunger;
-		SpawnedPlayerCrystal->FinishSpawning(PlayerCrystalTransform);
-		SpawnedPlayerCrystal->AttachToActor(PSS->PlayerIsland, FAttachmentTransformRules::KeepRelativeTransform);
-		PCS->Possess(SpawnedPlayerCrystal);
-	}
-	// If player in Dead form.
-	else if (SS.PlayerForm == EPlayerForm::Dead)
-	{
-		FTransform TransformPlayerDead;
-		APlayerIsland* AttachIsland = FindPlayerIsland(SS.PF_Normal.AttachedToIA);
-		if (IsValid(AttachIsland)) TransformPlayerDead.SetLocation(AttachIsland->GetTransform().TransformPosition(SS.PF_Dead.Location));
-		else TransformPlayerDead.SetLocation(SS.PF_Dead.Location);
-		
-		APlayerDead* SpawnedPlayerDead = GetWorld()->SpawnActorDeferred<APlayerDead>(GSS->PlayerDeadClass, TransformPlayerDead, PCS);
-		SpawnedPlayerDead->PSS = PSS;
-		SpawnedPlayerDead->InventoryComponent->Slots = SS.Inventory;
-		SpawnedPlayerDead->EquipmentInventoryComponent->Slots = SS.Equipment;
-		SpawnedPlayerDead->FinishSpawning(TransformPlayerDead);
-		SpawnedPlayerDead->Multicast_SetLookRotation(SS.PF_Dead.LookRotation);
-		PCS->Possess(SpawnedPlayerDead);
-	}
-	// If player in Phantom Estray form.
-	else if (SS.PlayerForm == EPlayerForm::Phantom && SS.PF_Phantom.bIsEstrayPhantom)
-	{
-		FTransform TransformPhantom;
-		TransformPhantom.SetLocation(SS.PF_Phantom.Location);
-			
-		APlayerPhantom* SpawnedPlayerPhantom = GetWorld()->SpawnActorDeferred<APlayerPhantom>(GSS->PlayerPhantomClass, TransformPhantom, PCS);
-		SpawnedPlayerPhantom->PSS = PSS;
-		SpawnedPlayerPhantom->bEstrayPhantom = true;
-		SpawnedPlayerPhantom->FinishSpawning(TransformPhantom);
-
-		APlayerIsland* AttachedToPI = FindPlayerIsland(SS.PF_Phantom.AttachedToIA);
-		if (IsValid(AttachedToPI)) SpawnedPlayerPhantom->AttachToActor(AttachedToPI, FAttachmentTransformRules::KeepRelativeTransform);
-			
-		SpawnedPlayerPhantom->OverrideEssence(SS.PF_Phantom.EstrayEssence);
-		SpawnedPlayerPhantom->Multicast_SetLookRotation(SS.PF_Phantom.LookRotation);
-		PCS->Possess(SpawnedPlayerPhantom);
-	}
-	// If player in Normal or Phantom(with normal) form.
-	else if (SS.PlayerForm == EPlayerForm::Normal || (SS.PlayerForm == EPlayerForm::Phantom && !SS.PF_Phantom.bIsEstrayPhantom))
-	{
-		APlayerIsland* IslandUnderFeet = FindPlayerIsland(SS.PF_Normal.AttachedToIA);
-		FTransform Transform_PlayerNormal = SS.PF_Normal.Transform;
-		Transform_PlayerNormal.AddToTranslation(FVector(0, 0, 50.0f));
-		if (IslandUnderFeet)
-		{
-			Transform_PlayerNormal.SetLocation(IslandUnderFeet->GetTransform().TransformPosition(SS.PF_Normal.Transform.GetLocation()));
-		}
-		APlayerNormal* SpawnedPlayerNormal = GetWorld()->SpawnActorDeferred<APlayerNormal>(GSS->PlayerNormalClass, Transform_PlayerNormal, PCS);
-		SpawnedPlayerNormal->PSS = PSS;
-		SpawnedPlayerNormal->InventoryComponent->Slots = SS.Inventory;
-		SpawnedPlayerNormal->EquipmentInventoryComponent->Slots = SS.Equipment;
-		SpawnedPlayerNormal->StoredMainQSI = SS.PF_Normal.MainQSI;
-		SpawnedPlayerNormal->StoredSecondQSI = SS.PF_Normal.SecondQSI;
-		SpawnedPlayerNormal->HungerComponent->Hunger = SS.PF_Normal.Hunger;
-		SpawnedPlayerNormal->FinishSpawning(Transform_PlayerNormal);
-		// TODO: There was attached to island, but i forgot what is AttachedToIA for. Investigate, add here if needed.
+	LoadWorldName = GIS->LoadWorldName;
+#ifdef WITH_EDITOR
+	LoadWorldName = "WorldEditor";
+#endif
 	
-		SpawnedPlayerNormal->Multicast_SetLookRotation(SS.PF_Normal.LookRotation);
-		SpawnedPlayerNormal->SetActorHiddenInGame(false);
-
-		APlayerPhantom* SpawnedPlayerPhantom = nullptr;
-		if (SS.PF_Normal.bPhantomSpawned)
-		{
-			FTransform TransformPhantom;
-			TransformPhantom.SetLocation(SS.PF_Phantom.Location);
-			SpawnedPlayerPhantom = GetWorld()->SpawnActorDeferred<APlayerPhantom>(GSS->PlayerPhantomClass, TransformPhantom, PCS);
-			SpawnedPlayerPhantom->PSS = PSS;
-			SpawnedPlayerPhantom->PlayerNormal = SpawnedPlayerNormal;
-			SpawnedPlayerPhantom->bEstrayPhantom = SS.PF_Phantom.bIsEstrayPhantom;
-			SpawnedPlayerPhantom->FinishSpawning(TransformPhantom);
-
-			SpawnedPlayerNormal->PlayerPhantom = SpawnedPlayerPhantom;
-			MARK_PROPERTY_DIRTY_FROM_NAME(APlayerNormal, PlayerPhantom, SpawnedPlayerNormal);
-
-			APlayerIsland* AttachedToPI = FindPlayerIsland(SS.PF_Phantom.AttachedToIA);
-			if (IsValid(AttachedToPI)) SpawnedPlayerPhantom->AttachToActor(AttachedToPI, FAttachmentTransformRules::KeepRelativeTransform);
-			SpawnedPlayerPhantom->Multicast_SetLookRotation(SS.PF_Phantom.LookRotation);
-		}
-		
-		if (SS.PlayerForm == EPlayerForm::Normal)
-		{
-			PCS->Possess(SpawnedPlayerNormal);	
-
-			SpawnedPlayerNormal->Server_SpawnIC(true); // TODO: Should be handled automatically.
-			SpawnedPlayerNormal->Server_SpawnIC(false);
-		}
-		else if (SS.PF_Normal.bPhantomSpawned)
-		{
-			PSS->PlayerNormal = SpawnedPlayerNormal;
-			SpawnedPlayerNormal->Multicast_LoadInPhantomAnim();
-			PCS->Possess(SpawnedPlayerPhantom);
-		}
+	if (UGameplayStatics::DoesSaveGameExist(LoadWorldName, 0))
+	{
+		WorldSave = Cast<UWorldSave>(UGameplayStatics::LoadGameFromSlot(LoadWorldName, 0));
 	}
+	else
+	{
+		WorldSave = Cast<UWorldSave>(UGameplayStatics::CreateSaveGameObject(GSS->WorldSaveClass));
+		UGameplayStatics::SaveGameToSlot(WorldSave, LoadWorldName, 0);
+	}
+	
+	LoadWorld();
+}
+
+void AGMS::LoadWorld_Implementation()
+{
+	GSS->LoadWorldSettings(WorldSave);
+	GSS->SavedPlayers = WorldSave->SavedPlayers;
+
+	// PlayerIslands
+	for (auto& PlayerIsland : WorldSave->PlayerIslands)
+	{
+		APlayerIsland* SpawnedPlayerIsland = GetWorld()->SpawnActorDeferred<APlayerIsland>(GSS->PlayerIslandClass, PlayerIsland.Transform);
+		SpawnedPlayerIsland->ID = PlayerIsland.ID;
+		SpawnedPlayerIsland->IslandSize = PlayerIsland.IslandSize;
+		SpawnedPlayerIsland->bIsCrystal = PlayerIsland.bIsCrystal;
+		SpawnedPlayerIsland->ArchonSteamID = PlayerIsland.ArchonSteamID;
+		// SpawnedPlayerIsland->Denizens // TODO: Implement Denizens loading.
+		SpawnedPlayerIsland->TargetDirection = PlayerIsland.TargetDirection;
+		SpawnedPlayerIsland->TargetAltitude = PlayerIsland.TargetAltitude;
+		SpawnedPlayerIsland->TargetSpeed = PlayerIsland.TargetSpeed;
+		SpawnedPlayerIsland->bStopIsland = PlayerIsland.bStopIsland;
+		SpawnedPlayerIsland->SetEssence(PlayerIsland.Essence);
+		SpawnedPlayerIsland->SS_Astralons = PlayerIsland.Astralons;
+		SpawnedPlayerIsland->SS_Island = PlayerIsland.SS_Island;
+		SpawnedPlayerIsland->bLoadFromSave = true;
+		SpawnedPlayerIsland->FinishSpawning(PlayerIsland.Transform);
+		PlayerIslands.Add(SpawnedPlayerIsland);
+	}
+
+	// Static Players Dead
+	for (auto& StaticPlayerDead : WorldSave->StaticPlayerDeads)
+	{
+		FTransform SpawnTransform;
+		SpawnTransform.SetLocation(StaticPlayerDead.Location);
+		APlayerDead* SpawnedStaticPlayerDead = GetWorld()->SpawnActorDeferred<APlayerDead>(GSS->PlayerDeadClass, SpawnTransform);
+		SpawnedStaticPlayerDead->bPossessed = false;
+		SpawnedStaticPlayerDead->DeadEssence = StaticPlayerDead.DeadEssence;
+		SpawnedStaticPlayerDead->CurrentLifeSpan = StaticPlayerDead.CurrentLifeSpan;
+		SpawnedStaticPlayerDead->InventoryComponent->Slots = StaticPlayerDead.Inventory;
+		SpawnedStaticPlayerDead->EquipmentInventoryComponent->Slots = StaticPlayerDead.Equipment;
+		SpawnedStaticPlayerDead->FinishSpawning(SpawnTransform);
+	}
+	
+	WorldSave->bFirstTimeLoadingWorld = false;
+}
+
+void AGMS::SaveWorld_Implementation()
+{
+	// TODO: decide if LastSave is needed.
+	check(WorldSave);
+	GSS->SaveWorldSettings(WorldSave);
+
+	for (auto& PSS : GSS->ConnectedPlayers) PSS->SavePlayer();
+	WorldSave->SavedPlayers = GSS->SavedPlayers;
+
+	TArray<FSS_PlayerIsland> SavingPlayerIslands;
+	for (auto& PlayerIsland : PlayerIslands)
+	{
+		FSS_PlayerIsland SS_PlayerIsland;
+		SS_PlayerIsland.ID = PlayerIsland->ID;
+		SS_PlayerIsland.IslandSize = PlayerIsland->IslandSize;
+		SS_PlayerIsland.bIsCrystal = PlayerIsland->bIsCrystal;
+		SS_PlayerIsland.Transform = PlayerIsland->GetTransform();
+		SS_PlayerIsland.ArchonSteamID = PlayerIsland->ArchonSteamID;
+		SS_PlayerIsland.TargetDirection = PlayerIsland->TargetDirection;
+		SS_PlayerIsland.TargetAltitude = PlayerIsland->TargetAltitude;
+		SS_PlayerIsland.TargetSpeed = PlayerIsland->TargetSpeed;
+		SS_PlayerIsland.bStopIsland = PlayerIsland->bStopIsland;
+		SS_PlayerIsland.Essence = PlayerIsland->GetEssence();
+		SS_PlayerIsland.Astralons = PlayerIsland->SS_Astralons;
+		PlayerIsland->SaveIsland();
+		SS_PlayerIsland.SS_Island = PlayerIsland->SS_Island;
+		SavingPlayerIslands.Add(SS_PlayerIsland);
+	}
+	WorldSave->PlayerIslands = SavingPlayerIslands;
+
+	WorldSave->StaticPlayerDeads.Empty();
+	TArray<AActor*> FoundPlayerDeads;
+	UGameplayStatics::GetAllActorsOfClass(this, GSS->PlayerDeadClass, FoundPlayerDeads);
+	for (auto& ActorDead : FoundPlayerDeads)
+	{
+		APlayerDead* PlayerDead = Cast<APlayerDead>(ActorDead);
+		if (PlayerDead->bPossessed) continue;
+		FSS_StaticPlayerDead SS_StaticPlayerDead;
+		SS_StaticPlayerDead.Location = PlayerDead->GetActorLocation();
+		SS_StaticPlayerDead.DeadEssence = PlayerDead->DeadEssence;
+		SS_StaticPlayerDead.Inventory = PlayerDead->InventoryComponent->Slots;
+		SS_StaticPlayerDead.Equipment = PlayerDead->EquipmentInventoryComponent->Slots;
+		SS_StaticPlayerDead.CurrentLifeSpan = PlayerDead->CurrentLifeSpan;
+		WorldSave->StaticPlayerDeads.Add(SS_StaticPlayerDead);
+	}
+
+	UGameplayStatics::SaveGameToSlot(WorldSave, LoadWorldName, 0);
 }
 
 void AGMS::PlayerFirstWorldSpawn(APCS* PCS)
@@ -267,7 +179,7 @@ void AGMS::PlayerFirstWorldSpawn(APCS* PCS)
 		FTransform SpawnIslandTransform;
 		SpawnIslandTransform.SetLocation(GetPlayerIslandWorldOrigin());
 		APlayerIsland* SpawnedPlayerIsland = GetWorld()->SpawnActorDeferred<APlayerIsland>(GSS->PlayerIslandClass, SpawnIslandTransform);
-		SpawnedPlayerIsland->ID = ID_PlayerIsland++;
+		SpawnedPlayerIsland->ID = WorldSave->ID_PlayerIsland++;
 		SpawnedPlayerIsland->bIsCrystal = GSS->bNewPlayersCastaArchonCrystal;
 		SpawnedPlayerIsland->IslandSize = 0.0f;
 		SpawnedPlayerIsland->AuthSetArchonSteamID(PCS->PSS->SteamID);

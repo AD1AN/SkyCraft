@@ -141,7 +141,7 @@ public:
 	UFUNCTION() void OnRep_ArchonSteamID() { OnArchonSteamID.Broadcast(); }
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
 	void AuthSetArchonSteamID(FString SteamID) { REP_SET(ArchonSteamID, SteamID); }
-	
+
 	UPROPERTY(Replicated, BlueprintReadOnly) TArray<APSS*> Denizens;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddDenizen(APSS* Denizen);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthRemoveDenizen(APSS* Denizen);

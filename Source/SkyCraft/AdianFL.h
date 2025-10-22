@@ -250,4 +250,5 @@ public:
 		int32 Value = FCString::Atoi(*InString);
 		return static_cast<uint8>(FMath::Clamp(Value, 0, 255));
 	}
+
 };

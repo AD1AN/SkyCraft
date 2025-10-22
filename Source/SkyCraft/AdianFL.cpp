@@ -3,6 +3,7 @@
 #include "AdianFL.h"
 #include "Island.h"
 #include "NiagaraFunctionLibrary.h"
+#include "RepHelpers.h"
 #include "AssetUserData/AUD_SkyTags.h"
 #include "AssetUserData/AUD_StaticMeshCustomPrimitiveData.h"
 #include "Components/EntityComponent.h"
@@ -10,6 +11,7 @@
 #include "Interfaces/IslandInterface.h"
 #include "Interfaces/PlayerFormInterface.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/Core/PushModel/PushModel.h"
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
 #include "Structs/RelativeBox.h"
 
@@ -322,12 +324,16 @@ bool UAdianFL::IsPlayerForm(const AActor* Actor)
 
 UInventoryComponent* UAdianFL::GetPlayerInventory(const AActor* Actor)
 {
-	if (Actor && Actor->Implements<UPlayerFormInterface>())
+	// if (Actor && Actor->Implements<UPlayerFormInterface>())
+	// {
+	// 	if (const IPlayerFormInterface* PFInterface = Cast<const IPlayerFormInterface>(Actor))
+	// 	{
+	// 		return PFInterface->GetPlayerInventory();
+	// 	}
+	// }
+	if (const IPlayerFormInterface* PFInterface = Cast<const IPlayerFormInterface>(Actor))
 	{
-		if (const IPlayerFormInterface* PFInterface = Cast<const IPlayerFormInterface>(Actor))
-		{
-			return PFInterface->GetPlayerInventory();
-		}
+		return PFInterface->GetPlayerInventory();
 	}
 	return nullptr;
 }

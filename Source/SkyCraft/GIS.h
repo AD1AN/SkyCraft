@@ -23,6 +23,8 @@ public:
 	UPROPERTY(BlueprintReadOnly) APCS* PCS = nullptr;
 	UPROPERTY(BlueprintReadOnly) APSS* PSS = nullptr;
 
+	UPROPERTY(BlueprintReadWrite) FString LoadWorldName;
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditDefaultsOnly) bool DebugChunks = false;
 	UPROPERTY(EditDefaultsOnly) bool bTestChunkIslandRenderRange = false;

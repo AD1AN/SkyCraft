@@ -8,10 +8,12 @@
 #include "Components/SphereComponent.h"
 #include "Enums/ItemType.h"
 #include "Net/UnrealNetwork.h"
+#include "Net/Core/PushModel/PushModel.h"
 
 APlayerDead::APlayerDead()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
 
 	SphereRootComponent = CreateDefaultSubobject<USphereComponent>("SphereRootComponent");
 	SetRootComponent(SphereRootComponent);
@@ -56,12 +58,45 @@ void APlayerDead::Tick(float DeltaTime)
 
 	Super::Tick(DeltaTime);
 
-	
+	if (HasAuthority())
+	{
+		if (bReviving)
+		{
+			CurrentReviveTime += DeltaTime;
+			if (CurrentReviveTime >= MaxReviveTime)
+			{
+				REP_SET(bReviving, false);
+				ReviveToNormal();
+			}
+		}
+
+		REP_SET(CurrentLifeSpan, CurrentLifeSpan -= DeltaTime);
+		if (CurrentLifeSpan <= 0)
+		{
+			SetActorTickEnabled(false);
+			if (bPossessed)
+			{
+				Client_EndLifeSpan();
+			}
+			else Destroy();
+		}
+	}
 }
 
 void APlayerDead::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+void APlayerDead::UnPossessed()
+{
+	Super::UnPossessed();
+	REP_SET(bPossessed, false);
+}
+
+void APlayerDead::Client_EndLifeSpan_Implementation()
+{
+	ReceiveEndLifeSpan();
 }
 
 void APlayerDead::Client_SetLookRotation_Implementation(FRotator NewLookRotation)
@@ -155,4 +190,9 @@ void APlayerDead::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& Ou
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerDead, PSS, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerDead, CurrentLifeSpan, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerDead, CurrentReviveTime, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerDead, bReviving, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerDead, bPossessed, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerDead, DeadEssence, Params);
 }

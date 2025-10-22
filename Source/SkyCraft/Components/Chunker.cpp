@@ -9,6 +9,7 @@
 #include "SkyCraft/GMS.h"
 #include "SkyCraft/GSS.h"
 #include "SkyCraft/Island.h"
+#include "SkyCraft/WorldSave.h"
 #include "SkyCraft/DataAssets/DA_IslandBiome.h"
 
 UChunker::UChunker()
@@ -131,7 +132,7 @@ void UChunker::SpawnChunks()
 							SpawnedIsland->GSS = GSS;
 							SpawnedIsland->DA_IslandBiome = DA_IslandBiome;
 							// Load island from save.
-							if (FSS_Island* SS_Island = GSS->GMS->SavedIslands.Find(ChunkCoords.HashCoords()))
+							if (FSS_Island* SS_Island = GSS->GMS->WorldSave->SavedIslands.Find(ChunkCoords.HashCoords()))
 							{
 								SpawnedIsland->bLoadFromSave = true;
 								SpawnedIsland->SS_Island = *SS_Island;
