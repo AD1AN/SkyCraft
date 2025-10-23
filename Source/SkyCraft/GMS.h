@@ -69,7 +69,7 @@ public:
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 
-	void PlayerFirstWorldSpawn(APCS* PCS);
+	void RegisterPlayer(APCS* PCS);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) APlayerCrystal* BornPlayerCrystal(APCS* PCS); // Called on FirstWorldSpawn / PlayerNormal Death / PhantomEstray Return.
 
 	UFUNCTION(BlueprintCallable) void SendMessageWorld(FString PlayerName, FText TextMessage);

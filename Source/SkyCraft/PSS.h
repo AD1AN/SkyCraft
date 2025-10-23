@@ -59,6 +59,7 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void OnRep_Owner() override;
+	UFUNCTION(BlueprintImplementableEvent) void ReceiveOnRep_Owner();
 
 	bool bOwnerStartedLoginPlayer = false;
 	void OwnerStartLoginPlayer();
@@ -66,9 +67,14 @@ public:
 	UPROPERTY(BlueprintAssignable) FOnServerLoggedIn OnServerLoggedIn;
 	UPROPERTY(BlueprintAssignable) FOnClientLoggedIn OnClientLoggedIn;
 	
-	UPROPERTY(ReplicatedUsing=OnRep_ServerLoggedIn) bool ServerLoggedIn = false;
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ServerLoggedIn)
+	bool ServerLoggedIn = false;
+	
 	UFUNCTION() void OnRep_ServerLoggedIn() { if (IsLocalState()) OnServerLoggedIn.Broadcast(); }
-	UPROPERTY(ReplicatedUsing=OnRep_ClientLoggedIn) bool ClientLoggedIn = false;
+	
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ClientLoggedIn)
+	bool ClientLoggedIn = false;
+	
 	UFUNCTION() void OnRep_ClientLoggedIn() { OnClientLoggedIn.Broadcast(); }
 	
 	APSS();

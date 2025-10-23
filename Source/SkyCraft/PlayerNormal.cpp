@@ -5,6 +5,7 @@
 #include "AdianFL.h"
 #include "GSS.h"
 #include "Island.h"
+#include "PlayerIsland.h"
 #include "PSS.h"
 #include "Components/EntityComponent.h"
 #include "Components/HealthRegenComponent.h"
@@ -117,7 +118,10 @@ void APlayerNormal::Tick(float DeltaSeconds)
 	if (IsLocallyControlled()) Server_SyncLookRotation(LookRotation);
 }
 
-void APlayerNormal::OnRep_Island() {}
+void APlayerNormal::OnRep_ParentPlayerIsland_Implementation()
+{
+	
+}
 
 void APlayerNormal::Server_SyncLookRotation_Implementation(FRotator NewLookRotation)
 {
@@ -232,21 +236,40 @@ void APlayerNormal::RemoveEquipmentStats(UDA_Item* OldItem)
 
 void APlayerNormal::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor)
 {
-	AIsland* IslandActor = nullptr;
+	// NewPlayerIsland can be nullptr.
+	APlayerIsland* NewPlayerIsland = nullptr;
+	
 	if (NewBase)
 	{
 		AActor* NewBaseRoot = UAdianFL::GetRootActor(NewBase->GetOwner());
-		if (NewBaseRoot && NewBaseRoot->IsA(AIsland::StaticClass()))
+		if (NewBaseRoot && NewBaseRoot->IsA(APlayerIsland::StaticClass()))
 		{
-			IslandActor = Cast<AIsland>(NewBaseRoot);
-			NewBase = IslandActor->PMC_Main;
+			NewPlayerIsland = Cast<APlayerIsland>(NewBaseRoot);
+			NewBase = NewPlayerIsland->PMC_Main;
 		}
 	}
+	
 	UPrimitiveComponent* OldBase = BasedMovement.MovementBase;
 	Super::SetBase(NewBase, BoneName, bNotifyActor);
+	
 	if (NewBase != OldBase)
 	{
-		Island = IslandActor;
+		if (PSS->IsLocalState())
+		{
+			// Unbind from previous PlayerIsland.
+			if (IsValid(ParentPlayerIsland)) ParentPlayerIsland->OnStopIsland.RemoveDynamic(this, &APlayerNormal::OnParentPlayerStopIsland);
+		}
+
+		ParentPlayerIsland = NewPlayerIsland;
+		
+		if (PSS->IsLocalState())
+		{
+			UpdateCameraLag();
+			
+			// Bind to new PlayerIsland.
+			if (IsValid(ParentPlayerIsland)) ParentPlayerIsland->OnStopIsland.AddDynamic(this, &APlayerNormal::OnParentPlayerStopIsland);
+		}
+		
 		OnNewBase.Broadcast();
 	}
 }
@@ -268,20 +291,20 @@ void APlayerNormal::Server_SetQSI_Implementation(bool bIsMainQSI, int32 QSI)
 {
 	if (bIsMainQSI)
 	{
-		MainQSI = QSI;
+		REP_SET(MainQSI, QSI);
 		StoredMainQSI = QSI;
 	}
 	else
 	{
-		SecondQSI = QSI;
+		REP_SET(SecondQSI, QSI);
 		StoredSecondQSI = QSI;
 	}
 }
 
 void APlayerNormal::Server_SetBothQSI_Implementation(int32 NewMainQSI, int32 NewSecondQSI, bool bStore)
 {
-	MainQSI = NewMainQSI;
-	SecondQSI = NewSecondQSI;
+	REP_SET(MainQSI, NewMainQSI);
+	REP_SET(SecondQSI, NewSecondQSI);
 	
 	if (bStore)
 	{
@@ -295,17 +318,10 @@ void APlayerNormal::Server_SpawnIC_Implementation(bool bIsMainQSI)
 	Server_ReceiveSpawnIC(bIsMainQSI);
 }
 
-void APlayerNormal::OnRep_HandsFull()
-{
-	OnHandsFull.Broadcast();
-}
-
 void APlayerNormal::SetHandsFull(bool bHandsFull, AActor* Actor)
 {
-	HandsFull = bHandsFull;
+	REP_SET(HandsFull, bHandsFull);
 	HandsFullActor = Actor;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerNormal, HandsFull, this);
-	OnHandsFull.Broadcast();
 }
 
 void APlayerNormal::Multicast_LoadInPhantomAnim_Implementation()
@@ -316,6 +332,22 @@ void APlayerNormal::Multicast_LoadInPhantomAnim_Implementation()
 void APlayerNormal::OnRep_AnimLoopUpperBody()
 {
 	SetAnimLoopUpperBody(AnimLoopUpperBody);
+}
+
+void APlayerNormal::UpdateCameraLag()
+{
+	if (IsValid(ParentPlayerIsland))
+	{
+		if (ParentPlayerIsland->bStopIsland) EnableCameraLag();
+		else DisableCameraLag();
+	}
+	else EnableCameraLag();
+}
+
+void APlayerNormal::OnParentPlayerStopIsland()
+{
+	if (ParentPlayerIsland->bStopIsland) EnableCameraLag();
+	else DisableCameraLag();
 }
 
 void APlayerNormal::SetAnimLoopUpperBody(UAnimSequenceBase* Sequence)

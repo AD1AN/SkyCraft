@@ -172,8 +172,24 @@ void AGMS::SaveWorld_Implementation()
 	UGameplayStatics::SaveGameToSlot(WorldSave, LoadWorldName, 0);
 }
 
-void AGMS::PlayerFirstWorldSpawn(APCS* PCS)
+void AGMS::RegisterPlayer(APCS* PCS)
 {
+	APSS* PSS = PCS->PSS;
+	
+	FSS_Player NewPlayer;
+	NewPlayer.PlayerName = PSS->GetPlayerName();
+	NewPlayer.CharacterBio = PSS->CharacterBio;
+	NewPlayer.FirstWorldJoin = FDateTime::Now();
+	NewPlayer.Casta = GSS->NewPlayersCasta;
+	GSS->SavedPlayers.Add(PSS->SteamID, NewPlayer);
+
+	TArray<FString> Keys;
+	WorldSave->SavedPlayers.GetKeys(Keys);
+	TArray<FSS_Player> Values;
+	WorldSave->SavedPlayers.GenerateValueArray(Values);
+
+	GSS->Multicast_ReplicateSavedPlayers(Keys, Values);
+	
 	if (GSS->NewPlayersCasta == ECasta::Archon)
 	{
 		FTransform SpawnIslandTransform;
@@ -182,12 +198,12 @@ void AGMS::PlayerFirstWorldSpawn(APCS* PCS)
 		SpawnedPlayerIsland->ID = WorldSave->ID_PlayerIsland++;
 		SpawnedPlayerIsland->bIsCrystal = GSS->bNewPlayersCastaArchonCrystal;
 		SpawnedPlayerIsland->IslandSize = 0.0f;
-		SpawnedPlayerIsland->AuthSetArchonSteamID(PCS->PSS->SteamID);
-		SpawnedPlayerIsland->AuthSetArchonPSS(PCS->PSS);
+		SpawnedPlayerIsland->AuthSetArchonSteamID(PSS->SteamID);
+		SpawnedPlayerIsland->AuthSetArchonPSS(PSS);
 		SpawnedPlayerIsland->FinishSpawning(SpawnIslandTransform);
 		PlayerIslands.Add(SpawnedPlayerIsland);
 
-		PCS->PSS->Multicast_SetPlayerIsland(SpawnedPlayerIsland);
+		PSS->Multicast_SetPlayerIsland(SpawnedPlayerIsland);
 		BornPlayerCrystal(PCS);
 	}
 	else if (GSS->NewPlayersCasta == ECasta::Denizen)
@@ -195,7 +211,7 @@ void AGMS::PlayerFirstWorldSpawn(APCS* PCS)
 		if (PlayerIslands.IsEmpty())
 		{
 			PCS->PSS->Casta = ECasta::Estray;
-			return PlayerFirstWorldSpawn(PCS); // Redirect to Estray spawn.
+			return RegisterPlayer(PCS); // Redirect to Estray spawn.
 		}
 		APlayerIsland* RandomPlayerIsland = PlayerIslands[FMath::RandRange(0, PlayerIslands.Num() - 1)];
 		PCS->PSS->Multicast_SetPlayerIsland(RandomPlayerIsland);

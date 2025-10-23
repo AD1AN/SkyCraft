@@ -12,6 +12,7 @@
 #include "Interfaces/PlayerFormInterface.h"
 #include "PlayerNormal.generated.h"
 
+class APlayerIsland;
 class APlayerPhantom;
 class USkySpringArmComponent;
 class UInventoryComponent;
@@ -55,10 +56,12 @@ public:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ParentPlayerIsland, VisibleInstanceOnly)
+	APlayerIsland* ParentPlayerIsland = nullptr;
 	
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, ReplicatedUsing=OnRep_Island)
-	AIsland* Island = nullptr; // The island under feet. Changes on SetBase().
-	UFUNCTION() void OnRep_Island();
+	UFUNCTION(BlueprintNativeEvent)
+	void OnRep_ParentPlayerIsland();
 
 	UPROPERTY(BlueprintAssignable) FOnPlayerPhantom OnPlayerPhantom;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_PlayerPhantom) APlayerPhantom* PlayerPhantom = nullptr;
@@ -79,19 +82,19 @@ public:
 	UFUNCTION() void OnRep_MainQSI() { OnMainQSI.Broadcast(MainQSI); }
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_SecondQSI) int32 SecondQSI = -1;
 	UFUNCTION() void OnRep_SecondQSI() { OnSecondQSI.Broadcast(SecondQSI); }
-	int32 StoredMainQSI = -1; // Server-only.
-	int32 StoredSecondQSI = -1; // Server-only.
+	UPROPERTY(BlueprintReadOnly) int32 StoredMainQSI = -1; // Server-only.
+	UPROPERTY(BlueprintReadOnly) int32 StoredSecondQSI = -1; // Server-only.
 
 	UFUNCTION(Reliable, Server, BlueprintCallable) void Server_SetQSI(bool bIsMainQSI, int32 QSI);
 	UFUNCTION(Reliable, Server, BlueprintCallable) void Server_SetBothQSI(int32 NewMainQSI, int32 NewSecondQSI, bool bStore = true);
 
-	UFUNCTION(Reliable, Server, BlueprintCallable) void Server_SpawnIC(bool bIsMainQSI);
-	UFUNCTION(BlueprintImplementableEvent, meta=(DisplayName="Server_SpawnIC")) void Server_ReceiveSpawnIC(bool bIsMainQSI);
+	UFUNCTION(Reliable, Server, BlueprintCallable) void Server_SpawnIC(bool bIsMainQSI); // TODO: Should be handled automatically.
+	UFUNCTION(BlueprintImplementableEvent) void Server_ReceiveSpawnIC(bool bIsMainQSI);
 	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnHandsFull OnHandsFull;
 	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_HandsFull) bool HandsFull = false;
-	UFUNCTION() void OnRep_HandsFull();
+	UFUNCTION() void OnRep_HandsFull() { OnHandsFull.Broadcast(); }
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetHandsFull(bool bHandsFull, AActor* Actor);
 	UPROPERTY(BlueprintReadWrite) AActor* HandsFullActor = nullptr;
 	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Main/Second Hands
@@ -135,6 +138,12 @@ public:
 		if (GetMovementBase()) return Cast<AIsland>(GetMovementBase()->GetOwner());
 		else return nullptr;
 	}
+
+protected:
+	UFUNCTION(BlueprintImplementableEvent) void EnableCameraLag();
+	UFUNCTION(BlueprintImplementableEvent) void DisableCameraLag();
+	UFUNCTION(BlueprintCallable) void UpdateCameraLag();
+	UFUNCTION() void OnParentPlayerStopIsland();
 
 private:
 	virtual void BeginActor_Implementation() override;

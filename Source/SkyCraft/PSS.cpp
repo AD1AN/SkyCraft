@@ -36,6 +36,7 @@ APSS::APSS()
 
 void APSS::BeginPlay()
 {
+	PCS = Cast<APCS>(GetOwner()); // Can be Server or Client-Owner.
 	Super::BeginPlay();
 	
 	GIS = GetWorld()->GetGameInstance<UGIS>();
@@ -52,8 +53,6 @@ void APSS::OnRep_Owner() // Client if Owner is replicates late.
 
 void APSS::OwnerStartLoginPlayer()
 {
-	if (GetOwner() == nullptr) return; // Can be null due network.
-	PCS = Cast<APCS>(GetOwner()); // Can be Server or Client-Owner.
 	if (!PCS) return;
 	PCS->PSS = this;
 
@@ -102,57 +101,43 @@ void APSS::Server_LoginPlayer_Implementation(FCharacterBio InCharacterBio)
 	// Found in SavedPlayers
 	if (FSS_Player* FoundSavedPlayer = GSS->SavedPlayers.Find(SteamID))
 	{
-		// Login player is changed name or character bio.
-		if (FoundSavedPlayer->PlayerName != GetPlayerName() || FoundSavedPlayer->CharacterBio != CharacterBio)
-		{
-			FoundSavedPlayer->PlayerName = GetPlayerName();
-			FoundSavedPlayer->CharacterBio = CharacterBio;
-			
-			TArray<FString> Keys;
-			GMS->WorldSave->SavedPlayers.GetKeys(Keys);
-			TArray<FSS_Player> Values;
-			GMS->WorldSave->SavedPlayers.GenerateValueArray(Values);
-		
-			GSS->Multicast_ReplicateSavedPlayers(Keys, Values);
-		}
-		else // Login player is the same.
-		{
-			TArray<FString> Keys;
-			GMS->WorldSave->SavedPlayers.GetKeys(Keys);
-			TArray<FSS_Player> Values;
-			GMS->WorldSave->SavedPlayers.GenerateValueArray(Values);
-			
-			GSS->Client_ReplicateSavedPlayers(Keys, Values);
-		}
-
 		LoadPlayer(*FoundSavedPlayer);
-		if (!PCS->IsLocalController()) GMS->SendMessageWorld(GetPlayerName(), LOCTEXT("PlayerJoinWorld", "joined the world."));
 	}
 	else // Not found in SavedPlayers
 	{
-		FSS_Player NewPlayer;
-		NewPlayer.PlayerName = GetPlayerName();
-		NewPlayer.CharacterBio = CharacterBio;
-		NewPlayer.FirstWorldJoin = FDateTime::Now();
-		NewPlayer.Casta = GSS->NewPlayersCasta;
-		GSS->SavedPlayers.Add(SteamID, NewPlayer);
-
-		TArray<FString> Keys;
-		GMS->WorldSave->SavedPlayers.GetKeys(Keys);
-		TArray<FSS_Player> Values;
-		GMS->WorldSave->SavedPlayers.GenerateValueArray(Values);
-		
-		GSS->Multicast_ReplicateSavedPlayers(Keys, Values);
-		
-		GMS->PlayerFirstWorldSpawn(PCS);
+		GMS->RegisterPlayer(PCS);
 	}
 	
+	if (!PCS->IsLocalController()) GMS->SendMessageWorld(GetPlayerName(), LOCTEXT("PlayerJoinWorld", "joined the world."));
 	REP_SET(ServerLoggedIn, true);
 	ForceNetUpdate();
 }
 
 void APSS::LoadPlayer(FSS_Player& PlayerSave)
 {
+	// Login player is changed name or character bio.
+	if (PlayerSave.PlayerName != GetPlayerName() || PlayerSave.CharacterBio != CharacterBio)
+	{
+		PlayerSave.PlayerName = GetPlayerName();
+		PlayerSave.CharacterBio = CharacterBio;
+			
+		TArray<FString> Keys;
+		GMS->WorldSave->SavedPlayers.GetKeys(Keys);
+		TArray<FSS_Player> Values;
+		GMS->WorldSave->SavedPlayers.GenerateValueArray(Values);
+		
+		GSS->Multicast_ReplicateSavedPlayers(Keys, Values);
+	}
+	else // Login player is the same.
+	{
+		TArray<FString> Keys;
+		GMS->WorldSave->SavedPlayers.GetKeys(Keys);
+		TArray<FSS_Player> Values;
+		GMS->WorldSave->SavedPlayers.GenerateValueArray(Values);
+			
+		GSS->Client_ReplicateSavedPlayers(Keys, Values);
+	}
+	
 	AuthSetCasta(PlayerSave.Casta);
 	StaminaLevel = PlayerSave.StaminaLevel;
 	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StaminaLevel, this);
@@ -320,14 +305,14 @@ void APSS::SavePlayer()
 	else if (PlayerForm == EPlayerForm::Normal || (PlayerForm == EPlayerForm::Phantom && !PlayerPhantom->bEstrayPhantom))
 	{
 		check(PlayerNormal);
-		APlayerIsland* FeetPlayerIsland = Cast<APlayerIsland>(PlayerNormal->Island);
+		APlayerIsland* FeetPlayerIsland = Cast<APlayerIsland>(PlayerNormal->ParentPlayerIsland);
 		SS_Player.Inventory = PlayerNormal->InventoryComponent->Slots;
 		SS_Player.Equipment = PlayerNormal->EquipmentInventoryComponent->Slots;
 		SS_Player.PF_Normal.AttachedToIA = FeetPlayerIsland ? FeetPlayerIsland->ID : -1;
 		FTransform TransformPlayerNormal;
-		if (PlayerNormal->Island)
+		if (FeetPlayerIsland)
 		{
-			TransformPlayerNormal.SetLocation(PlayerNormal->Island->GetTransform().InverseTransformPosition(PlayerNormal->GetActorLocation()));
+			TransformPlayerNormal.SetLocation(FeetPlayerIsland->GetTransform().InverseTransformPosition(PlayerNormal->GetActorLocation()));
 			TransformPlayerNormal.SetRotation(PlayerNormal->GetActorRotation().Quaternion());
 		}
 		else
