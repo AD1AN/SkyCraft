@@ -2,7 +2,6 @@
 
 #include "GSS.h"
 #include "GIS.h"
-#include "GMS.h"
 #include "SkyCraft/WorldSave.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
@@ -134,23 +133,23 @@ void AGSS::BeginPlay()
 	}
 }
 
-void AGSS::Client_ReplicateSavedPlayers_Implementation(const TArray<FString>& Keys, const TArray<FSS_Player>& Values)
+void AGSS::Client_ReplicateRegisteredPlayers_Implementation(const TArray<FString>& Keys, const TArray<FSS_RegisteredPlayer>& Values)
 {
-	AssembleSavedPlayers(Keys, Values);
+	AssembleRegisteredPlayers(Keys, Values);
 }
 
-void AGSS::Multicast_ReplicateSavedPlayers_Implementation(const TArray<FString>& Keys, const TArray<FSS_Player>& Values)
+void AGSS::Multicast_ReplicateRegisteredPlayers_Implementation(const TArray<FString>& Keys, const TArray<FSS_RegisteredPlayer>& Values)
 {
 	if (HasAuthority()) return; // Except server.
-	AssembleSavedPlayers(Keys, Values);
+	AssembleRegisteredPlayers(Keys, Values);
 }
 
-void AGSS::AssembleSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values)
+void AGSS::AssembleRegisteredPlayers(const TArray<FString>& Keys, const TArray<FSS_RegisteredPlayer>& Values)
 {
-	SavedPlayers.Empty(Keys.Num());
+	RegisteredPlayers.Empty(Keys.Num());
 	for (int32 i = 0; i < Keys.Num(); ++i)
 	{
-		SavedPlayers.Add(Keys[i], Values[i]);
+		RegisteredPlayers.Add(Keys[i], Values[i]);
 	}
 }
 

@@ -89,24 +89,27 @@ APlayerNormal::APlayerNormal(const FObjectInitializer& ObjectInitializer) : Supe
 
 void APlayerNormal::BeginActor_Implementation()
 {
-	Super::BeginActor_Implementation();
-	GSS = GetWorld()->GetGameState<AGSS>();
-	
 	if (HasAuthority())
 	{
-		InitialUpdateEquipmentSlots();
-		EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
+		CharacterStart();
 	}
-	
-	CharacterStart();
 }
 
 void APlayerNormal::OnRep_PSS_Implementation()
 {
 	CharacterStart();
-	
+}
+
+void APlayerNormal::CharacterStart_Implementation()
+{
+	if (bCharacterStarted) return;
+	GSS = GetWorld()->GetGameState<AGSS>();
+
 	InitialUpdateEquipmentSlots();
 	EquipmentInventoryComponent->OnSlotItem.AddDynamic(this, &APlayerNormal::UpdateEquipmentSlot);
+	
+	HealthRegenComponent->ManualBeginPlay(EntityComponent);
+	HungerComponent->OnHunger.AddDynamic(this, &APlayerNormal::OnHunger);
 }
 
 void APlayerNormal::Tick(float DeltaSeconds)
@@ -141,14 +144,6 @@ void APlayerNormal::Multicast_SetLookRotation_Implementation(FRotator NewLookRot
 {
 	LookRotation = NewLookRotation;
 	SkySpringArmComponent->SetWorldRotation(LookRotation);
-}
-
-void APlayerNormal::CharacterStart_Implementation()
-{
-	if (bCharacterStarted) return;
-	
-	HealthRegenComponent->ManualBeginPlay(EntityComponent);
-	HungerComponent->OnHunger.AddDynamic(this, &APlayerNormal::OnHunger);
 }
 
 void APlayerNormal::InitialUpdateEquipmentSlots()

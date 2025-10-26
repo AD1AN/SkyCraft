@@ -11,7 +11,7 @@
 class USkySpringArmComponent;
 class APSS;
 
-UCLASS()
+UCLASS(Blueprintable, Abstract)
 class SKYCRAFT_API APlayerCrystal : public APawn, public IPlayerFormInterface, public IEssenceInterface
 {
 	GENERATED_BODY()
@@ -33,6 +33,9 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite) float PreservedHunger = -1.0f;
 
+protected:
+	UFUNCTION(BlueprintCallable, BlueprintPure) float GetCameraMaxAngle();
+	
 private:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;

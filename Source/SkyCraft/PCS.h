@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "PCS.generated.h"
 
+class UGIS;
 class APSS;
 
 UCLASS()
@@ -14,10 +15,11 @@ class SKYCRAFT_API APCS : public APlayerController
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintReadOnly) APSS* PSS = nullptr;
+	UPROPERTY(BlueprintReadOnly) TObjectPtr<UGIS> GIS;
+	UPROPERTY(BlueprintReadOnly) TObjectPtr<APSS> PSS;
 
 	virtual void PostInitializeComponents() override;
-	
+
 	virtual void BeginPlay() override;
 	virtual void PawnLeavingGame() override;
 	

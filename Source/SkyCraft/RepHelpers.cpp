@@ -46,9 +46,7 @@ void ReplicateImmediately(AActor* Actor)
         for (UNetConnection* const Connection : Driver->ClientConnections)
         {
             UActorChannel* Channel = Connection->FindActorChannelRef(Actor);
-            if (Channel == nullptr
-                && !Actor->IsPendingKillPending()
-                && Driver->IsLevelInitializedForActor(Actor, Connection))
+            if (Channel == nullptr && !Actor->IsPendingKillPending() && Driver->IsLevelInitializedForActor(Actor, Connection))
             {
                 // Some actors might get immediately destroyed before they have the chance to replicate, so create the channel for them if called in BeginPlay
                 Channel = Cast<UActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));

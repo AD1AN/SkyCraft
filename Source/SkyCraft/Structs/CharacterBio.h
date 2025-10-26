@@ -22,17 +22,13 @@ struct FCharacterBio
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SkinTone = 1.0f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FDateTime DateTimeCreated;
-
 	FORCEINLINE bool operator==(const FCharacterBio& Other) const
 	{
 		return Gender == Other.Gender
 			&& HairStyle == Other.HairStyle
 			&& HairColor == Other.HairColor
 			&& EyeColor == Other.EyeColor
-			&& FMath::IsNearlyEqual(SkinTone, Other.SkinTone)
-			&& DateTimeCreated == Other.DateTimeCreated;
+			&& FMath::IsNearlyEqual(SkinTone, Other.SkinTone);
 	}
 
 	FORCEINLINE bool operator!=(const FCharacterBio& Other) const

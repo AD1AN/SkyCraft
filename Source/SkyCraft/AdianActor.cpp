@@ -20,29 +20,7 @@ void AAdianActor::PostInitializeComponents()
 void AAdianActor::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (HasAuthority()) AdianActorLifeCycle();
-}
-
-void AAdianActor::PostNetInit()
-{
-	Super::PostNetInit();
-
-	if (!HasAuthority() && !bReplicationInitialized)
-	{
-		bReplicationInitialized = true;
-		AdianActorLifeCycle();
-	}
-}
-
-void AAdianActor::OnPostInitializeComponents_Implementation() {}
-void AAdianActor::InitActor_Implementation() {}
-void AAdianActor::PreBeginActor_Implementation() {}
-void AAdianActor::BeginActor_Implementation() {}
-void AAdianActor::PostBeginActor_Implementation() {}
-
-void AAdianActor::AdianActorLifeCycle()
-{
+	
 	InitActor();
 	PreBeginActor();
 	
@@ -65,6 +43,12 @@ void AAdianActor::AdianActorLifeCycle()
 
 	PostBeginActor();
 }
+
+void AAdianActor::OnPostInitializeComponents_Implementation() {}
+void AAdianActor::InitActor_Implementation() {}
+void AAdianActor::PreBeginActor_Implementation() {}
+void AAdianActor::BeginActor_Implementation() {}
+void AAdianActor::PostBeginActor_Implementation() {}
 
 void AAdianCharacter::BeginPlay()
 {

@@ -44,12 +44,14 @@ void AGMS::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 
 void AGMS::Logout(AController* Exiting)
 {
-	Super::Logout(Exiting);
 	APCS* PCS = Cast<APCS>(Exiting);
 	APSS* PSS = PCS->PSS;
-
+	
 	GSS->ConnectedPlayers.Remove(PSS);
 	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, ConnectedPlayers, GSS);
+	
+	Super::Logout(Exiting);
+	
 	GSS->OnConnectedPlayers.Broadcast();
 }
 
@@ -67,23 +69,28 @@ void AGMS::StartWorld_Implementation()
 	LoadWorldName = "WorldEditor";
 #endif
 	
-	if (UGameplayStatics::DoesSaveGameExist(LoadWorldName, 0))
-	{
-		WorldSave = Cast<UWorldSave>(UGameplayStatics::LoadGameFromSlot(LoadWorldName, 0));
-	}
-	else
-	{
-		WorldSave = Cast<UWorldSave>(UGameplayStatics::CreateSaveGameObject(GSS->WorldSaveClass));
-		UGameplayStatics::SaveGameToSlot(WorldSave, LoadWorldName, 0);
-	}
+	LoadWorldSave();
 	
-	LoadWorld();
+	if (WorldSave->bWorldCreated) LoadWorld();
+	else CreateWorld();
+}
+
+void AGMS::CreateWorld()
+{
+	GSS->LoadWorldSettings(WorldSave);
+
+	WorldSave->DateTimeCreatedWorld = FDateTime::Now();
+	WorldSave->LastPlayed = FDateTime::Now();
+
+	// Here's good place for applying world creation settings.
+	
+	WorldSave->bWorldCreated = true;
 }
 
 void AGMS::LoadWorld_Implementation()
 {
 	GSS->LoadWorldSettings(WorldSave);
-	GSS->SavedPlayers = WorldSave->SavedPlayers;
+	GSS->RegisteredPlayers = WorldSave->RegisteredPlayers;
 
 	// PlayerIslands
 	for (auto& PlayerIsland : WorldSave->PlayerIslands)
@@ -119,18 +126,16 @@ void AGMS::LoadWorld_Implementation()
 		SpawnedStaticPlayerDead->EquipmentInventoryComponent->Slots = StaticPlayerDead.Equipment;
 		SpawnedStaticPlayerDead->FinishSpawning(SpawnTransform);
 	}
-	
-	WorldSave->bFirstTimeLoadingWorld = false;
 }
 
 void AGMS::SaveWorld_Implementation()
 {
 	// TODO: decide if LastSave is needed.
-	check(WorldSave);
 	GSS->SaveWorldSettings(WorldSave);
+	WorldSave->LastPlayed = FDateTime::Now();
 
 	for (auto& PSS : GSS->ConnectedPlayers) PSS->SavePlayer();
-	WorldSave->SavedPlayers = GSS->SavedPlayers;
+	WorldSave->RegisteredPlayers = GSS->RegisteredPlayers;
 
 	TArray<FSS_PlayerIsland> SavingPlayerIslands;
 	for (auto& PlayerIsland : PlayerIslands)
@@ -176,19 +181,44 @@ void AGMS::RegisterPlayer(APCS* PCS)
 {
 	APSS* PSS = PCS->PSS;
 	
-	FSS_Player NewPlayer;
+	FSS_RegisteredPlayer NewPlayer;
 	NewPlayer.PlayerName = PSS->GetPlayerName();
 	NewPlayer.CharacterBio = PSS->CharacterBio;
 	NewPlayer.FirstWorldJoin = FDateTime::Now();
 	NewPlayer.Casta = GSS->NewPlayersCasta;
-	GSS->SavedPlayers.Add(PSS->SteamID, NewPlayer);
+	GSS->RegisteredPlayers.Add(PSS->SteamID, NewPlayer);
 
 	TArray<FString> Keys;
-	WorldSave->SavedPlayers.GetKeys(Keys);
-	TArray<FSS_Player> Values;
-	WorldSave->SavedPlayers.GenerateValueArray(Values);
+	WorldSave->RegisteredPlayers.GetKeys(Keys);
+	TArray<FSS_RegisteredPlayer> Values;
+	WorldSave->RegisteredPlayers.GenerateValueArray(Values);
 
-	GSS->Multicast_ReplicateSavedPlayers(Keys, Values);
+	GSS->Multicast_ReplicateRegisteredPlayers(Keys, Values);
+
+	// Registering Host. Apply world creation settings.
+	if (!WorldSave->bHostRegistered && PSS->IsLocalState())
+	{
+		if (GIS->bHostStartAsArchon)
+		{
+			FTransform SpawnIslandTransform;
+			SpawnIslandTransform.SetLocation(GetPlayerIslandWorldOrigin());
+			APlayerIsland* SpawnedPlayerIsland = GetWorld()->SpawnActorDeferred<APlayerIsland>(GSS->PlayerIslandClass, SpawnIslandTransform);
+			SpawnedPlayerIsland->ID = WorldSave->ID_PlayerIsland++;
+			SpawnedPlayerIsland->bIsCrystal = GIS->bHostPlayerIslandIsCrystal;
+			SpawnedPlayerIsland->IslandSize = 0.0f;
+			SpawnedPlayerIsland->Set_ArchonSteamID(PSS->SteamID);
+			SpawnedPlayerIsland->Set_ArchonPSS(PSS);
+			SpawnedPlayerIsland->FinishSpawning(SpawnIslandTransform);
+			PlayerIslands.Add(SpawnedPlayerIsland);
+
+			PSS->Multicast_SetPlayerIsland(SpawnedPlayerIsland);
+			BornPlayerCrystal(PCS);
+			
+			WorldSave->bHostRegistered = true;
+			return;
+		}
+		WorldSave->bHostRegistered = true;
+	}
 	
 	if (GSS->NewPlayersCasta == ECasta::Archon)
 	{
@@ -198,8 +228,8 @@ void AGMS::RegisterPlayer(APCS* PCS)
 		SpawnedPlayerIsland->ID = WorldSave->ID_PlayerIsland++;
 		SpawnedPlayerIsland->bIsCrystal = GSS->bNewPlayersCastaArchonCrystal;
 		SpawnedPlayerIsland->IslandSize = 0.0f;
-		SpawnedPlayerIsland->AuthSetArchonSteamID(PSS->SteamID);
-		SpawnedPlayerIsland->AuthSetArchonPSS(PSS);
+		SpawnedPlayerIsland->Set_ArchonSteamID(PSS->SteamID);
+		SpawnedPlayerIsland->Set_ArchonPSS(PSS);
 		SpawnedPlayerIsland->FinishSpawning(SpawnIslandTransform);
 		PlayerIslands.Add(SpawnedPlayerIsland);
 
@@ -305,6 +335,19 @@ APlayerNormal* AGMS::SpawnPlayerNormal(FVector Location, FRotator Rotation, AAct
 	if (!InitialEquipment.IsEmpty()) SpawnedPlayer->EquipmentInventoryComponent->Slots = InitialEquipment;
 	SpawnedPlayer->FinishSpawning(SpawnTransform);
 	return SpawnedPlayer;
+}
+
+void AGMS::LoadWorldSave_Implementation()
+{
+	if (UGameplayStatics::DoesSaveGameExist(LoadWorldName, 0))
+	{
+		WorldSave = Cast<UWorldSave>(UGameplayStatics::LoadGameFromSlot(LoadWorldName, 0));
+	}
+	else
+	{
+		WorldSave = Cast<UWorldSave>(UGameplayStatics::CreateSaveGameObject(GSS->WorldSaveClass));
+		UGameplayStatics::SaveGameToSlot(WorldSave, LoadWorldName, 0);
+	}
 }
 
 ANavMeshBoundsVolume* AGMS::NMBV_Use(AActor* ActorAttach, FVector Scale)

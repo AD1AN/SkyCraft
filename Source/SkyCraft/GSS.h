@@ -6,7 +6,7 @@
 #include "GameFramework/GameState.h"
 #include "Structs/FloatMinMax.h"
 #include "Structs/Cue.h"
-#include "Structs/SS_Player.h"
+#include "Structs/SS_RegisteredPlayer.h"
 #include "GSS.generated.h"
 
 class UWorldSave;
@@ -42,7 +42,7 @@ public:
 	UPROPERTY(BlueprintReadWrite) bool bAllowJoinViaPresence = true;
 	UPROPERTY(BlueprintReadWrite) bool bAllowJoinViaPresenceFriendsOnly = true;
 	UPROPERTY(BlueprintReadWrite) bool bShouldAdvertise = true;
-	UPROPERTY(BlueprintReadWrite) ECasta NewPlayersCasta;
+	UPROPERTY(BlueprintReadWrite) ECasta NewPlayersCasta = ECasta::Denizen;
 	UPROPERTY(BlueprintReadWrite) bool bNewPlayersCastaArchonCrystal = true;
 	UPROPERTY(BlueprintReadWrite) int32 ChunkRenderRange = 10;
 	UPROPERTY(BlueprintReadWrite) float ChunkSize = 100000;
@@ -78,10 +78,10 @@ public:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(BlueprintReadWrite, Replicated) FRandomStream WorldSeed;
-	UPROPERTY(BlueprintReadWrite) TMap<FString, FSS_Player> SavedPlayers;
-	UFUNCTION(Reliable, Client) void Client_ReplicateSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
-	UFUNCTION(Reliable, NetMulticast) void Multicast_ReplicateSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
-	void AssembleSavedPlayers(const TArray<FString>& Keys, const TArray<FSS_Player>& Values);
+	UPROPERTY(BlueprintReadOnly) TMap<FString, FSS_RegisteredPlayer> RegisteredPlayers;
+	UFUNCTION(Reliable, Client) void Client_ReplicateRegisteredPlayers(const TArray<FString>& Keys, const TArray<FSS_RegisteredPlayer>& Values);
+	UFUNCTION(Reliable, NetMulticast) void Multicast_ReplicateRegisteredPlayers(const TArray<FString>& Keys, const TArray<FSS_RegisteredPlayer>& Values);
+	void AssembleRegisteredPlayers(const TArray<FString>& Keys, const TArray<FSS_RegisteredPlayer>& Values);
 	
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable) void Multicast_SpawnFXAttached(FCue FX, FVector LocalLocation = FVector::ZeroVector, AActor* AttachTo = nullptr, USoundAttenuation* AttenuationSettings = nullptr);
 

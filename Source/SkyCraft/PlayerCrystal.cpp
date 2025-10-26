@@ -2,6 +2,7 @@
 
 #include "PlayerCrystal.h"
 #include "GSS.h"
+#include "PlayerIsland.h"
 #include "PSS.h"
 #include "Components/InventoryComponent.h"
 #include "Components/SkySpringArmComponent.h"
@@ -45,6 +46,14 @@ void APlayerCrystal::Multicast_SetLookRotation_Implementation(FRotator NewLookRo
 {
 	LookRotation = NewLookRotation;
 	SkySpringArmComponent->SetWorldRotation(LookRotation);
+}
+
+float APlayerCrystal::GetCameraMaxAngle()
+{
+	if (!PSS) return 0;
+	if (!PSS->PlayerIsland) return 0;
+	if (PSS->PlayerIsland->bIsCrystal) return 0;
+	else return 85;
 }
 
 void APlayerCrystal::BeginPlay()

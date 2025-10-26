@@ -34,7 +34,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMainQSI, int32, MainQSI);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSecondQSI, int32, SecondQSI);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerPhantom);
 
-UCLASS()
+UCLASS(Blueprintable, Abstract)
 class SKYCRAFT_API APlayerNormal : public AAdianCharacter, public IPlayerFormInterface, public IIslandInterface, public IEssenceInterface
 {
 	GENERATED_BODY()
@@ -56,6 +56,11 @@ public:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PSS, BlueprintReadOnly, meta=(ExposeOnSpawn)) APSS* PSS = nullptr;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PSS();
+
+	// Called ONCE from BeginActor or OnRep_PSS. PSS should be valid.
+	UFUNCTION(BlueprintNativeEvent) void CharacterStart();
+	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCharacterStarted OnCharacterStarted;
 
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ParentPlayerIsland, VisibleInstanceOnly)
 	APlayerIsland* ParentPlayerIsland = nullptr;
@@ -107,13 +112,6 @@ public:
 	UPROPERTY(BlueprintReadOnly) bool bAnimLoopUpperBody = false;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetAnimLoopUpperBody(UAnimSequenceBase* Sequence);
 	
-	// Called ONCE from BeginActor or OnRep_PSS.
-	UFUNCTION(BlueprintNativeEvent) void CharacterStart();
-
-	// Character Initiated and PSS is valid, but BP_PSS->PlayerLoaded can be true/false.
-	// PSS is important and should be replicated.
-	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
-
 	UPROPERTY(BlueprintReadWrite, Replicated) float Stamina = 100.0f;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float StaminaCooldown = 1.0f;
 
@@ -124,8 +122,6 @@ public:
 	void RemoveEquipmentStats(UDA_Item* OldItem);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure) USkeletalMeshComponent* GetEquipmentMeshComponent(int32 SlotIndex);
-	
-	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCharacterStarted OnCharacterStarted;
 	
 	UPROPERTY(BlueprintAssignable) FOnNewBase OnNewBase;
 	virtual void SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor) override;

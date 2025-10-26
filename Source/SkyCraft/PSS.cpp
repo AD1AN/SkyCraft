@@ -36,7 +36,6 @@ APSS::APSS()
 
 void APSS::BeginPlay()
 {
-	PCS = Cast<APCS>(GetOwner()); // Can be Server or Client-Owner.
 	Super::BeginPlay();
 	
 	GIS = GetWorld()->GetGameInstance<UGIS>();
@@ -48,11 +47,15 @@ void APSS::BeginPlay()
 
 void APSS::OnRep_Owner() // Client if Owner is replicates late.
 {
-	if (HasActorBegunPlay()) OwnerStartLoginPlayer();
+	if (HasActorBegunPlay())
+	{
+		OwnerStartLoginPlayer();
+	}
 }
 
 void APSS::OwnerStartLoginPlayer()
 {
+	PCS = Cast<APCS>(GetOwner()); // Can be Server or Client-Owner.
 	if (!PCS) return;
 	PCS->PSS = this;
 
@@ -80,30 +83,29 @@ void APSS::Server_LoginPlayer_Implementation(FCharacterBio InCharacterBio)
 	FString GetSteamID;
 	UAdvancedSessionsLibrary::GetUniqueNetID(PCS, PlayerUniqueNetId);
 	UAdvancedSessionsLibrary::UniqueNetIdToString(PlayerUniqueNetId, GetSteamID);
-	AuthSetSteamID(SteamID);
+	Set_SteamID(SteamID);
 	
 #if WITH_EDITOR
-	// For editor: change PlayerIDs to editor names.
+	// Rename players to editor roles.
 	if (IsLocalState())
 	{
-		AuthSetSteamID("Server");
+		Set_SteamID("Server");
 		SetPlayerName("Server");
 	}
 	else
 	{
 		GMS->NumEditorClients++;
 		FString ClientName = FString::Printf(TEXT("Client %d"), GMS->NumEditorClients);
-		AuthSetSteamID(ClientName);
+		Set_SteamID(ClientName);
 		SetPlayerName(ClientName);
 	}
 #endif
 
-	// Found in SavedPlayers
-	if (FSS_Player* FoundSavedPlayer = GSS->SavedPlayers.Find(SteamID))
+	if (FSS_RegisteredPlayer* FoundRegisteredPlayer = GSS->RegisteredPlayers.Find(SteamID))
 	{
-		LoadPlayer(*FoundSavedPlayer);
+		LoadPlayer(*FoundRegisteredPlayer);
 	}
-	else // Not found in SavedPlayers
+	else
 	{
 		GMS->RegisterPlayer(PCS);
 	}
@@ -113,160 +115,152 @@ void APSS::Server_LoginPlayer_Implementation(FCharacterBio InCharacterBio)
 	ForceNetUpdate();
 }
 
-void APSS::LoadPlayer(FSS_Player& PlayerSave)
+void APSS::LoadPlayer(FSS_RegisteredPlayer& SS_RegisteredPlayer)
 {
 	// Login player is changed name or character bio.
-	if (PlayerSave.PlayerName != GetPlayerName() || PlayerSave.CharacterBio != CharacterBio)
+	if (SS_RegisteredPlayer.PlayerName != GetPlayerName() || SS_RegisteredPlayer.CharacterBio != CharacterBio)
 	{
-		PlayerSave.PlayerName = GetPlayerName();
-		PlayerSave.CharacterBio = CharacterBio;
-			
+		SS_RegisteredPlayer.PlayerName = GetPlayerName();
+		SS_RegisteredPlayer.CharacterBio = CharacterBio;
+
 		TArray<FString> Keys;
-		GMS->WorldSave->SavedPlayers.GetKeys(Keys);
-		TArray<FSS_Player> Values;
-		GMS->WorldSave->SavedPlayers.GenerateValueArray(Values);
+		GMS->WorldSave->RegisteredPlayers.GetKeys(Keys);
+		TArray<FSS_RegisteredPlayer> Values;
+		GMS->WorldSave->RegisteredPlayers.GenerateValueArray(Values);
 		
-		GSS->Multicast_ReplicateSavedPlayers(Keys, Values);
+		GSS->Multicast_ReplicateRegisteredPlayers(Keys, Values);
 	}
 	else // Login player is the same.
 	{
 		TArray<FString> Keys;
-		GMS->WorldSave->SavedPlayers.GetKeys(Keys);
-		TArray<FSS_Player> Values;
-		GMS->WorldSave->SavedPlayers.GenerateValueArray(Values);
-			
-		GSS->Client_ReplicateSavedPlayers(Keys, Values);
+		GMS->WorldSave->RegisteredPlayers.GetKeys(Keys);
+		TArray<FSS_RegisteredPlayer> Values;
+		GMS->WorldSave->RegisteredPlayers.GenerateValueArray(Values);
+
+		GSS->Client_ReplicateRegisteredPlayers(Keys, Values);
 	}
 	
-	AuthSetCasta(PlayerSave.Casta);
-	StaminaLevel = PlayerSave.StaminaLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StaminaLevel, this);
-	StrengthLevel = PlayerSave.StrengthLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StrengthLevel, this);
-	EssenceFlowLevel = PlayerSave.EssenceFlowLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceFlowLevel, this);
-	EssenceVesselLevel = PlayerSave.EssenceVesselLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceVesselLevel, this);
+	Set_Casta(SS_RegisteredPlayer.Casta);
+	REP_SET(StaminaLevel, SS_RegisteredPlayer.StaminaLevel);
+	REP_SET(StrengthLevel, SS_RegisteredPlayer.StrengthLevel);
+	REP_SET(EssenceFlowLevel, SS_RegisteredPlayer.EssenceFlowLevel);
+	REP_SET(EssenceVesselLevel, SS_RegisteredPlayer.EssenceVesselLevel);
 
-	StaminaMax = (PlayerSave.StaminaLevel * GSS->StaminaPerLevel) + (StaminaMax - 1);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, StaminaMax, this);
-	Strength = PlayerSave.StrengthLevel * GSS->StrengthPerLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Strength, this);
-	EssenceFlow = PlayerSave.EssenceFlowLevel * GSS->EssenceFlowPerLevel;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceFlow, this);
-	EssenceVessel = (PlayerSave.EssenceVesselLevel * GSS->EssenceVesselPerLevel) + (EssenceVessel - 3000);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, EssenceVessel, this);
+	REP_SET(StaminaMax, (SS_RegisteredPlayer.StaminaLevel * GSS->StaminaPerLevel) + (StaminaMax - 1));
+	REP_SET(Strength, SS_RegisteredPlayer.StrengthLevel * GSS->StrengthPerLevel);
+	REP_SET(EssenceFlow, SS_RegisteredPlayer.EssenceFlowLevel * GSS->EssenceFlowPerLevel);
+	REP_SET(EssenceVessel, (SS_RegisteredPlayer.EssenceVesselLevel * GSS->EssenceVesselPerLevel) + (EssenceVessel - 3000));
 
-	AuthSetPlayerForm(PlayerSave.PlayerForm);
-	SetEssence(PlayerSave.Essence);
-	AnalyzedEntities = PlayerSave.AnalyzedEntities;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedEntities, this);
-	AnalyzedItems = PlayerSave.AnalyzedItems;
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, AnalyzedItems, this);
+	Set_PlayerForm(SS_RegisteredPlayer.PlayerForm);
+	SetEssence(SS_RegisteredPlayer.Essence);
+	REP_SET(AnalyzedEntities, SS_RegisteredPlayer.AnalyzedEntities);
+	REP_SET(AnalyzedItems, SS_RegisteredPlayer.AnalyzedItems);
 
-	APlayerIsland* FoundPlayerIsland = GMS->FindPlayerIsland(PlayerSave.ID_PlayerIsland);
+	APlayerIsland* FoundPlayerIsland = GMS->FindPlayerIsland(SS_RegisteredPlayer.ID_PlayerIsland);
 	Multicast_SetPlayerIsland(FoundPlayerIsland);
 
 	if (PlayerIsland && PlayerIsland->ArchonSteamID == SteamID)
 	{
-		PlayerIsland->AuthSetArchonPSS(this);
+		PlayerIsland->Set_ArchonPSS(this);
 	}
 
-	if (PlayerSave.PlayerForm == EPlayerForm::Crystal)
+	if (SS_RegisteredPlayer.PlayerForm == EPlayerForm::Crystal)
 	{
 		FTransform PlayerCrystalTransform;
 		APlayerCrystal* SpawnedPlayerCrystal = GetWorld()->SpawnActorDeferred<APlayerCrystal>(GSS->PlayerCrystalClass, PlayerCrystalTransform, PCS);
 		SpawnedPlayerCrystal->PSS = this;
-		SpawnedPlayerCrystal->InventoryComponent->Slots = PlayerSave.Inventory;
-		SpawnedPlayerCrystal->EquipmentInventoryComponent->Slots = PlayerSave.Equipment;
-		SpawnedPlayerCrystal->PreservedHunger = PlayerSave.PF_Island.Hunger;
+		SpawnedPlayerCrystal->InventoryComponent->Slots = SS_RegisteredPlayer.Inventory;
+		SpawnedPlayerCrystal->EquipmentInventoryComponent->Slots = SS_RegisteredPlayer.Equipment;
+		SpawnedPlayerCrystal->PreservedHunger = SS_RegisteredPlayer.PF_Island.Hunger;
 		SpawnedPlayerCrystal->FinishSpawning(PlayerCrystalTransform);
 		SpawnedPlayerCrystal->AttachToActor(PlayerIsland, FAttachmentTransformRules::KeepRelativeTransform);
 		PCS->Possess(SpawnedPlayerCrystal);
 	}
-	else if (PlayerSave.PlayerForm == EPlayerForm::Dead)
+	else if (SS_RegisteredPlayer.PlayerForm == EPlayerForm::Dead)
 	{
 		FTransform TransformPlayerDead;
-		APlayerIsland* AttachIsland = GMS->FindPlayerIsland(PlayerSave.PF_Normal.AttachedToIA);
-		if (IsValid(AttachIsland)) TransformPlayerDead.SetLocation(AttachIsland->GetTransform().TransformPosition(PlayerSave.PF_Dead.Location));
-		else TransformPlayerDead.SetLocation(PlayerSave.PF_Dead.Location);
+		APlayerIsland* AttachIsland = GMS->FindPlayerIsland(SS_RegisteredPlayer.PF_Normal.ParentPlayerIsland);
+		if (IsValid(AttachIsland)) TransformPlayerDead.SetLocation(AttachIsland->GetTransform().TransformPosition(SS_RegisteredPlayer.PF_Dead.Location));
+		else TransformPlayerDead.SetLocation(SS_RegisteredPlayer.PF_Dead.Location);
 		
 		APlayerDead* SpawnedPlayerDead = GetWorld()->SpawnActorDeferred<APlayerDead>(GSS->PlayerDeadClass, TransformPlayerDead, PCS);
 		SpawnedPlayerDead->PSS = this;
-		SpawnedPlayerDead->InventoryComponent->Slots = PlayerSave.Inventory;
-		SpawnedPlayerDead->EquipmentInventoryComponent->Slots = PlayerSave.Equipment;
+		SpawnedPlayerDead->InventoryComponent->Slots = SS_RegisteredPlayer.Inventory;
+		SpawnedPlayerDead->EquipmentInventoryComponent->Slots = SS_RegisteredPlayer.Equipment;
 		SpawnedPlayerDead->FinishSpawning(TransformPlayerDead);
-		SpawnedPlayerDead->Multicast_SetLookRotation(PlayerSave.PF_Dead.LookRotation);
+		SpawnedPlayerDead->Multicast_SetLookRotation(SS_RegisteredPlayer.PF_Dead.LookRotation);
 		PCS->Possess(SpawnedPlayerDead);
 	}
 	// If player in Phantom ESTRAY form.
-	else if (PlayerSave.PlayerForm == EPlayerForm::Phantom && PlayerSave.PF_Phantom.bIsEstrayPhantom)
+	else if (SS_RegisteredPlayer.PlayerForm == EPlayerForm::Phantom && SS_RegisteredPlayer.PF_Phantom.bIsEstrayPhantom)
 	{
 		FTransform TransformPhantom;
-		TransformPhantom.SetLocation(PlayerSave.PF_Phantom.Location);
+		TransformPhantom.SetLocation(SS_RegisteredPlayer.PF_Phantom.Location);
 			
 		APlayerPhantom* SpawnedPlayerPhantom = GetWorld()->SpawnActorDeferred<APlayerPhantom>(GSS->PlayerPhantomClass, TransformPhantom, PCS);
 		SpawnedPlayerPhantom->PSS = this;
 		SpawnedPlayerPhantom->bEstrayPhantom = true;
 		SpawnedPlayerPhantom->FinishSpawning(TransformPhantom);
 
-		APlayerIsland* AttachedToPI = GMS->FindPlayerIsland(PlayerSave.PF_Phantom.Parent_ID_PlayerIsland);
+		APlayerIsland* AttachedToPI = GMS->FindPlayerIsland(SS_RegisteredPlayer.PF_Phantom.ParentPlayerIsland);
 		if (IsValid(AttachedToPI)) SpawnedPlayerPhantom->AttachToActor(AttachedToPI, FAttachmentTransformRules::KeepRelativeTransform);
 			
-		SpawnedPlayerPhantom->OverrideEssence(PlayerSave.PF_Phantom.EstrayEssence);
-		SpawnedPlayerPhantom->Multicast_SetLookRotation(PlayerSave.PF_Phantom.LookRotation);
+		SpawnedPlayerPhantom->OverrideEssence(SS_RegisteredPlayer.PF_Phantom.EstrayEssence);
+		SpawnedPlayerPhantom->Multicast_SetLookRotation(SS_RegisteredPlayer.PF_Phantom.LookRotation);
 		PCS->Possess(SpawnedPlayerPhantom);
 	}
 	// If player in Normal or Phantom(with normal) form.
-	else if (PlayerSave.PlayerForm == EPlayerForm::Normal || (PlayerSave.PlayerForm == EPlayerForm::Phantom && !PlayerSave.PF_Phantom.bIsEstrayPhantom))
+	else if (SS_RegisteredPlayer.PlayerForm == EPlayerForm::Normal || (SS_RegisteredPlayer.PlayerForm == EPlayerForm::Phantom && !SS_RegisteredPlayer.PF_Phantom.bIsEstrayPhantom))
 	{
-		APlayerIsland* IslandUnderFeet = GMS->FindPlayerIsland(PlayerSave.PF_Normal.AttachedToIA);
-		FTransform Transform_PlayerNormal = PlayerSave.PF_Normal.Transform;
+		APlayerIsland* IslandUnderFeet = GMS->FindPlayerIsland(SS_RegisteredPlayer.PF_Normal.ParentPlayerIsland);
+		FTransform Transform_PlayerNormal = SS_RegisteredPlayer.PF_Normal.Transform;
 		Transform_PlayerNormal.AddToTranslation(FVector(0, 0, 50.0f));
 		if (IslandUnderFeet)
 		{
-			Transform_PlayerNormal.SetLocation(IslandUnderFeet->GetTransform().TransformPosition(PlayerSave.PF_Normal.Transform.GetLocation()));
+			Transform_PlayerNormal.SetLocation(IslandUnderFeet->GetTransform().TransformPosition(SS_RegisteredPlayer.PF_Normal.Transform.GetLocation()));
 		}
 		APlayerNormal* SpawnedPlayerNormal = GetWorld()->SpawnActorDeferred<APlayerNormal>(GSS->PlayerNormalClass, Transform_PlayerNormal, PCS);
 		SpawnedPlayerNormal->PSS = this;
-		SpawnedPlayerNormal->InventoryComponent->Slots = PlayerSave.Inventory;
-		SpawnedPlayerNormal->EquipmentInventoryComponent->Slots = PlayerSave.Equipment;
-		SpawnedPlayerNormal->StoredMainQSI = PlayerSave.PF_Normal.MainQSI;
-		SpawnedPlayerNormal->StoredSecondQSI = PlayerSave.PF_Normal.SecondQSI;
-		SpawnedPlayerNormal->HungerComponent->Hunger = PlayerSave.PF_Normal.Hunger;
+		SpawnedPlayerNormal->InventoryComponent->Slots = SS_RegisteredPlayer.Inventory;
+		SpawnedPlayerNormal->EquipmentInventoryComponent->Slots = SS_RegisteredPlayer.Equipment;
+		SpawnedPlayerNormal->StoredMainQSI = SS_RegisteredPlayer.PF_Normal.MainQSI;
+		SpawnedPlayerNormal->StoredSecondQSI = SS_RegisteredPlayer.PF_Normal.SecondQSI;
+		SpawnedPlayerNormal->HungerComponent->Hunger = SS_RegisteredPlayer.PF_Normal.Hunger;
+		SpawnedPlayerNormal->ParentPlayerIsland = GMS->FindPlayerIsland(SS_RegisteredPlayer.PF_Normal.ParentPlayerIsland);
 		SpawnedPlayerNormal->FinishSpawning(Transform_PlayerNormal);
-		// TODO: There was attached to island, but i forgot what is AttachedToIA for. Investigate, add here if needed.
 	
-		SpawnedPlayerNormal->Multicast_SetLookRotation(PlayerSave.PF_Normal.LookRotation);
+		SpawnedPlayerNormal->Multicast_SetLookRotation(SS_RegisteredPlayer.PF_Normal.LookRotation);
 		SpawnedPlayerNormal->SetActorHiddenInGame(false);
 
 		APlayerPhantom* SpawnedPlayerPhantom = nullptr;
-		if (PlayerSave.PF_Normal.bPhantomSpawned)
+		if (SS_RegisteredPlayer.PF_Normal.bPhantomSpawned)
 		{
 			FTransform TransformPhantom;
-			TransformPhantom.SetLocation(PlayerSave.PF_Phantom.Location);
+			TransformPhantom.SetLocation(SS_RegisteredPlayer.PF_Phantom.Location);
 			SpawnedPlayerPhantom = GetWorld()->SpawnActorDeferred<APlayerPhantom>(GSS->PlayerPhantomClass, TransformPhantom, PCS);
 			SpawnedPlayerPhantom->PSS = this;
 			SpawnedPlayerPhantom->PlayerNormal = SpawnedPlayerNormal;
-			SpawnedPlayerPhantom->bEstrayPhantom = PlayerSave.PF_Phantom.bIsEstrayPhantom;
+			SpawnedPlayerPhantom->bEstrayPhantom = SS_RegisteredPlayer.PF_Phantom.bIsEstrayPhantom;
 			SpawnedPlayerPhantom->FinishSpawning(TransformPhantom);
 
 			SpawnedPlayerNormal->PlayerPhantom = SpawnedPlayerPhantom;
 			MARK_PROPERTY_DIRTY_FROM_NAME(APlayerNormal, PlayerPhantom, SpawnedPlayerNormal);
 
-			APlayerIsland* AttachedToPI = GMS->FindPlayerIsland(PlayerSave.PF_Phantom.Parent_ID_PlayerIsland);
+			APlayerIsland* AttachedToPI = GMS->FindPlayerIsland(SS_RegisteredPlayer.PF_Phantom.ParentPlayerIsland);
 			if (IsValid(AttachedToPI)) SpawnedPlayerPhantom->AttachToActor(AttachedToPI, FAttachmentTransformRules::KeepRelativeTransform);
-			SpawnedPlayerPhantom->Multicast_SetLookRotation(PlayerSave.PF_Phantom.LookRotation);
+			SpawnedPlayerPhantom->Multicast_SetLookRotation(SS_RegisteredPlayer.PF_Phantom.LookRotation);
 		}
 		
-		if (PlayerSave.PlayerForm == EPlayerForm::Normal)
+		if (SS_RegisteredPlayer.PlayerForm == EPlayerForm::Normal)
 		{
 			PCS->Possess(SpawnedPlayerNormal);	
 
+			SpawnedPlayerNormal->Server_SetQSI(true, SpawnedPlayerNormal->StoredMainQSI);
+			SpawnedPlayerNormal->Server_SetQSI(false, SpawnedPlayerNormal->StoredSecondQSI);
 			SpawnedPlayerNormal->Server_SpawnIC(true); // TODO: Should be handled automatically.
 			SpawnedPlayerNormal->Server_SpawnIC(false);
 		}
-		else if (PlayerSave.PF_Normal.bPhantomSpawned)
+		else if (SS_RegisteredPlayer.PF_Normal.bPhantomSpawned)
 		{
 			PlayerNormal = SpawnedPlayerNormal;
 			SpawnedPlayerNormal->Multicast_LoadInPhantomAnim();
@@ -277,18 +271,18 @@ void APSS::LoadPlayer(FSS_Player& PlayerSave)
 
 void APSS::SavePlayer()
 {
-	FSS_Player SS_Player;
-	SS_Player.PlayerName = GetPlayerName();
-	SS_Player.Casta = Casta;
-	SS_Player.ID_PlayerIsland = IsValid(PlayerIsland) ? PlayerIsland->ID : -1;
-	SS_Player.PlayerForm = PlayerForm;
-	SS_Player.Essence = Essence;
-	SS_Player.AnalyzedEntities = AnalyzedEntities;
-	SS_Player.AnalyzedItems = AnalyzedItems;
-	SS_Player.StaminaLevel = StaminaLevel;
-	SS_Player.StrengthLevel = StrengthLevel;
-	SS_Player.EssenceFlowLevel = EssenceFlowLevel;
-	SS_Player.EssenceVesselLevel = EssenceVesselLevel;
+	FSS_RegisteredPlayer RegisteredPlayer;
+	RegisteredPlayer.PlayerName = GetPlayerName();
+	RegisteredPlayer.Casta = Casta;
+	RegisteredPlayer.ID_PlayerIsland = IsValid(PlayerIsland) ? PlayerIsland->ID : -1;
+	RegisteredPlayer.PlayerForm = PlayerForm;
+	RegisteredPlayer.Essence = Essence;
+	RegisteredPlayer.AnalyzedEntities = AnalyzedEntities;
+	RegisteredPlayer.AnalyzedItems = AnalyzedItems;
+	RegisteredPlayer.StaminaLevel = StaminaLevel;
+	RegisteredPlayer.StrengthLevel = StrengthLevel;
+	RegisteredPlayer.EssenceFlowLevel = EssenceFlowLevel;
+	RegisteredPlayer.EssenceVesselLevel = EssenceVesselLevel;
 
 	// Crystal
 	if (PlayerForm == EPlayerForm::Crystal)
@@ -296,9 +290,9 @@ void APSS::SavePlayer()
 		ensure(PlayerCrystal);
 		if (PlayerCrystal)
 		{
-			SS_Player.Inventory = PlayerCrystal->InventoryComponent->Slots;
-			SS_Player.Equipment = PlayerCrystal->EquipmentInventoryComponent->Slots;
-			SS_Player.PF_Island.Hunger = PlayerCrystal->PreservedHunger;
+			RegisteredPlayer.Inventory = PlayerCrystal->InventoryComponent->Slots;
+			RegisteredPlayer.Equipment = PlayerCrystal->EquipmentInventoryComponent->Slots;
+			RegisteredPlayer.PF_Island.Hunger = PlayerCrystal->PreservedHunger;
 		}
 	}
 	// Normal or Phantom
@@ -306,9 +300,9 @@ void APSS::SavePlayer()
 	{
 		check(PlayerNormal);
 		APlayerIsland* FeetPlayerIsland = Cast<APlayerIsland>(PlayerNormal->ParentPlayerIsland);
-		SS_Player.Inventory = PlayerNormal->InventoryComponent->Slots;
-		SS_Player.Equipment = PlayerNormal->EquipmentInventoryComponent->Slots;
-		SS_Player.PF_Normal.AttachedToIA = FeetPlayerIsland ? FeetPlayerIsland->ID : -1;
+		RegisteredPlayer.Inventory = PlayerNormal->InventoryComponent->Slots;
+		RegisteredPlayer.Equipment = PlayerNormal->EquipmentInventoryComponent->Slots;
+		RegisteredPlayer.PF_Normal.ParentPlayerIsland = FeetPlayerIsland ? FeetPlayerIsland->ID : -1;
 		FTransform TransformPlayerNormal;
 		if (FeetPlayerIsland)
 		{
@@ -319,43 +313,43 @@ void APSS::SavePlayer()
 		{
 			TransformPlayerNormal = PlayerNormal->GetActorTransform();
 		}
-		SS_Player.PF_Normal.Transform = TransformPlayerNormal;
-		SS_Player.PF_Normal.LookRotation = PlayerNormal->LookRotation;
-		SS_Player.PF_Normal.bPhantomSpawned = PlayerNormal->PlayerPhantom != nullptr;
-		SS_Player.PF_Normal.MainQSI = PlayerNormal->MainQSI;
-		SS_Player.PF_Normal.SecondQSI = PlayerNormal->SecondQSI;
-		SS_Player.PF_Normal.Hunger = PlayerNormal->HungerComponent->Hunger;
+		RegisteredPlayer.PF_Normal.Transform = TransformPlayerNormal;
+		RegisteredPlayer.PF_Normal.LookRotation = PlayerNormal->LookRotation;
+		RegisteredPlayer.PF_Normal.bPhantomSpawned = PlayerNormal->PlayerPhantom != nullptr;
+		RegisteredPlayer.PF_Normal.MainQSI = PlayerNormal->MainQSI;
+		RegisteredPlayer.PF_Normal.SecondQSI = PlayerNormal->SecondQSI;
+		RegisteredPlayer.PF_Normal.Hunger = PlayerNormal->HungerComponent->Hunger;
 		
 		if (PlayerNormal->PlayerPhantom)
 		{
 			APlayerPhantom* Phantom = PlayerNormal->PlayerPhantom;
 			APlayerIsland* Parent_PI = Phantom->ParentPlayerIsland;
-			SS_Player.PF_Phantom.bIsEstrayPhantom = false;
-			SS_Player.PF_Phantom.Parent_ID_PlayerIsland = Parent_PI ? Parent_PI->ID : -1;
-			SS_Player.PF_Phantom.Location = Parent_PI ? Parent_PI->GetTransform().InverseTransformPosition(Phantom->GetActorLocation()) : Phantom->GetActorLocation();
-			SS_Player.PF_Phantom.LookRotation = Phantom->LookRotation;
+			RegisteredPlayer.PF_Phantom.bIsEstrayPhantom = false;
+			RegisteredPlayer.PF_Phantom.ParentPlayerIsland = Parent_PI ? Parent_PI->ID : -1;
+			RegisteredPlayer.PF_Phantom.Location = Parent_PI ? Parent_PI->GetTransform().InverseTransformPosition(Phantom->GetActorLocation()) : Phantom->GetActorLocation();
+			RegisteredPlayer.PF_Phantom.LookRotation = Phantom->LookRotation;
 		}
 	}
 	// Phantom Estray
 	else if (PlayerForm == EPlayerForm::Phantom && PlayerPhantom->bEstrayPhantom)
 	{
 		APlayerIsland* Parent_PI = PlayerPhantom->ParentPlayerIsland;
-		SS_Player.PF_Phantom.bIsEstrayPhantom = true;
-		SS_Player.PF_Phantom.Parent_ID_PlayerIsland = Parent_PI ? Parent_PI->ID : -1;
-		SS_Player.PF_Phantom.Location = Parent_PI ? Parent_PI->GetTransform().InverseTransformPosition(PlayerPhantom->GetActorLocation()) : PlayerPhantom->GetActorLocation();
-		SS_Player.PF_Phantom.LookRotation = PlayerPhantom->LookRotation;
+		RegisteredPlayer.PF_Phantom.bIsEstrayPhantom = true;
+		RegisteredPlayer.PF_Phantom.ParentPlayerIsland = Parent_PI ? Parent_PI->ID : -1;
+		RegisteredPlayer.PF_Phantom.Location = Parent_PI ? Parent_PI->GetTransform().InverseTransformPosition(PlayerPhantom->GetActorLocation()) : PlayerPhantom->GetActorLocation();
+		RegisteredPlayer.PF_Phantom.LookRotation = PlayerPhantom->LookRotation;
 	}
 	else if (PlayerForm == EPlayerForm::Dead)
 	{
 		check(PlayerDead);
-		SS_Player.Inventory = PlayerDead->InventoryComponent->Slots;
-		SS_Player.Equipment = PlayerDead->EquipmentInventoryComponent->Slots;
-		SS_Player.PF_Dead.AttachedToIA = PlayerDead->ParentPlayerIsland ? PlayerDead->ParentPlayerIsland->ID : -1;
-		SS_Player.PF_Dead.Location = PlayerDead->GetRootComponent()->GetRelativeLocation();
-		SS_Player.PF_Dead.LookRotation = PlayerDead->LookRotation;
+		RegisteredPlayer.Inventory = PlayerDead->InventoryComponent->Slots;
+		RegisteredPlayer.Equipment = PlayerDead->EquipmentInventoryComponent->Slots;
+		RegisteredPlayer.PF_Dead.AttachedToIA = PlayerDead->ParentPlayerIsland ? PlayerDead->ParentPlayerIsland->ID : -1;
+		RegisteredPlayer.PF_Dead.Location = PlayerDead->GetRootComponent()->GetRelativeLocation();
+		RegisteredPlayer.PF_Dead.LookRotation = PlayerDead->LookRotation;
 	}
 
-	GSS->SavedPlayers.Add(SteamID, SS_Player);
+	GSS->RegisteredPlayers.Add(SteamID, RegisteredPlayer);
 }
 
 void APSS::Server_ClientLoggedIn_Implementation()
@@ -380,9 +374,7 @@ void APSS::Multicast_SetPlayerIsland_Implementation(APlayerIsland* InPlayerIslan
 
 int32 APSS::SetEssence(int32 NewEssence)
 {
-	Essence = FMath::Clamp(NewEssence, 0, EssenceVessel);
-	MARK_PROPERTY_DIRTY_FROM_NAME(APSS, Essence, this);
-	OnRep_Essence();
+	REP_SET(Essence, FMath::Clamp(NewEssence, 0, EssenceVessel));
 	return Essence;
 }
 

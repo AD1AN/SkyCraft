@@ -61,14 +61,11 @@ public:
 	bool bWorldStarted = false;
 
 	FString LoadWorldName;
-
-	UFUNCTION(BlueprintNativeEvent) void LoadWorld(); // Called only in StartWorld.
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void SaveWorld(); // Called from EscapeMenu/AutoSave/Debug Button.
-
+	
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
-
+	
 	void RegisterPlayer(APCS* PCS);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable) APlayerCrystal* BornPlayerCrystal(APCS* PCS); // Called on FirstWorldSpawn / PlayerNormal Death / PhantomEstray Return.
 
@@ -79,4 +76,13 @@ public:
 
 	UFUNCTION(BlueprintCallable) AResource* SpawnResource(AIsland* Island, FVector LocalLocation, FRotator LocalRotation, UDA_Resource* DA_Resource, uint8 ResourceSize, bool Growing, int32 IslandLOD = -1);
 	UFUNCTION(BlueprintCallable) APlayerNormal* SpawnPlayerNormal(FVector Location, FRotator Rotation, AActor* InOwner, APSS* PSS, TArray<FSlot> InitialInventory, TArray<FSlot> InitialEquipment);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) void SaveWorld(); // Called from EscapeMenu/AutoSave/Debug Button.
+	
+protected:
+	UFUNCTION(BlueprintNativeEvent) void LoadWorldSave();
+	UFUNCTION(BlueprintNativeEvent) void LoadWorld(); // Called only in StartWorld.
+
+private:
+	void CreateWorld();
 };

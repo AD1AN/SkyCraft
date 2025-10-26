@@ -29,4 +29,15 @@ public:
 	UPROPERTY(BlueprintReadWrite) bool bInvertVerticalMouse = false;
 
 	UPROPERTY(BlueprintReadWrite) FCharacterBio CharacterBio;
+
+	void CreateRandomCharacterBio()
+	{
+		CharacterBio.Gender = FMath::RandBool();
+		CharacterBio.HairStyle = 0;
+		FLinearColor HairHSV(FMath::RandRange(0.0f, 360.0f), FMath::RandRange(0.0f, 0.75f), FMath::RandRange(0.0f, 1.0f), 1);
+		CharacterBio.HairColor = HairHSV.HSVToLinearRGB();
+		FLinearColor EyeHSV(FMath::RandRange(0.0f, 360.0f), FMath::RandRange(0.0f, 1.0f), FMath::RandRange(0.25f, 1.0f), 1);
+		CharacterBio.EyeColor = EyeHSV.HSVToLinearRGB();
+		CharacterBio.SkinTone = FMath::RandRange(0.9f, 1.0f);
+	}
 };

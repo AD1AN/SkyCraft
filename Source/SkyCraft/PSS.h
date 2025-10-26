@@ -10,7 +10,7 @@
 #include "Enums/PlayerForm.h"
 #include "GameFramework/PlayerState.h"
 #include "Structs/CharacterBio.h"
-#include "Structs/SS_Player.h"
+#include "Structs/SS_RegisteredPlayer.h"
 #include "PSS.generated.h"
 
 class UWidgetPlayerState;
@@ -80,38 +80,33 @@ public:
 	APSS();
 
 	UFUNCTION(Reliable, Server) void Server_LoginPlayer(FCharacterBio InCharacterBio);
-	void LoadPlayer(FSS_Player& PlayerSave);
+	void LoadPlayer(FSS_RegisteredPlayer& SS_RegisteredPlayer);
 	UFUNCTION(Reliable, Server) void Server_ClientLoggedIn();
 
-	UFUNCTION(BlueprintCallable) void SavePlayer();
+	// Just packs player to GSS->RegisteredPlayers.
+	UFUNCTION(BlueprintCallable)
+	void SavePlayer();
 	
 	UPROPERTY(EditDefaultsOnly) TSubclassOf<UWidgetPlayerState> ClassWidgetPlayerState;
 	UPROPERTY(BlueprintReadOnly) TObjectPtr<UWidgetPlayerState> WidgetPlayerState;
 
 	UPROPERTY(Replicated, BlueprintReadOnly) FString SteamID = "";
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AuthSetSteamID(FString NewSteamID) { REP_SET(SteamID, NewSteamID); }
+	UFUNCTION(BlueprintCallable) void Set_SteamID(FString NewValue) { REP_SET(SteamID, NewValue); }
 	
 	UPROPERTY(Replicated, BlueprintReadWrite) FCharacterBio CharacterBio;
 
 	UPROPERTY(Replicated, BlueprintReadOnly) ECasta Casta = ECasta::Archon;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AuthSetCasta(ECasta NewCasta) { REP_SET(Casta, NewCasta); }
+	UFUNCTION(BlueprintCallable) void Set_Casta(ECasta NewValue) { REP_SET(Casta, NewValue); }
 	
 	UPROPERTY(ReplicatedUsing=OnRep_PlayerIsland, BlueprintReadOnly) APlayerIsland* PlayerIsland = nullptr;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthSetPlayerIsland(APlayerIsland* NewPlayerIsland) { REP_SET(PlayerIsland, NewPlayerIsland); }
+	UFUNCTION(BlueprintCallable) void Set_PlayerIsland(APlayerIsland* NewValue) { REP_SET(PlayerIsland, NewValue); }
 	UPROPERTY(BlueprintAssignable) FOnPlayerIsland OnPlayerIsland;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_PlayerIsland();
-
+	
 	UFUNCTION(Reliable, NetMulticast) void Multicast_SetPlayerIsland(APlayerIsland* InPlayerIsland);
 	
 	UPROPERTY(Replicated, BlueprintReadOnly) EPlayerForm PlayerForm = EPlayerForm::Crystal;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	EPlayerForm AuthSetPlayerForm(EPlayerForm NewPlayerForm)
-	{
-		REP_SET(PlayerForm, NewPlayerForm);
-		return PlayerForm;
-	}
+	UFUNCTION(BlueprintCallable) EPlayerForm Set_PlayerForm(EPlayerForm NewValue) { REP_SET(PlayerForm, NewValue); return PlayerForm; }
 
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerCrystal* PlayerCrystal = nullptr;
 	UPROPERTY(Replicated, BlueprintReadWrite) APlayerNormal* PlayerNormal = nullptr;

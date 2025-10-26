@@ -6,6 +6,7 @@
 #include "AdvancedFriendsGameInstance.h"
 #include "GIS.generated.h"
 
+class UInputMappingContext;
 class ULocalSettings;
 class APCS;
 class APSS;
@@ -16,7 +17,10 @@ class SKYCRAFT_API UGIS : public UAdvancedFriendsGameInstance
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(BlueprintReadWrite) TObjectPtr<ULocalSettings> LocalSettings;
+	UPROPERTY(BlueprintReadOnly) TObjectPtr<ULocalSettings> LocalSettings;
+	UFUNCTION(BlueprintCallable) void SaveLocalSettings();
+
+	UPROPERTY(EditDefaultsOnly) TObjectPtr<UInputMappingContext> DefaultMappingContext;
 	
 	UGIS(FObjectInitializer const & ObjectInitializerRef) : Super(ObjectInitializerRef){}
 
@@ -24,6 +28,11 @@ public:
 	UPROPERTY(BlueprintReadOnly) APSS* PSS = nullptr;
 
 	UPROPERTY(BlueprintReadWrite) FString LoadWorldName;
+
+	// >>>>>>>>>>>>>>>>>>>>>>> World Creation Settings
+	UPROPERTY(BlueprintReadWrite) bool bHostStartAsArchon = true;
+	UPROPERTY(BlueprintReadWrite) bool bHostPlayerIslandIsCrystal = true;
+	// <<<<<<<<<<<<<<<<<<<<<<< World Creation Settings
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditDefaultsOnly) bool DebugChunks = false;

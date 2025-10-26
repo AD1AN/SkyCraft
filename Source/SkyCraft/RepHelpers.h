@@ -1,4 +1,6 @@
-// ADIAN Copyrighted
+// From Andrew Joy on UnrealFest ANZ 2024
+// https://gitlab.com/2Bit/unrealfest-anz-2024/
+// https://www.youtube.com/watch?v=mu7I4PsXY44
 
 #pragma once
 
@@ -126,18 +128,23 @@ FORCEINLINE void RepNotify_ProcessEvent(UObject* const Object, UFunction* Functi
         REP_NOTIFY(PropertyName, OldValue); \
     }
 
+// For arrays.
 #define REP_ADD(PropertyName, ...) \
     REP_APPLY(PropertyName, this->PropertyName.Add(__VA_ARGS__));
 
+// For arrays.
 #define REP_INSERT(PropertyName, NewValue, NewIndex) \
     REP_APPLY(PropertyName, this->PropertyName.Insert(NewValue, NewIndex));
 
+// For arrays.
 #define REP_REMOVE(PropertyName, OldValue) \
     REP_APPLY(PropertyName, this->PropertyName.Remove(OldValue));
 
+// For arrays.
 #define REP_REMOVEAT(PropertyName, OldIndex) \
     REP_APPLY(PropertyName, this->PropertyName.RemoveAt(OldIndex));
 
+// For arrays.
 #define REP_EMPTY(PropertyName) \
     REP_APPLY(PropertyName, this->PropertyName.Empty());
 

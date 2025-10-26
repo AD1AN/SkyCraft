@@ -133,14 +133,12 @@ public:
 	void DestroyIslandGeometry();
 	
 	UPROPERTY(Replicated, BlueprintReadOnly) APSS* ArchonPSS = nullptr;
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AuthSetArchonPSS(APSS* NewArchonPSS) { REP_SET(ArchonPSS, NewArchonPSS); }
+	UFUNCTION(BlueprintCallable) void Set_ArchonPSS(APSS* NewValue) { REP_SET(ArchonPSS, NewValue); }
 
 	UPROPERTY(BlueprintAssignable) FOnArchonSteamID OnArchonSteamID;
-	UPROPERTY(ReplicatedUsing=OnRep_ArchonSteamID, BlueprintReadOnly) FString ArchonSteamID = "";
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ArchonSteamID) FString ArchonSteamID = "";
 	UFUNCTION() void OnRep_ArchonSteamID() { OnArchonSteamID.Broadcast(); }
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AuthSetArchonSteamID(FString SteamID) { REP_SET(ArchonSteamID, SteamID); }
+	UFUNCTION(BlueprintCallable) void Set_ArchonSteamID(FString NewValue) { REP_SET(ArchonSteamID, NewValue); }
 
 	UPROPERTY(Replicated, BlueprintReadOnly) TArray<APSS*> Denizens;
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthAddDenizen(APSS* Denizen);

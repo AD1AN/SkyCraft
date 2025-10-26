@@ -2,6 +2,8 @@
 
 #include "PCS.h"
 #include "Interfaces/PossessionInterface.h"
+#include "EnhancedInputSubsystems.h"
+#include "GIS.h"
 
 void APCS::PostInitializeComponents()
 {
@@ -12,6 +14,25 @@ void APCS::PostInitializeComponents()
 
 void APCS::BeginPlay()
 {
+	GIS = GetGameInstance<UGIS>();
+
+	if (IsLocalController())
+	{
+		if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+		{
+			UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+
+			if (Subsystem && GIS->DefaultMappingContext)
+			{
+				FModifyContextOptions ContextOptions;
+				ContextOptions.bForceImmediately = true;
+				ContextOptions.bIgnoreAllPressedKeysUntilRelease = true;
+				ContextOptions.bNotifyUserSettings = true;
+				Subsystem->AddMappingContext(GIS->DefaultMappingContext, 0, ContextOptions);
+			}
+		}
+	}
+	
 	Super::BeginPlay();
 }
 

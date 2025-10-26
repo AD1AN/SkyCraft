@@ -19,6 +19,6 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent) void SetLoadingStage(int32 Stage);
 
-	UPROPERTY(BlueprintAssignable) FOnFinishCompleted OnFinishCompleted;
+	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnFinishCompleted OnFinishCompleted;
 	UFUNCTION(BlueprintImplementableEvent) void FinishLoadingScreen();
 };
