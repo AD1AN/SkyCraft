@@ -62,11 +62,14 @@ public:
 	UPROPERTY(BlueprintReadWrite) bool bCharacterStarted = false;
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnCharacterStarted OnCharacterStarted;
 
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ParentPlayerIsland, VisibleInstanceOnly)
-	APlayerIsland* ParentPlayerIsland = nullptr;
-	
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ParentIsland, VisibleInstanceOnly)
+	AIsland* ParentIsland = nullptr;
+
 	UFUNCTION(BlueprintNativeEvent)
-	void OnRep_ParentPlayerIsland();
+	void OnRep_ParentIsland(AIsland* OldValue);
+	
+	UPROPERTY(BlueprintReadOnly)
+	APlayerIsland* ParentPlayerIsland = nullptr;
 
 	UPROPERTY(BlueprintAssignable) FOnPlayerPhantom OnPlayerPhantom;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_PlayerPhantom) APlayerPhantom* PlayerPhantom = nullptr;

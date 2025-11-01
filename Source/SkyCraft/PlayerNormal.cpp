@@ -121,11 +121,6 @@ void APlayerNormal::Tick(float DeltaSeconds)
 	if (IsLocallyControlled()) Server_SyncLookRotation(LookRotation);
 }
 
-void APlayerNormal::OnRep_ParentPlayerIsland_Implementation()
-{
-	
-}
-
 void APlayerNormal::Server_SyncLookRotation_Implementation(FRotator NewLookRotation)
 {
 	NewLookRotation.Pitch = FRotator::NormalizeAxis(NewLookRotation.Pitch);
@@ -231,16 +226,15 @@ void APlayerNormal::RemoveEquipmentStats(UDA_Item* OldItem)
 
 void APlayerNormal::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor)
 {
-	// NewPlayerIsland can be nullptr.
-	APlayerIsland* NewPlayerIsland = nullptr;
+	AIsland* NewIsland = nullptr;
 	
 	if (NewBase)
 	{
 		AActor* NewBaseRoot = UAdianFL::GetRootActor(NewBase->GetOwner());
-		if (NewBaseRoot && NewBaseRoot->IsA(APlayerIsland::StaticClass()))
+		if (NewBaseRoot && NewBaseRoot->IsA(AIsland::StaticClass()))
 		{
-			NewPlayerIsland = Cast<APlayerIsland>(NewBaseRoot);
-			NewBase = NewPlayerIsland->PMC_Main;
+			NewIsland = Cast<AIsland>(NewBaseRoot);
+			NewBase = NewIsland->PMC_Main;
 		}
 	}
 	
@@ -249,23 +243,29 @@ void APlayerNormal::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, 
 	
 	if (NewBase != OldBase)
 	{
-		if (PSS->IsLocalState())
+		REP_SET(ParentIsland, NewIsland);
+		OnNewBase.Broadcast();
+	}
+}
+
+void APlayerNormal::OnRep_ParentIsland_Implementation(AIsland* OldValue)
+{
+	if (PSS->IsLocalState())
+	{
+		APlayerIsland* OldPlayerIsland = Cast<APlayerIsland>(OldValue);
+		
+		// Unbind from old PlayerIsland.
+		if (IsValid(OldPlayerIsland))
 		{
-			// Unbind from previous PlayerIsland.
-			if (IsValid(ParentPlayerIsland)) ParentPlayerIsland->OnStopIsland.RemoveDynamic(this, &APlayerNormal::OnParentPlayerStopIsland);
+			OldPlayerIsland->OnStopIsland.RemoveDynamic(this, &APlayerNormal::OnParentPlayerStopIsland);
 		}
 
-		ParentPlayerIsland = NewPlayerIsland;
+		ParentPlayerIsland = Cast<APlayerIsland>(ParentIsland);
+
+		// Bind to new PlayerIsland.
+		UpdateCameraLag();
 		
-		if (PSS->IsLocalState())
-		{
-			UpdateCameraLag();
-			
-			// Bind to new PlayerIsland.
-			if (IsValid(ParentPlayerIsland)) ParentPlayerIsland->OnStopIsland.AddDynamic(this, &APlayerNormal::OnParentPlayerStopIsland);
-		}
-		
-		OnNewBase.Broadcast();
+		if (IsValid(ParentPlayerIsland)) ParentPlayerIsland->OnStopIsland.AddDynamic(this, &APlayerNormal::OnParentPlayerStopIsland);
 	}
 }
 
@@ -427,6 +427,7 @@ void APlayerNormal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PSS, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, ParentIsland, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, PlayerPhantom, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, MainQSI, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(APlayerNormal, SecondQSI, Params);

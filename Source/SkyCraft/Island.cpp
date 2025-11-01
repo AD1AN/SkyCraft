@@ -750,14 +750,17 @@ void AIsland::SmoothVertices(const TArray<int32>& VerticesToSmooth, float Smooth
 void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	if (!HasAuthority()) return;
-	if (!bPlayerIsland) SaveIsland();
-	DestroyLODs();
-	for (int32 i = Buildings.Num() - 1; i >= 0; --i)
+	
+	if (HasAuthority() && EndPlayReason != EEndPlayReason::Quit)
 	{
-		if (IsValid(Buildings[i])) Buildings[i]->Destroy();
+		if (!bPlayerIsland) SaveIsland();
+		DestroyLODs();
+		for (int32 i = Buildings.Num() - 1; i >= 0; --i)
+		{
+			if (IsValid(Buildings[i])) Buildings[i]->Destroy();
+		}
+		GSS->GMS->NMBV_Unuse(CurrentNMBV);
 	}
-	GSS->GMS->NMBV_Unuse(CurrentNMBV);
 }
 
 void AIsland::DestroyLODs()

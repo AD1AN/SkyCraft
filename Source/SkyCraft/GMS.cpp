@@ -2,6 +2,7 @@
 
 #include "GMS.h"
 #include "AdvancedSessionsLibrary.h"
+#include "ChunkIsland.h"
 #include "EngineUtils.h"
 #include "GSS.h"
 #include "GIS.h"
@@ -44,15 +45,22 @@ void AGMS::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 
 void AGMS::Logout(AController* Exiting)
 {
-	APCS* PCS = Cast<APCS>(Exiting);
-	APSS* PSS = PCS->PSS;
+	// Exiting can be DebugCameraController or other bullshit.
+	if (APCS* PCS = Cast<APCS>(Exiting))
+	{
+		APSS* PSS = PCS->PSS;
 	
-	GSS->ConnectedPlayers.Remove(PSS);
-	MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, ConnectedPlayers, GSS);
+		GSS->ConnectedPlayers.Remove(PSS);
+		MARK_PROPERTY_DIRTY_FROM_NAME(AGSS, ConnectedPlayers, GSS);
 	
-	Super::Logout(Exiting);
+		Super::Logout(Exiting);
 	
-	GSS->OnConnectedPlayers.Broadcast();
+		GSS->OnConnectedPlayers.Broadcast();
+	}
+	else
+	{
+		Super::Logout(Exiting);
+	}
 }
 
 void AGMS::StartWorld_Implementation()
@@ -134,8 +142,16 @@ void AGMS::SaveWorld_Implementation()
 	GSS->SaveWorldSettings(WorldSave);
 	WorldSave->LastPlayed = FDateTime::Now();
 
-	for (auto& PSS : GSS->ConnectedPlayers) PSS->SavePlayer();
+	for (auto& PSS : GSS->ConnectedPlayers)
+	{
+		PSS->SavePlayer();
+	}
 	WorldSave->RegisteredPlayers = GSS->RegisteredPlayers;
+
+	for (auto& Chunk : SpawnedChunkIslands)
+	{
+		if (Chunk->Island) Chunk->Island->SaveIsland();
+	}
 
 	TArray<FSS_PlayerIsland> SavingPlayerIslands;
 	for (auto& PlayerIsland : PlayerIslands)
