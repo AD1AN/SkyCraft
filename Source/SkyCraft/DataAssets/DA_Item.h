@@ -17,6 +17,15 @@ class UDA_AnalyzeEntity;
 class UDA_EquipmentStats;
 class UDA_SkyTag;
 
+USTRUCT(BlueprintType)
+struct FOverrideMaterial
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 Index = 0;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSoftObjectPtr<UMaterialInterface> Material;
+};
+
 UCLASS(BlueprintType)
 class SKYCRAFT_API UDA_Item : public UDataAsset
 {
@@ -44,7 +53,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(EditCondition="ItemType==EItemType::Equipment", EditConditionHides)) TSoftObjectPtr<USkeletalMesh> EQ_Female;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") TSoftObjectPtr<UStaticMesh> StaticMesh = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") TSoftObjectPtr<UMaterialInterface> OverrideMaterial = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") TArray<FOverrideMaterial> OverrideMaterials;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") FRotator RotationOffset = FRotator::ZeroRotator;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="DroppedItem") FVector LocationOffset = FVector::ZeroVector;
 };

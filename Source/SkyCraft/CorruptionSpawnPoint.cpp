@@ -59,7 +59,10 @@ void ACorruptionSpawnPoint::SpawnNPC()
 	FTransform SpawnTransform;
 	SpawnTransform.SetLocation(GetActorLocation() + FVector(0.0f, 0.0f, 120.0f));
 	ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(ClassNPC, SpawnTransform);
-	SpawnedNPC->Island = AttachToIsland;
+	SpawnedNPC->bCorrupted = true;
+	SpawnedNPC->ParentIsland = AttachToIsland;
+	SpawnedNPC->SetBase(AttachToIsland->PMC_Main, NAME_None, false);
+
 	if (AttachToIsland->bPlayerIsland) SpawnedNPC->IslandCrystal = Cast<APlayerIsland>(AttachToIsland)->IslandCrystal;
 	SpawnedNPC->SpawnWithCorruptionOverlayEffect = GetWorld()->GetGameState<AGSS>()->CorruptionOverlayEffectClass;
 	SpawnedNPC->FinishSpawning(SpawnTransform);

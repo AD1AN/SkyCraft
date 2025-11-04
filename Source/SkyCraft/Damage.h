@@ -68,8 +68,14 @@ USTRUCT(BlueprintType)
 struct FDamageInfo
 {
 	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_DamageAction* DA_DamageAction = nullptr; // Always expected.
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) AActor* EntityDealer = nullptr; // Optional.
+	
+	// Always expected.
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) UDA_DamageAction* DA_DamageAction = nullptr;
+	
+	// Optional.
+	UPROPERTY(BlueprintReadWrite, EditAnywhere) AActor* EntityDealer = nullptr;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) FVector WorldLocation = FVector::ZeroVector;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere) float LinearDamage = 0;
 };

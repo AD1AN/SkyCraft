@@ -6,6 +6,8 @@
 #include "UObject/Interface.h"
 #include "EntityInterface.generated.h"
 
+struct FDamageInfo;
+
 UINTERFACE()
 class UEntityInterface : public UInterface
 {

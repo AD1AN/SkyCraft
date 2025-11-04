@@ -31,11 +31,14 @@ APlayerIsland::APlayerIsland()
 
 void APlayerIsland::BeginPlay()
 {
+	PreviousLocation = GetActorLocation();
+
 	if (bIsCrystal) StartIsland();
 	else
 	{
 		SpawnCliffsComponents();
 	}
+	
 	if (HasAuthority())
 	{
 		AIslandCrystal* SpawnedCrystal = GetWorld()->SpawnActorDeferred<AIslandCrystal>(GSS->IslandCrystalClass, FTransform::Identity);
@@ -63,7 +66,7 @@ void APlayerIsland::StartIsland()
 		DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(Seed);
 	}
 	SpawnCliffsComponents();
-	
+
 	const FIslandData _ID = GenerateIsland();
 	InitialGenerateComplete(_ID);
 }
@@ -72,39 +75,44 @@ void APlayerIsland::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	PreviousLocation = GetActorLocation();
-
-	// Should be TeleportPhysics. Otherwise, attached physics objects will fly away.
-	ETeleportType IslandMoveType = ETeleportType::TeleportPhysics;
-	FVector IslandMovement = CurrentDirection * (CurrentSpeed * 50);
-	IslandMovement.Z = (AltitudeDirection * 5) + (AltitudeDirection * CurrentSpeed * 0.5);
-	IslandMovement *= DeltaSeconds;
-	IslandMovement += GetActorLocation();
-	SetActorLocation(IslandMovement, false, nullptr, IslandMoveType);
+	// Island Movement
+	if (!bStopIsland)
+	{
+		PreviousLocation = GetActorLocation();
+		
+		// Should be TeleportPhysics. Otherwise, attached physics objects will fly away.
+		ETeleportType IslandMoveType = ETeleportType::TeleportPhysics;
+		FVector IslandMovement = CurrentDirection * (CurrentSpeed * 50);
+		IslandMovement.Z = (AltitudeDirection * 5) + (AltitudeDirection * CurrentSpeed * 0.5);
+		IslandMovement *= DeltaSeconds;
+		IslandMovement += GetActorLocation();
+		SetActorLocation(IslandMovement, false, nullptr, IslandMoveType);
 	
-	CurrentDirection = FMath::VInterpTo(CurrentDirection, TargetDirection, DeltaSeconds, 1.0f);
+		CurrentDirection = FMath::VInterpTo(CurrentDirection, TargetDirection, DeltaSeconds, 1.0f);
 
-	float ToTargetSpeed = bStopIsland ? 0.0f : TargetSpeed;
-	CurrentSpeed = FMath::FInterpTo(CurrentSpeed, ToTargetSpeed, DeltaSeconds, 0.75f);
+		float ToTargetSpeed = bStopIsland ? 0.0f : TargetSpeed;
+		CurrentSpeed = FMath::FInterpTo(CurrentSpeed, ToTargetSpeed, DeltaSeconds, 0.75f);
 
-	if (AltitudeDirection != 0)
-	{
-		bool AltitudeDirectionUp = AltitudeDirection > 0 ? GetActorLocation().Z >= TargetAltitude : GetActorLocation().Z <= TargetAltitude;
-		if (AltitudeDirectionUp)
+		// Altitude movement.
+		if (AltitudeDirection != 0)
 		{
-			AltitudeDirection = 0.0f;
-			FVector NewLocation = GetActorLocation();
-			NewLocation.Z = TargetAltitude;
-			SetActorLocation(NewLocation, false, nullptr, IslandMoveType);
+			bool AltitudeDirectionUp = AltitudeDirection > 0 ? GetActorLocation().Z >= TargetAltitude : GetActorLocation().Z <= TargetAltitude;
+			if (AltitudeDirectionUp)
+			{
+				AltitudeDirection = 0.0f;
+				FVector NewLocation = GetActorLocation();
+				NewLocation.Z = TargetAltitude;
+				SetActorLocation(NewLocation, false, nullptr, IslandMoveType);
+			}
 		}
-	}
 
-	// Update Foliage (hism bug when movement)
-	for (UFoliageHISM*& FoliageComp : FoliageComponents)
-	{
-		if (!IsValid(FoliageComp)) continue;
-		FoliageComp->UpdateBounds();
-		FoliageComp->MarkRenderStateDirty();
+		// Update Foliage (fixes hism bug for movement)
+		for (auto& FoliageComp : FoliageComponents)
+		{
+			if (!IsValid(FoliageComp)) continue;
+			FoliageComp->UpdateBounds();
+			FoliageComp->MarkRenderStateDirty();
+		}
 	}
 
 	// Island Corruption
@@ -113,11 +121,13 @@ void APlayerIsland::Tick(float DeltaSeconds)
 		CorruptionTime += DeltaSeconds;
 		if (CorruptionTime >= GSS->PlayerIslandsCorruptionTime)
 		{
+			SetStopIsland(true);
+			bCorruptionOngoing = true;
 			CorruptionTime = 0.0f;
 			
 			for (auto& PSS : Denizens)
 			{
-				PSS->Client_GlobalWarning(LOCTEXT("CorruptionSurge", "Corruption Surge! Home Island at risk!"));
+				PSS->Client_GlobalWarning(LOCTEXT("CorruptionSurge", "Corruption Surge!\nHome Island at risk!"));
 			}
 
 			TArray<ACorruptionSpawnPoint*> CorruptionSpawnPoints;
@@ -217,6 +227,12 @@ void APlayerIsland::Tick(float DeltaSeconds)
 			}
 		}
 	}
+
+	// Crystal attack notify
+	if (CrystalAttackedNotify >= 0)
+	{
+		CrystalAttackedNotify -= DeltaSeconds;
+	}
 }
 
 void APlayerIsland::SetIslandSize(float NewSize)
@@ -225,6 +241,16 @@ void APlayerIsland::SetIslandSize(float NewSize)
 	IslandSize = NewSize;
 	OnRep_IslandSize();
 	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, IslandSize, this);
+}
+
+void APlayerIsland::Multicast_SetStopIsland_Implementation(bool NewStopIsland, FVector ServerLocation)
+{
+	REP_SET(bStopIsland, NewStopIsland);
+	SetActorLocation(ServerLocation, false, nullptr, ETeleportType::TeleportPhysics); // TeleportPhysics important!
+	REP_SET(CurrentSpeed, 0);
+	REP_SET(AltitudeDirection, 0);
+	REP_SET(TargetAltitude, ServerLocation.Z);
+	CueIslandStopped();
 }
 
 void APlayerIsland::OnRep_TargetDirection()

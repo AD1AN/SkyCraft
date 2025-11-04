@@ -9,54 +9,63 @@
 
 class UDA_Foliage;
 class UDA_Resource;
+class ANPC;
 
-USTRUCT(BlueprintType)
-struct FSS_NPC
-{
-	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) TSubclassOf<class ANPC> NPC_Class = nullptr;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) int32 Health = 100;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) FTransform Transform = FTransform::Identity;
-	UPROPERTY(BlueprintReadWrite, EditAnywhere) FNPCParameters Parameters;
-};
-
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FSS_Resource
 {
 	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FVector RelativeLocation = FVector::ZeroVector;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FRotator RelativeRotation = FRotator::ZeroRotator;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) UDA_Resource* DA_Resource = nullptr;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) uint8 ResourceSize = 0;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) uint8 SM_Variety = 0;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) int32 Health = 405;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) bool Growing = false;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) float CurrentGrowTime = 0.0f;
+	UPROPERTY() FVector RelativeLocation = FVector::ZeroVector;
+	UPROPERTY() FRotator RelativeRotation = FRotator::ZeroRotator;
+	UPROPERTY() UDA_Resource* DA_Resource = nullptr;
+	UPROPERTY() uint8 ResourceSize = 0;
+	UPROPERTY() uint8 SM_Variety = 0;
+	UPROPERTY() int32 Health = 405;
+	UPROPERTY() bool Growing = false;
+	UPROPERTY() float CurrentGrowTime = 0.0f;
 };
 
-USTRUCT(BlueprintType)
+USTRUCT()
+struct FSS_NPC
+{
+	GENERATED_BODY()
+	UPROPERTY() int32 Health = 100;
+	UPROPERTY() FTransform Transform = FTransform::Identity;
+	UPROPERTY() FNPCParameters Parameters;
+};
+
+USTRUCT()
+struct FSS_NPCInstance
+{
+	GENERATED_BODY()
+	UPROPERTY() TSubclassOf<ANPC> NPC_Class = nullptr;
+	UPROPERTY() int32 MaxInstances = 1;
+	UPROPERTY() TArray<FSS_NPC> NPCs;
+};
+
+USTRUCT()
 struct FSS_DroppedItem
 {
 	GENERATED_BODY()
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FVector RelativeLocation = FVector::ZeroVector;
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere) FSlot Slot;
+	UPROPERTY() FVector RelativeLocation = FVector::ZeroVector;
+	UPROPERTY() FSlot Slot;
 };
 
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FSS_IslandLOD
 {
 	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) int32 LOD = 0;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Resource> Resources;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_NPC> NPCs;
+	UPROPERTY() int32 LOD = 0;
+	UPROPERTY() TArray<FSS_Resource> Resources;
+	UPROPERTY() TArray<FSS_NPCInstance> NPCInstances;
 };
 
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FSS_Foliage
 {
 	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TObjectPtr<UDA_Foliage> DA_Foliage;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<int32> InitialInstancesRemoved;
+	UPROPERTY() TObjectPtr<UDA_Foliage> DA_Foliage;
+	UPROPERTY() TArray<int32> InitialInstancesRemoved;
 	UPROPERTY() TArray<FDynamicInstance> DynamicInstancesAdded;
 };
 
@@ -67,13 +76,13 @@ struct FSS_TerrainChunk
 	UPROPERTY() TArray<FEditedVertex> EditedVertices;
 };
 
-USTRUCT(BlueprintType)
+USTRUCT()
 struct FSS_Island
 {
 	GENERATED_BODY()
 	UPROPERTY() TArray<FSS_TerrainChunk> TerrainChunks;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Foliage> Foliage;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_IslandLOD> IslandLODs;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_Building> Buildings;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<FSS_DroppedItem> DroppedItems;
+	UPROPERTY() TArray<FSS_Foliage> Foliage;
+	UPROPERTY() TArray<FSS_IslandLOD> IslandLODs;
+	UPROPERTY() TArray<FSS_Building> Buildings;
+	UPROPERTY() TArray<FSS_DroppedItem> DroppedItems;
 };

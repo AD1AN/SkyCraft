@@ -44,6 +44,33 @@ AIsland::AIsland()
 	GrowingResourcesComponent = CreateDefaultSubobject<UGrowingResourcesComponent>("GrowingResourcesComponent");
 }
 
+#if WITH_EDITOR
+void AIsland::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	
+	if (!bOnConstruction) return;
+	
+	if (Resolution % 2 != 0) Resolution += 1;
+	for (UInstancedStaticMeshComponent* ISM : CliffsComponents) if (IsValid(ISM)) ISM->DestroyComponent();
+	CliffsComponents.Empty();
+	if (IsValid(PMC_Main)) PMC_Main->ClearAllMeshSections();
+	IslandData.TopVertices.Empty();
+	IslandData.TopVerticesAxis.Empty();
+	Seed.Reset();
+	const FIslandData _ID = GenerateIsland();
+	InitialGenerateComplete(_ID);
+}
+#endif
+
+void AIsland::BeginPlay()
+{
+	Super::BeginPlay();
+	if (HasAuthority()) CurrentNMBV = GSS->GMS->NMBV_Use(this);
+	// Read GMS about BeginPlay() order.
+	if (!bPlayerIsland) StartIsland();
+}
+
 TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
 {
 	TArray<FSS_DroppedItem> SS_DroppedItems;
@@ -89,33 +116,6 @@ void AIsland::RemoveConstellation(FSS_Astralon RemoveConstellation)
 			return;
 		}
 	}
-}
-
-#if WITH_EDITOR
-void AIsland::OnConstruction(const FTransform& Transform)
-{
-	Super::OnConstruction(Transform);
-	
-	if (!bOnConstruction) return;
-	
-	if (Resolution % 2 != 0) Resolution += 1;
-	for (UInstancedStaticMeshComponent* ISM : CliffsComponents) if (IsValid(ISM)) ISM->DestroyComponent();
-	CliffsComponents.Empty();
-	if (IsValid(PMC_Main)) PMC_Main->ClearAllMeshSections();
-	IslandData.TopVertices.Empty();
-	IslandData.TopVerticesAxis.Empty();
-	Seed.Reset();
-	const FIslandData _ID = GenerateIsland();
-	InitialGenerateComplete(_ID);
-}
-#endif
-
-void AIsland::BeginPlay()
-{
-	Super::BeginPlay();
-	if (HasAuthority()) CurrentNMBV = GSS->GMS->NMBV_Use(this);
-	// Read GMS about BeginPlay() order.
-	if (!bPlayerIsland) StartIsland();
 }
 
 void AIsland::SpawnCliffsComponents()
@@ -580,7 +580,7 @@ void AIsland::SetServerLOD(int32 NewLOD)
 
 void AIsland::FoliageRemove(FVector_NetQuantize Location, float Radius)
 {
-	for (UFoliageHISM*& FoliageComp : FoliageComponents)
+	for (auto& FoliageComp : FoliageComponents)
 	{
 		FoliageComp->RemoveInSphere(Location, Radius);
 	}
@@ -588,7 +588,7 @@ void AIsland::FoliageRemove(FVector_NetQuantize Location, float Radius)
 
 void AIsland::FoliageAdd(UDA_Foliage* DA_Foliage, FVector_NetQuantize Location, float Radius)
 {
-	for (UFoliageHISM*& FoliageComp : FoliageComponents)
+	for (auto& FoliageComp : FoliageComponents)
 	{
 		if (FoliageComp->DA_Foliage == DA_Foliage)
 		{
@@ -815,7 +815,7 @@ bool AIsland::LoadLOD(int32 LoadLODIndex)
 	for (auto& IslandLOD : SS_Island.IslandLODs)
 	{
 		if (IslandLOD.LOD != LoadLODIndex) continue;
-		FEntities& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
+		FSpawnedIslandLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
 		TArray<AResource*> LoadedResources = LoadResources(IslandLOD.Resources);
 		TArray<ANPC*> LoadedNPCs = LoadNPCs(IslandLOD.NPCs, LoadLODIndex);
 		SpawnedLOD.Resources = LoadedResources;
@@ -839,7 +839,7 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 	}
 	
 	const float VertexOffset = (Resolution * CellSize) / 2;
-	FEntities& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLODIndex);
+	FSpawnedIslandLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLODIndex);
 
 	// Generate Resources
 	for (auto& IslandResource : IslandLOD.Resources)
@@ -954,15 +954,18 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 	}
 
 	// Generate NPCs
-	for (auto& IslandNPC : IslandLOD.NPCs)
+	for (auto& NPC : IslandLOD.NPCs)
 	{
-		ensureAlways(IslandNPC.NPC_Class);
-		if (!IslandNPC.NPC_Class) continue;
+		ensureAlways(NPC.NPC_Class);
+		if (!NPC.NPC_Class) continue;
 
-		const int32 SpawnsByIslandSize = FMath::Lerp(IslandNPC.MaxSpawnPoints/10, IslandNPC.MaxSpawnPoints, IslandSize);
+		FNPCInstance InstanceNPC;
+		InstanceNPC.NPCClass = NPC.NPC_Class;
+		InstanceNPC.MaxInstances = FMath::Lerp(NPC.MaxSpawnPoints/10, NPC.MaxSpawnPoints, IslandSize);
+		
 		int32 SpawnedNPCs = 0;
 		int32 Attempts = 0;
-		while (Attempts < 30 && SpawnedNPCs < SpawnsByIslandSize)
+		while (Attempts < 30 && SpawnedNPCs < InstanceNPC.MaxInstances)
 		{
 			// Pick a random triangle
 			const int32 TriangleIndex = Seed.RandRange(0, IslandData.TopTriangles.Num() / 3 - 1) * 3;
@@ -981,14 +984,16 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 			}
 
 			FTransform NpcTransform(GetActorLocation() + RandomPoint + FVector(0,0,60));
-			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(IslandNPC.NPC_Class, NpcTransform);
-			SpawnedNPC->Island = this;
+			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(NPC.NPC_Class, NpcTransform);
+			SpawnedNPC->ParentIsland = this;
 			SpawnedNPC->IslandLODIndex = GenerateLODIndex;
 			SpawnedNPC->FinishSpawning(NpcTransform);
 			SpawnedLOD.NPCs.Add(SpawnedNPC);
+			InstanceNPC.NPCs.Add(SpawnedNPC);
 			++SpawnedNPCs;
 			Attempts = 0;
 		}
+		SpawnedLOD.NPCInstances.Add(InstanceNPC);
 	}
 }
 
@@ -1031,7 +1036,7 @@ TArray<ANPC*> AIsland::LoadNPCs(TArray<FSS_NPC>& SS_NPCs, int32 IslandLODIndex)
 		FTransform LoadTransform = SS_NPC.Transform;
 		LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,60));
 		ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPC.NPC_Class, LoadTransform);
-		SpawnedNPC->Island = this;
+		SpawnedNPC->ParentIsland = this;
 		SpawnedNPC->IslandLODIndex = IslandLODIndex;
 		SpawnedNPC->FinishSpawning(LoadTransform);
 		SpawnedNPC->SetBase(PMC_Main, NAME_None, false);
@@ -1114,7 +1119,8 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 	{
 		FSS_IslandLOD SS_IslandLOD;
 		SS_IslandLOD.LOD = SpawnedLOD.Key;
-		
+
+		// Save Resources
 		for (auto& Res : SpawnedLOD.Value.Resources)
 		{
 			if (!IsValid(Res)) continue;
@@ -1129,13 +1135,17 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 			SS_Resource.CurrentGrowTime = Res->CurrentGrowTime;
 			SS_IslandLOD.Resources.Add(SS_Resource);
 		}
-		
-		for (auto& NPC : SpawnedLOD.Value.NPCs)
+
+		// Save NPCs
+		for (auto& NPCInstance : SpawnedLOD.Value.NPCInstances)
 		{
-			if (!IsValid(NPC)) continue;
-			FSS_NPC SS_NPC;
-			SS_NPC = NPC->SaveNPC();
-			SS_IslandLOD.NPCs.Add(SS_NPC);
+			for (auto& npc : NPCInstance.NPCs)
+			{
+				if (!IsValid(npc)) continue;
+				FSS_NPC SS_NPC;
+				SS_NPC = NPC->SaveNPC();
+				SS_IslandLOD.NPCs.Add(SS_NPC);
+			}
 		}
 		
 		SS_IslandLODs.Add(SS_IslandLOD);
@@ -1165,7 +1175,7 @@ TArray<FSS_Building> AIsland::SaveBuildings()
 	TArray<FSS_Building> SS_Buildings;
 	for (auto*& Building : Buildings)
 	{
-		if (!Building) continue;
+		if (!IsValid(Building)) continue;
 		if (Building->GetOwner() != nullptr) continue; // Check if this building not in Preview
 		FSS_Building SS_Building;
 		SS_Building.ID = Building->ID;
@@ -1185,7 +1195,7 @@ TArray<FSS_Building> AIsland::SaveBuildings()
 TArray<FSS_Foliage> AIsland::SaveFoliage()
 {
 	TArray<FSS_Foliage> SS_Foliage;
-	for (UFoliageHISM*& FoliageComponent : FoliageComponents)
+	for (auto& FoliageComponent : FoliageComponents)
 	{
 		FSS_Foliage SavedFoliage;
 		SavedFoliage.DA_Foliage = FoliageComponent->DA_Foliage;
@@ -1372,6 +1382,29 @@ uint8 AIsland::TerrainChunkIndex(int32 X, int32 Y, int32 HalfResolution)
 	else
 	{
 		return (Y < HalfResolution) ? 1 : 3; // Top-right or Bottom-right
+	}
+}
+
+void AIsland::AddCorruptedNPC(ANPC* InNPC)
+{
+	CorruptedNPCs.Add(InNPC);
+}
+
+void AIsland::RemoveCorruptedNPC(ANPC* InNPC)
+{
+	CorruptedNPCs.RemoveSingle(InNPC);
+
+	for (int32 i = CorruptedNPCs.Num()-1; i >= 0; --i)
+	{
+		if (!IsValid(CorruptedNPCs[i]))
+		{
+			CorruptedNPCs.RemoveAt(i);
+		}
+	}
+	
+	if (CorruptedNPCs.IsEmpty())
+	{
+		bCorruptionOngoing = false;
 	}
 }
 

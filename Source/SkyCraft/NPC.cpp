@@ -40,6 +40,11 @@ void ANPC::BeginActor_Implementation()
 {
 	Super::BeginActor_Implementation();
 
+	if (bCorrupted)
+	{
+		if (ParentIsland) ParentIsland->AddCorruptedNPC(this);
+	}
+	
 	if (SpawnWithCorruptionOverlayEffect)
 	{
 		UCorruptionOverlayEffect* CorruptionOverlayEffect = NewObject<UCorruptionOverlayEffect>(this, SpawnWithCorruptionOverlayEffect);
@@ -52,11 +57,11 @@ void ANPC::BeginActor_Implementation()
 	if (!HasAuthority()) return;
 	SetActorTickEnabled(true);
 	
-	if (!IsValid(Island)) return;
+	if (!IsValid(ParentIsland)) return;
 	
 	UpdateSettings();
 
-	Island->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
+	ParentIsland->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
 }
 
 void ANPC::NativeOnDie(const FDamageInfo& DamageInfo)
@@ -127,7 +132,7 @@ void ANPC::SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNot
 		{
 			AIsland* IslandBase = Cast<AIsland>(NewBaseRoot);
 			NewBase = IslandBase->PMC_Main;
-			if (Island != IslandBase) AddToIsland(IslandBase); 
+			if (ParentIsland != IslandBase) AddToIsland(IslandBase);
 		}
 	}
 	
@@ -146,10 +151,10 @@ void ANPC::ChangedLOD()
 
 void ANPC::UpdateSettings()
 {
-	ensureAlways(Island);
-	if (!IsValid(Island)) return;
+	ensureAlways(ParentIsland);
+	if (!IsValid(ParentIsland)) return;
 	
-	if (Island->ServerLOD == 0)
+	if (ParentIsland->ServerLOD == 0)
 	{
 		SetActorTickEnabled(true);
 		SetActorTickInterval(FMath::FRandRange(0.09f, 0.11f));
@@ -162,22 +167,22 @@ void ANPC::UpdateSettings()
 
 void ANPC::RemoveFromIsland()
 {
-	if (!IsValid(Island)) return;
-	FEntities* IslandLOD = Island->SpawnedLODs.Find(IslandLODIndex);
+	if (!IsValid(ParentIsland)) return;
+	FSpawnedIslandLOD* IslandLOD = ParentIsland->SpawnedLODs.Find(IslandLODIndex);
 	if (!IslandLOD) return;
 	IslandLOD->NPCs.RemoveSingle(this);
-	Island->OnServerLOD.RemoveAll(this);
-	Island = nullptr;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ANPC, Island, this);
+	ParentIsland->OnServerLOD.RemoveAll(this);
+	ParentIsland = nullptr;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ANPC, ParentIsland, this);
 }
 
 void ANPC::AddToIsland(AIsland* NewIsland)
 {
 	if (!IsValid(NewIsland)) return;
-	Island = NewIsland;
-	MARK_PROPERTY_DIRTY_FROM_NAME(ANPC, Island, this);
-	Island->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
-	FEntities& IslandLOD = Island->SpawnedLODs.FindOrAdd(IslandLODIndex);
+	ParentIsland = NewIsland;
+	MARK_PROPERTY_DIRTY_FROM_NAME(ANPC, ParentIsland, this);
+	ParentIsland->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
+	FSpawnedIslandLOD& IslandLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
 	IslandLOD.NPCs.Add(this);
 }
 
@@ -205,6 +210,6 @@ void ANPC::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifeti
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
-	DOREPLIFETIME_WITH_PARAMS_FAST(ANPC, Island, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ANPC, ParentIsland, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ANPC, SpawnWithCorruptionOverlayEffect, Params);
 }

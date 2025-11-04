@@ -2,7 +2,6 @@
 
 
 #include "SkyCharacterMovementComponent.h"
-#include "SkyCraft/PlayerNormal.h"
 
 USkyCharacterMovementComponent::USkyCharacterMovementComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 

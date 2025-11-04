@@ -232,26 +232,16 @@ void ADroppedItem::SetupStaticMesh()
 {
 	StaticMeshComponent->SetStaticMesh(Slot.DA_Item->StaticMesh.Get());
 	UAdianFL::ResolveStaticMeshCustomPrimitiveData(StaticMeshComponent);
-	
-	if (Slot.DA_Item->OverrideMaterial.IsNull()) return;
-	if (Slot.DA_Item->OverrideMaterial.IsValid()) SetupOverrideMaterial();
-	else
+
+	for (auto& OverrideMaterial : Slot.DA_Item->OverrideMaterials)
 	{
-		FStreamableManager& StreamableManager = UAssetManager::GetStreamableManager();
-		StreamableManager.RequestAsyncLoad(Slot.DA_Item->OverrideMaterial.ToSoftObjectPath(), FStreamableDelegate::CreateUObject(this, &ADroppedItem::OnMaterialLoaded));
+		if (OverrideMaterial.Material.IsNull()) continue;
+		
+		if (UMaterialInterface* LoadedMaterial = OverrideMaterial.Material.LoadSynchronous())
+		{
+			StaticMeshComponent->SetMaterial(OverrideMaterial.Index, LoadedMaterial);
+		}
 	}
-}
-
-void ADroppedItem::OnMaterialLoaded()
-{
-	if (!Slot.DA_Item) return;
-	if (!Slot.DA_Item->OverrideMaterial.IsValid()) return;
-	SetupOverrideMaterial();
-}
-
-void ADroppedItem::SetupOverrideMaterial()
-{
-	StaticMeshComponent->SetMaterial(0, Slot.DA_Item->OverrideMaterial.Get());
 }
 
 void ADroppedItem::ClientInteract(FInteractIn InteractIn, FInteractOut& InteractOut)

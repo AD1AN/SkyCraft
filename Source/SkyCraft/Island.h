@@ -26,12 +26,22 @@ class ANPC;
 class ABM;
 struct FSS_Building;
 
-USTRUCT(BlueprintType)
-struct FEntities
+USTRUCT()
+struct FNPCInstance
 {
 	GENERATED_BODY()
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<AResource*> Resources;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite) TArray<ANPC*> NPCs;
+	UPROPERTY() TSubclassOf<ANPC> NPCClass;
+	UPROPERTY() int32 MaxInstances = 0;
+	UPROPERTY() TArray<ANPC*> NPCs;
+};
+
+USTRUCT()
+struct FSpawnedIslandLOD
+{
+	GENERATED_BODY()
+	UPROPERTY() TArray<AResource*> Resources;
+	UPROPERTY() TArray<ANPC*> NPCs;
+	UPROPERTY() TArray<FNPCInstance> NPCInstances;
 };
 
 struct FCliffData
@@ -69,17 +79,23 @@ struct FIslandData
 	TArray<FProcMeshTangent> BottomTangents;
 };
 
-UCLASS(Blueprintable)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnServerLOD);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIDGenerated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFullGenerated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandFullGenerated, AIsland*, Island);
+
+UCLASS()
 class SKYCRAFT_API AIsland : public AActor
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(VisibleAnywhere) USceneComponent* RootScene;
-	UPROPERTY(VisibleAnywhere) UProceduralMeshComponent* PMC_Main;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) USceneComponent* AttachSimulatedBodies;
-	UPROPERTY(VisibleAnywhere) TArray<UInstancedStaticMeshComponent*> CliffsComponents;
-	UPROPERTY(VisibleAnywhere) TArray<UFoliageHISM*> FoliageComponents;
-	UPROPERTY(VisibleAnywhere) UGrowingResourcesComponent* GrowingResourcesComponent;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> RootScene;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UProceduralMeshComponent> PMC_Main;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<USceneComponent> AttachSimulatedBodies;
+	UPROPERTY(VisibleAnywhere) TArray<TObjectPtr<UInstancedStaticMeshComponent>> CliffsComponents;
+	UPROPERTY(VisibleAnywhere) TArray<TObjectPtr<UFoliageHISM>> FoliageComponents;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UGrowingResourcesComponent> GrowingResourcesComponent;
 	
 	bool bPlayerIsland = false;
 	
@@ -96,26 +112,25 @@ public:
 
 	UPROPERTY(BlueprintReadOnly) FIslandData IslandData;
 	
-	UPROPERTY(EditAnywhere) int32 ShapePoints = 20;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly) float ShapeRadius = 1000.0f;
-	UPROPERTY(EditAnywhere) int32 Resolution = 150; // Try not using odd numbers
-	UPROPERTY(EditAnywhere) float CellSize = 100.0f;
-	UPROPERTY(EditAnywhere) float InterpShapePointLength = 1500.0f;
-	UPROPERTY(EditAnywhere) float ScalePerlinNoise1D = 0.25f;
-	UPROPERTY(EditAnywhere) float ScaleRandomShape = 0.5f;
-	UPROPERTY(EditAnywhere) float SmallNoiseScale = 0.0025;
-	UPROPERTY(EditAnywhere) float SmallNoiseStrength = 75.0f;
-	UPROPERTY(EditAnywhere) float SmallNoiseHeight = -50.0f;
-	UPROPERTY(EditAnywhere) float BigNoiseScale = 0.0005f;
-	UPROPERTY(EditAnywhere) float BigNoiseStrength = 200.0f;
-	UPROPERTY(EditAnywhere) float BigNoiseHeight = -25.0f;
-	UPROPERTY(EditAnywhere) float BottomUVScale = 0.0005f;
-	UPROPERTY(EditAnywhere) float BottomRandomHorizontal = 0.025f;
-	UPROPERTY(EditAnywhere) float BottomRandomVertical = 0.05f;
+	UPROPERTY(EditDefaultsOnly) int32 ShapePoints = 20;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) float ShapeRadius = 1000.0f;
+	UPROPERTY(EditDefaultsOnly) int32 Resolution = 150; // Try not using odd numbers
+	UPROPERTY(EditDefaultsOnly) float CellSize = 100.0f;
+	UPROPERTY(EditDefaultsOnly) float InterpShapePointLength = 1500.0f;
+	UPROPERTY(EditDefaultsOnly) float ScalePerlinNoise1D = 0.25f;
+	UPROPERTY(EditDefaultsOnly) float ScaleRandomShape = 0.5f;
+	UPROPERTY(EditDefaultsOnly) float SmallNoiseScale = 0.0025;
+	UPROPERTY(EditDefaultsOnly) float SmallNoiseStrength = 75.0f;
+	UPROPERTY(EditDefaultsOnly) float SmallNoiseHeight = -50.0f;
+	UPROPERTY(EditDefaultsOnly) float BigNoiseScale = 0.0005f;
+	UPROPERTY(EditDefaultsOnly) float BigNoiseStrength = 200.0f;
+	UPROPERTY(EditDefaultsOnly) float BigNoiseHeight = -25.0f;
+	UPROPERTY(EditDefaultsOnly) float BottomUVScale = 0.0005f;
+	UPROPERTY(EditDefaultsOnly) float BottomRandomHorizontal = 0.025f;
+	UPROPERTY(EditDefaultsOnly) float BottomRandomVertical = 0.05f;
 
 	// --------------------------------------------------
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandSize);
 	UPROPERTY(BlueprintAssignable) FOnIslandSize OnIslandSize;
 
 	UPROPERTY(Replicated, VisibleInstanceOnly) FRandomStream Seed;
@@ -125,10 +140,9 @@ public:
 	UFUNCTION() virtual void OnRep_IslandSize();
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn)) bool bLoadFromSave = false;
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn)) FSS_Island SS_Island;
+	UPROPERTY() FSS_Island SS_Island;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) bool bIslandCanSave = false;
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnServerLOD);
 	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnServerLOD OnServerLOD;
 	UPROPERTY(VisibleInstanceOnly, ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 ServerLOD = -1;
 	UPROPERTY(VisibleInstanceOnly) int32 LoadedLowestLOD = 666; // Only decreases.
@@ -136,22 +150,19 @@ public:
 	UFUNCTION(BlueprintCallable) void SetServerLOD(int32 NewLOD);
 
 	TMap<UDA_Resource*, TMap<int32, FVector>> ResourcesGridMap;
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TMap<int32, FEntities> SpawnedLODs; // Key: LOD index. INDEX_NONE = AlwaysLOD.
+	UPROPERTY(VisibleInstanceOnly) TMap<int32, FSpawnedIslandLOD> SpawnedLODs; // Key: LOD index. INDEX_NONE = AlwaysLOD.
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ABM*> Buildings;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ADroppedItem*> DroppedItems;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) TArray<FSS_Astralon> SS_Astralons;
-	UFUNCTION(BlueprintCallable) TArray<FSS_DroppedItem> SaveDroppedItems();
+	TArray<FSS_DroppedItem> SaveDroppedItems();
 	void LoadDroppedItems();
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddConstellation(FSS_Astralon NewConstellation);
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveConstellation(FSS_Astralon RemoveConstellation);
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIDGenerated);
 	UPROPERTY(BlueprintAssignable) FOnIDGenerated OnIDGenerated;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bIDGenerated = false;
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFullGenerated);
 	UPROPERTY(BlueprintAssignable) FOnFullGenerated OnFullGenerated;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly) bool bFullGenerated = false;
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnIslandFullGenerated, AIsland*, Island);
 	UPROPERTY(BlueprintAssignable) FOnIslandFullGenerated OnIslandFullGenerated;
 	
 	UPROPERTY(VisibleInstanceOnly) TArray<UTerrainChunk*> TerrainChunks;
@@ -167,7 +178,7 @@ public:
 	bool LoadLOD(int32 LoadLODIndex);
 	void GenerateLOD(int32 GenerateLODIndex);
 	TArray<AResource*> LoadResources(TArray<FSS_Resource>& SS_Resources);
-	TArray<ANPC*> LoadNPCs(TArray<FSS_NPC>& SS_NPCs, int32 IslandLODIndex);
+	TArray<ANPC*> LoadNPCs(TArray<FSS_NPCInstance>& SS_NPCInstances, int32 IslandLODIndex);
 	void LoadBuildings();
 	
 	UFUNCTION(BlueprintCallable) void SaveIsland();
@@ -201,6 +212,14 @@ public:
 	uint8 TerrainChunkIndex(int32 X, int32 Y, int32 HalfResolution);
 
 	UFUNCTION() void OnRep_ServerLOD() { OnServerLOD.Broadcast(); }
+
+private:
+	UPROPERTY() TArray<ANPC*> CorruptedNPCs;
+	
+public:
+	void AddCorruptedNPC(ANPC* InNPC);
+	void RemoveCorruptedNPC(ANPC* InNPC);
+	UPROPERTY(BlueprintReadOnly) bool bCorruptionOngoing = false;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere) bool bOnConstruction = false;

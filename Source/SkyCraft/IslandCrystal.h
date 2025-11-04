@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AdianActor.h"
 #include "GameFramework/Actor.h"
+#include "Interfaces/EntityInterface.h"
 #include "IslandCrystal.generated.h"
 
 class UInteractComponent;
@@ -14,7 +15,7 @@ class UNiagaraComponent;
 class APlayerIsland;
 
 UCLASS()
-class SKYCRAFT_API AIslandCrystal : public AAdianActor
+class SKYCRAFT_API AIslandCrystal : public AAdianActor, public IEntityInterface
 {
 	GENERATED_BODY()
 
@@ -38,6 +39,12 @@ public:
 	UFUNCTION() void OnTargetDirection();
 	UFUNCTION() void OnCrystal();
 	UFUNCTION() void OnIslandSize();
+
+private:
+	// >>>>>>>>>>>>>>>>>>>>>>> IEntityInterface
+	virtual void NativeOnDamage(const FDamageInfo& DamageInfo) override;
+	virtual void NativeOnDie(const FDamageInfo& DamageInfo) override;
+	// <<<<<<<<<<<<<<<<<<<<<<< IEntityInterface
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 };

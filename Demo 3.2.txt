@@ -1,0 +1,14 @@
+New:
+* Player island stops on corruption surge.
+* Players receive global warning when the island crystal is damaged.
+* Island crystal deals return damage in area with knockback.
+
+Changes/Improvements:
+* Drevia resource added more health.
+* Improved dropped items material handling.
+* Improved optimization for player island on stopped movement.
+
+Fixes:
+* Fixed global/action warnings pop ups.
+* Fixed corrupted skeletons slide off on moving island.
+* Fixed corrupted skeletons phase through island crystal. (from NavMesh to Walking)

@@ -24,8 +24,10 @@ public:
 
 	ANPC();
 	
-	UPROPERTY(BlueprintReadWrite, Replicated) AIsland* Island = nullptr;
+	UPROPERTY(BlueprintReadWrite, Replicated) AIsland* ParentIsland = nullptr;
 	UPROPERTY(BlueprintReadOnly) int32 IslandLODIndex = 0;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) bool bCorrupted = false;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) AIslandCrystal* IslandCrystal = nullptr; // Used for corrupted NPC to attack.
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveFromIsland();
@@ -50,7 +52,7 @@ public:
 
 	virtual AIsland* GetIsland() override
 	{
-		return Island;
+		return ParentIsland;
 	}
 
 	// ~Begin IEntityInterface

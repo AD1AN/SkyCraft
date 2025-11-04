@@ -23,7 +23,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIsCrystal);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnArchonSteamID);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnIslandCrystal);
 
-UCLASS(Blueprintable)
+UCLASS(Abstract, Blueprintable)
 class SKYCRAFT_API APlayerIsland : public AIsland, public IEssenceInterface
 {
 	GENERATED_BODY()
@@ -56,11 +56,25 @@ public:
 	UPROPERTY(BlueprintAssignable) FOnStopIsland OnStopIsland;
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_StopIsland) bool bStopIsland = false;
 	UFUNCTION() void OnRep_StopIsland() { OnStopIsland.Broadcast(); }
-	UFUNCTION(BlueprintCallable) bool SetStopIsland(bool NewStopIsland)
+	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) bool SetStopIsland(bool NewStopIsland)
 	{
-		REP_SET(bStopIsland, NewStopIsland);
-		return NewStopIsland;
+		if (NewStopIsland)
+		{
+			Multicast_SetStopIsland(true, PreviousLocation);
+		}
+		else
+		{
+			if (Essence > 0 && !bCorruptionOngoing)
+			{
+				REP_SET(bStopIsland, NewStopIsland);
+			}
+		}
+		
+		return bStopIsland;
 	}
+
+	UFUNCTION(NetMulticast, Reliable) void Multicast_SetStopIsland(bool NewStopIsland, FVector ServerLocation);
+	UFUNCTION(BlueprintImplementableEvent) void CueIslandStopped();
 	
 	UPROPERTY(BlueprintAssignable) FOnTargetDirection OnTargetDirection;
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_TargetDirection) FVector_NetQuantizeNormal TargetDirection;
@@ -121,7 +135,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent) void OnRep_PawnIslandControl();
 	
 	UPROPERTY(BlueprintAssignable) FOnIsCrystal OnIsCrystal;
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_bIsCrystal, meta=(ExposeOnSpawn)) bool bIsCrystal = true;
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_bIsCrystal) bool bIsCrystal = true;
 	UFUNCTION(BlueprintNativeEvent) void OnRep_bIsCrystal();
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void SetIsCrystal(bool newCrystal) { REP_SET(bIsCrystal, newCrystal); }
 
@@ -149,6 +163,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure) int32 GetIslandSizeNum();
 	
+	float CrystalAttackedNotify = 0;
+
 private:
 	// >>>>>>>>>>>>>>>>>>>>>> IEssenceInterface
 	virtual int32 OverrideEssence_Implementation(int32 NewEssence) override { return SetEssence(NewEssence); }

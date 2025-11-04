@@ -116,6 +116,8 @@ public:
 	UPROPERTY(BlueprintAssignable) FOnConnectedPlayers OnConnectedPlayers;
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ConnectedPlayers) TArray<APSS*> ConnectedPlayers;
 	UFUNCTION() void OnRep_ConnectedPlayers() { OnConnectedPlayers.Broadcast(); }
+
+	UFUNCTION(BlueprintImplementableEvent) float GetTimeOfDay();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
