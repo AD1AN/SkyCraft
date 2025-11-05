@@ -160,6 +160,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AuthEmptyDenizens();
 
 	UPROPERTY(BlueprintReadWrite, Replicated) float CorruptionTime;
+	UFUNCTION(NetMulticast, Unreliable) void Multicast_CueBeginCorruption();
+	UFUNCTION(BlueprintImplementableEvent) void CueBeginCorruption();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure) int32 GetIslandSizeNum();
 	

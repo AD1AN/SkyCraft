@@ -40,7 +40,6 @@ struct FSpawnedIslandLOD
 {
 	GENERATED_BODY()
 	UPROPERTY() TArray<AResource*> Resources;
-	UPROPERTY() TArray<ANPC*> NPCs;
 	UPROPERTY() TArray<FNPCInstance> NPCInstances;
 };
 
@@ -148,9 +147,13 @@ public:
 	UPROPERTY(VisibleInstanceOnly) int32 LoadedLowestLOD = 666; // Only decreases.
 	UPROPERTY(VisibleInstanceOnly) int32 ClientLOD = -1; // TODO: Implement Client LOD system, maybe for future needs.
 	UFUNCTION(BlueprintCallable) void SetServerLOD(int32 NewLOD);
+	
+	// Key: LOD index. INDEX_NONE(-1) = AlwaysLOD.
+	UPROPERTY(VisibleInstanceOnly) TMap<int32, FSpawnedIslandLOD> SpawnedLODs;
 
 	TMap<UDA_Resource*, TMap<int32, FVector>> ResourcesGridMap;
-	UPROPERTY(VisibleInstanceOnly) TMap<int32, FSpawnedIslandLOD> SpawnedLODs; // Key: LOD index. INDEX_NONE = AlwaysLOD.
+	TArray<FNPCInstance> NightNPCInstances;
+
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ABM*> Buildings;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ADroppedItem*> DroppedItems;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, Replicated) TArray<FSS_Astralon> SS_Astralons;
@@ -173,12 +176,11 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	UFUNCTION(BlueprintCallable) void DestroyLODs();
-	
+
+	void GenerateLOD(int32 GenerateLODIndex);
+
 	UFUNCTION(BlueprintCallable) void LoadIsland();
 	bool LoadLOD(int32 LoadLODIndex);
-	void GenerateLOD(int32 GenerateLODIndex);
-	TArray<AResource*> LoadResources(TArray<FSS_Resource>& SS_Resources);
-	TArray<ANPC*> LoadNPCs(TArray<FSS_NPCInstance>& SS_NPCInstances, int32 IslandLODIndex);
 	void LoadBuildings();
 	
 	UFUNCTION(BlueprintCallable) void SaveIsland();

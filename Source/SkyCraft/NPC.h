@@ -14,6 +14,14 @@ class USuffocationComponent;
 class AIsland;
 struct FSS_NPC;
 
+UENUM(BlueprintType)
+enum class ENPCType : uint8
+{
+	Normal,
+	Corrupted,
+	Nocturnal
+};
+
 UCLASS()
 class SKYCRAFT_API ANPC : public AAdianCharacter, public IEntityInterface, public IIslandInterface
 {
@@ -27,8 +35,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated) AIsland* ParentIsland = nullptr;
 	UPROPERTY(BlueprintReadOnly) int32 IslandLODIndex = 0;
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) bool bCorrupted = false;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) AIslandCrystal* IslandCrystal = nullptr; // Used for corrupted NPC to attack.
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) ENPCType NPCType = ENPCType::Normal;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) AIslandCrystal* IslandCrystal = nullptr; // Used for NPC to attack.
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveFromIsland();
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void AddToIsland(AIsland* NewIsland);

@@ -40,7 +40,7 @@ void ANPC::BeginActor_Implementation()
 {
 	Super::BeginActor_Implementation();
 
-	if (bCorrupted)
+	if (NPCType == ENPCType::Corrupted)
 	{
 		if (ParentIsland) ParentIsland->AddCorruptedNPC(this);
 	}
@@ -165,13 +165,18 @@ void ANPC::UpdateSettings()
 	}
 }
 
-void ANPC::RemoveFromIsland()
+void ANPC::RemoveFromIsland() // TODO: for NightNPCs
 {
 	if (!IsValid(ParentIsland)) return;
-	FSpawnedIslandLOD* IslandLOD = ParentIsland->SpawnedLODs.Find(IslandLODIndex);
-	if (!IslandLOD) return;
-	IslandLOD->NPCs.RemoveSingle(this);
-	ParentIsland->OnServerLOD.RemoveAll(this);
+	FSpawnedIslandLOD& SpawnedLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
+	for (auto& NPCInstance : SpawnedLOD.NPCInstances)
+	{
+		if (NPCInstance.NPCClass == GetClass())
+		{
+			NPCInstance.NPCs.RemoveSingle(this);
+		}
+	}
+	ParentIsland->OnServerLOD.RemoveDynamic(this, &ANPC::ChangedLOD);
 	ParentIsland = nullptr;
 	MARK_PROPERTY_DIRTY_FROM_NAME(ANPC, ParentIsland, this);
 }
@@ -182,8 +187,15 @@ void ANPC::AddToIsland(AIsland* NewIsland)
 	ParentIsland = NewIsland;
 	MARK_PROPERTY_DIRTY_FROM_NAME(ANPC, ParentIsland, this);
 	ParentIsland->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
-	FSpawnedIslandLOD& IslandLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
-	IslandLOD.NPCs.Add(this);
+	FSpawnedIslandLOD& SpawnedLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
+	for (auto& NPCInstance : SpawnedLOD.NPCInstances)
+	{
+		if (NPCInstance.NPCClass == GetClass())
+		{
+			NPCInstance.NPCs.Add(this);
+		}
+	}
+	
 }
 
 bool ANPC::LoadNPC_Implementation(const FSS_NPC& SS_NPC)
@@ -195,7 +207,6 @@ bool ANPC::LoadNPC_Implementation(const FSS_NPC& SS_NPC)
 FSS_NPC ANPC::SaveNPC_Implementation()
 {
 	FSS_NPC SS_NPC;
-	SS_NPC.NPC_Class = GetClass();
 	SS_NPC.Health = EntityComponent->GetHealth();
 	SS_NPC.Transform = GetTransform();
 	

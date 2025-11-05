@@ -70,7 +70,7 @@ public:
 	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< World Settings
 
 	// Key: Hashed Coords
-	UPROPERTY(BlueprintReadOnly) TMap<int32, FSS_Island> SavedIslands;
+	UPROPERTY() TMap<int32, FSS_Island> SavedIslands;
 	
 	// Key: SteamID
 	UPROPERTY(BlueprintReadOnly) TMap<FString, FSS_RegisteredPlayer> RegisteredPlayers;

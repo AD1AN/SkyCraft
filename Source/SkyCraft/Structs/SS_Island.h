@@ -25,13 +25,13 @@ struct FSS_Resource
 	UPROPERTY() float CurrentGrowTime = 0.0f;
 };
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FSS_NPC
 {
 	GENERATED_BODY()
 	UPROPERTY() int32 Health = 100;
 	UPROPERTY() FTransform Transform = FTransform::Identity;
-	UPROPERTY() FNPCParameters Parameters;
+	UPROPERTY(BlueprintReadWrite) FNPCParameters Parameters;
 };
 
 USTRUCT()

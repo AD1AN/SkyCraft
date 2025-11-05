@@ -59,7 +59,7 @@ void ACorruptionSpawnPoint::SpawnNPC()
 	FTransform SpawnTransform;
 	SpawnTransform.SetLocation(GetActorLocation() + FVector(0.0f, 0.0f, 120.0f));
 	ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(ClassNPC, SpawnTransform);
-	SpawnedNPC->bCorrupted = true;
+	SpawnedNPC->NPCType = ENPCType::Corrupted;
 	SpawnedNPC->ParentIsland = AttachToIsland;
 	SpawnedNPC->SetBase(AttachToIsland->PMC_Main, NAME_None, false);
 

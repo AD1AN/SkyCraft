@@ -767,15 +767,21 @@ void AIsland::DestroyLODs()
 {
 	for (auto& SpawnedLOD : SpawnedLODs)
 	{
+		// Destroy Resources
 		for (auto& Res : SpawnedLOD.Value.Resources)
 		{
 			if (!IsValid(Res)) continue;
 			Res->Destroy();
 		}
-		for (ANPC* NPC : SpawnedLOD.Value.NPCs)
+
+		// Destroy NPCs
+		for (auto& NPCInstance : SpawnedLOD.Value.NPCInstances)
 		{
-			if (!IsValid(NPC)) continue;
-			NPC->Destroy();
+			for (auto& NPC : NPCInstance.NPCs)
+			{
+				if (!IsValid(NPC)) continue;
+				NPC->Destroy();
+			}
 		}
 	}
 	SpawnedLODs.Empty();
@@ -812,14 +818,54 @@ void AIsland::LoadIsland()
 
 bool AIsland::LoadLOD(int32 LoadLODIndex)
 {
-	for (auto& IslandLOD : SS_Island.IslandLODs)
+	for (auto& SS_IslandLOD : SS_Island.IslandLODs)
 	{
-		if (IslandLOD.LOD != LoadLODIndex) continue;
+		if (SS_IslandLOD.LOD != LoadLODIndex) continue;
 		FSpawnedIslandLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
-		TArray<AResource*> LoadedResources = LoadResources(IslandLOD.Resources);
-		TArray<ANPC*> LoadedNPCs = LoadNPCs(IslandLOD.NPCs, LoadLODIndex);
-		SpawnedLOD.Resources = LoadedResources;
-		SpawnedLOD.NPCs = LoadedNPCs;
+
+		// Load Resources.
+		for (const auto& SS_Resource : SS_IslandLOD.Resources)
+		{
+			if (!SS_Resource.DA_Resource) continue;
+			FTransform ResTransform;
+			ResTransform.SetLocation(SS_Resource.RelativeLocation);
+			ResTransform.SetRotation(FQuat(SS_Resource.RelativeRotation));
+			TSubclassOf<AResource> ResourceClass = (SS_Resource.DA_Resource->OverrideResourceClass) ? SS_Resource.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+			AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
+			SpawnedRes->bLoaded = true;
+			SpawnedRes->Island = this;
+			SpawnedRes->EntityComponent->OverrideHealth(SS_Resource.Health);
+			SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
+			SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
+			SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
+			SpawnedRes->Growing = SS_Resource.Growing;
+			SpawnedRes->CurrentGrowTime = SS_Resource.CurrentGrowTime;
+			SpawnedRes->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+			SpawnedRes->FinishSpawning(ResTransform);
+			SpawnedLOD.Resources.Add(SpawnedRes);
+		}
+
+		// Load NPCs
+		for (auto& SS_NPCInstance : SS_IslandLOD.NPCInstances)
+		{
+			if (!IsValid(SS_NPCInstance.NPC_Class)) continue;
+			FNPCInstance NPCInstance;
+			NPCInstance.NPCClass = SS_NPCInstance.NPC_Class;
+			NPCInstance.MaxInstances = SS_NPCInstance.MaxInstances;
+			for (auto& SS_NPC : SS_NPCInstance.NPCs)
+			{
+				FTransform LoadTransform = SS_NPC.Transform;
+				LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,60));
+				ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPCInstance.NPC_Class, LoadTransform);
+				SpawnedNPC->ParentIsland = this;
+				SpawnedNPC->SetBase(PMC_Main, NAME_None, false);
+				SpawnedNPC->IslandLODIndex = LoadLODIndex;
+				SpawnedNPC->FinishSpawning(LoadTransform);
+				SpawnedNPC->LoadNPC(SS_NPC);
+				NPCInstance.NPCs.Add(SpawnedNPC);
+			}
+			SpawnedLOD.NPCInstances.Add(NPCInstance);
+		}
 		return true;
 	}
 	return false;
@@ -988,62 +1034,12 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 			SpawnedNPC->ParentIsland = this;
 			SpawnedNPC->IslandLODIndex = GenerateLODIndex;
 			SpawnedNPC->FinishSpawning(NpcTransform);
-			SpawnedLOD.NPCs.Add(SpawnedNPC);
 			InstanceNPC.NPCs.Add(SpawnedNPC);
 			++SpawnedNPCs;
 			Attempts = 0;
 		}
 		SpawnedLOD.NPCInstances.Add(InstanceNPC);
 	}
-}
-
-TArray<AResource*> AIsland::LoadResources(TArray<FSS_Resource>& SS_Resources)
-{
-	if (SS_Resources.IsEmpty()) return {};
-	
-	TArray<AResource*> LoadedResources;
-	for (const auto& SS_Resource : SS_Resources)
-	{
-		if (!SS_Resource.DA_Resource) continue;
-		FTransform ResTransform;
-		ResTransform.SetLocation(SS_Resource.RelativeLocation);
-		ResTransform.SetRotation(FQuat(SS_Resource.RelativeRotation));
-		TSubclassOf<AResource> ResourceClass = (SS_Resource.DA_Resource->OverrideResourceClass) ? SS_Resource.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
-		AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
-		SpawnedRes->bLoaded = true;
-		SpawnedRes->Island = this;
-		SpawnedRes->EntityComponent->OverrideHealth(SS_Resource.Health);
-		SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
-		SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
-		SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
-		SpawnedRes->Growing = SS_Resource.Growing;
-		SpawnedRes->CurrentGrowTime = SS_Resource.CurrentGrowTime;
-		SpawnedRes->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-		SpawnedRes->FinishSpawning(ResTransform);
-		LoadedResources.Add(SpawnedRes);
-	}
-	return LoadedResources;
-}
-
-TArray<ANPC*> AIsland::LoadNPCs(TArray<FSS_NPC>& SS_NPCs, int32 IslandLODIndex)
-{
-	if (SS_NPCs.IsEmpty()) return {};
-	
-	TArray<ANPC*> LoadedNPCs;
-	for (auto& SS_NPC : SS_NPCs)
-	{
-		if (!IsValid(SS_NPC.NPC_Class)) continue;
-		FTransform LoadTransform = SS_NPC.Transform;
-		LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,60));
-		ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPC.NPC_Class, LoadTransform);
-		SpawnedNPC->ParentIsland = this;
-		SpawnedNPC->IslandLODIndex = IslandLODIndex;
-		SpawnedNPC->FinishSpawning(LoadTransform);
-		SpawnedNPC->SetBase(PMC_Main, NAME_None, false);
-		SpawnedNPC->LoadNPC(SS_NPC);
-		LoadedNPCs.Add(SpawnedNPC);
-	}
-	return LoadedNPCs;
 }
 
 void AIsland::LoadBuildings()
@@ -1139,13 +1135,17 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 		// Save NPCs
 		for (auto& NPCInstance : SpawnedLOD.Value.NPCInstances)
 		{
-			for (auto& npc : NPCInstance.NPCs)
+			FSS_NPCInstance SS_NPCInstance;
+			SS_NPCInstance.NPC_Class = NPCInstance.NPCClass;
+			SS_NPCInstance.MaxInstances = NPCInstance.MaxInstances;
+			for (auto& NPC : NPCInstance.NPCs)
 			{
-				if (!IsValid(npc)) continue;
+				if (!IsValid(NPC)) continue;
 				FSS_NPC SS_NPC;
 				SS_NPC = NPC->SaveNPC();
-				SS_IslandLOD.NPCs.Add(SS_NPC);
+				SS_NPCInstance.NPCs.Add(SS_NPC);
 			}
+			SS_IslandLOD.NPCInstances.Add(SS_NPCInstance);
 		}
 		
 		SS_IslandLODs.Add(SS_IslandLOD);

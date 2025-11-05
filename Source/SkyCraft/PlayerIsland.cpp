@@ -121,10 +121,11 @@ void APlayerIsland::Tick(float DeltaSeconds)
 		CorruptionTime += DeltaSeconds;
 		if (CorruptionTime >= GSS->PlayerIslandsCorruptionTime)
 		{
+			Multicast_CueBeginCorruption();
 			SetStopIsland(true);
 			bCorruptionOngoing = true;
 			CorruptionTime = 0.0f;
-			
+
 			for (auto& PSS : Denizens)
 			{
 				PSS->Client_GlobalWarning(LOCTEXT("CorruptionSurge", "Corruption Surge!\nHome Island at risk!"));
@@ -386,6 +387,11 @@ void APlayerIsland::AuthEmptyDenizens()
 {
 	Denizens.Empty();
 	MARK_PROPERTY_DIRTY_FROM_NAME(APlayerIsland, Denizens, this);
+}
+
+void APlayerIsland::Multicast_CueBeginCorruption_Implementation()
+{
+	CueBeginCorruption();
 }
 
 int32 APlayerIsland::GetIslandSizeNum()
