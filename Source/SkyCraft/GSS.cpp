@@ -11,7 +11,7 @@
 #include "Structs/Cue.h"
 #include "Internationalization/StringTable.h"
 
-AGSS::AGSS(){}
+AGSS::AGSS() {}
 
 void AGSS::LoadWorldSettings(UWorldSave* WorldSave)
 {
@@ -31,16 +31,13 @@ void AGSS::LoadWorldSettings(UWorldSave* WorldSave)
     PlayerIslandSpawnXY = WorldSave->PlayerIslandSpawnXY;
     PlayerIslandSpawnZ = WorldSave->PlayerIslandSpawnZ;
     SkyEssenceDensity = WorldSave->SkyEssenceDensity;
-    BuildingInfiniteHeight = WorldSave->BuildingInfiniteHeight;
+    bBuildingInfiniteHeight = WorldSave->BuildingInfiniteHeight;
     GroundedMax = WorldSave->GroundedMax;
-    CheatsEnabled = WorldSave->CheatsEnabled;
+    bCheatsEnabled = WorldSave->CheatsEnabled;
     PlayerHunger = WorldSave->PlayerHunger;
-    PlayerIslandsCorruption = WorldSave->PlayerIslandsCorruption;
+    bCorruptionEventEnabled = WorldSave->PlayerIslandsCorruption;
     PlayerIslandsCorruptionTime = WorldSave->PlayerIslandsCorruptionTime;
     PlayerIslandsCorruptionScale = WorldSave->PlayerIslandsCorruptionScale;
-    WildIslandsCorruption = WorldSave->WildIslandsCorruption;
-    WildIslandsCorruptionCycle = WorldSave->WildIslandsCorruptionCycle;
-    WildIslandsCorruptionScale = WorldSave->WildIslandsCorruptionScale;
     EssenceRequireForLevel = WorldSave->EssenceRequireForLevel;
     StaminaPerLevel = WorldSave->StaminaPerLevel;
     StrengthPerLevel = WorldSave->StrengthPerLevel;
@@ -49,6 +46,7 @@ void AGSS::LoadWorldSettings(UWorldSave* WorldSave)
     StaminaMaxLevel = WorldSave->StaminaMaxLevel;
     StrengthMaxLevel = WorldSave->StrengthMaxLevel;
     EssenceFlowMaxLevel = WorldSave->EssenceFlowMaxLevel;
+	bRespawnNPCs = WorldSave->bRespawnNPCs;
 }
 
 void AGSS::SaveWorldSettings(UWorldSave* WorldSave)
@@ -69,16 +67,13 @@ void AGSS::SaveWorldSettings(UWorldSave* WorldSave)
     WorldSave->PlayerIslandSpawnXY = PlayerIslandSpawnXY;
     WorldSave->PlayerIslandSpawnZ = PlayerIslandSpawnZ;
     WorldSave->SkyEssenceDensity = SkyEssenceDensity;
-    WorldSave->BuildingInfiniteHeight = BuildingInfiniteHeight;
+    WorldSave->BuildingInfiniteHeight = bBuildingInfiniteHeight;
     WorldSave->GroundedMax = GroundedMax;
-    WorldSave->CheatsEnabled = CheatsEnabled;
+    WorldSave->CheatsEnabled = bCheatsEnabled;
     WorldSave->PlayerHunger = PlayerHunger;
-    WorldSave->PlayerIslandsCorruption = PlayerIslandsCorruption;
+    WorldSave->PlayerIslandsCorruption = bCorruptionEventEnabled;
     WorldSave->PlayerIslandsCorruptionTime = PlayerIslandsCorruptionTime;
     WorldSave->PlayerIslandsCorruptionScale = PlayerIslandsCorruptionScale;
-    WorldSave->WildIslandsCorruption = WildIslandsCorruption;
-    WorldSave->WildIslandsCorruptionCycle = WildIslandsCorruptionCycle;
-    WorldSave->WildIslandsCorruptionScale = WildIslandsCorruptionScale;
     WorldSave->EssenceRequireForLevel = EssenceRequireForLevel;
     WorldSave->StaminaPerLevel = StaminaPerLevel;
     WorldSave->StrengthPerLevel = StrengthPerLevel;
@@ -87,6 +82,7 @@ void AGSS::SaveWorldSettings(UWorldSave* WorldSave)
     WorldSave->StaminaMaxLevel = StaminaMaxLevel;
     WorldSave->StrengthMaxLevel = StrengthMaxLevel;
     WorldSave->EssenceFlowMaxLevel = EssenceFlowMaxLevel;
+	WorldSave->bRespawnNPCs = bRespawnNPCs;
 }
 
 void AGSS::ResetWorldSettings()
@@ -126,6 +122,7 @@ void AGSS::BeginPlay()
 {
 	Super::BeginPlay();
 	GIS = GetWorld()->GetGameInstance<UGIS>();
+	if (HasAuthority()) SetActorTickEnabled(true);
 
 	if (StringTableWarnings.IsValid())
 	{
@@ -176,10 +173,10 @@ void AGSS::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProp
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, WorldSeed, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, TraversalAltitude, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, HostPlayer, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, BuildingInfiniteHeight, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, bBuildingInfiniteHeight, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, GroundedMax, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, ConnectedPlayers, Params);
-	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, CheatsEnabled, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, bCheatsEnabled, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, EssenceRequireForLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, StrengthPerLevel, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(AGSS, StaminaPerLevel, Params);

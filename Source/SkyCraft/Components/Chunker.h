@@ -19,9 +19,15 @@ public:
 	UChunker();
 
 	UPROPERTY() AGSS* GSS = nullptr;
+	
+	// Current player coordinates.
 	FCoords CurrentCoords;
+	
+	// Previous player coordinates.
 	FCoords PreviousCoords;
+	
 	TArray<FCoords> RenderingCoords;
+	
 	TArray<AChunkIsland*> RenderingChunks;
 	
 	virtual void BeginPlay() override;

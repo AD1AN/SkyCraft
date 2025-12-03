@@ -11,6 +11,9 @@ class AIsland;
 class AGMS;
 class UChunker;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangeLOD);
+
+// Only server side.
 UCLASS(Blueprintable)
 class SKYCRAFT_API AChunkIsland : public AActor
 {
@@ -28,15 +31,23 @@ public:
 	
 	AChunkIsland();
 	
-	UPROPERTY() AGMS* GMS = nullptr;
-	UPROPERTY(BlueprintReadOnly) AIsland* Island = nullptr;
-	TArray<UChunker*> Chunkers;
-	FCoords Coords;
-	FRandomStream ChunkSeed;
-	int32 ServerLOD = 666; // I'm the devil!
+	UPROPERTY()
+	AGMS* GMS = nullptr;
+
+	UPROPERTY(BlueprintReadOnly)
+	AIsland* Island = nullptr;
 	
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangeLOD);
-	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnChangeLOD OnChangeLOD;
+	TArray<UChunker*> Chunkers;
+
+	FCoords Coords;
+	
+	FRandomStream ChunkSeed;
+	
+	// Calculated by distance to the closest chunker.
+	int32 ServerLOD = 666;
+	
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnChangeLOD OnChangeLOD;
 
 	virtual void BeginPlay() override;
 

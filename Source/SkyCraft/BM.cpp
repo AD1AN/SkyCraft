@@ -175,7 +175,7 @@ void ABM::UpdateGrounded(uint8 NewGrounded, TArray<ABM*>& FlaggedDismantle)
 	AuthSetGrounded(NewGrounded);
 	AGSS* GSS = GetWorld()->GetGameState<AGSS>();
 	check(GSS);
-	if (!GSS->BuildingInfiniteHeight && NewGrounded > GSS->GroundedMax)
+	if (!GSS->bBuildingInfiniteHeight && NewGrounded > GSS->GroundedMax)
 	{
 		RecursiveDismantle(FlaggedDismantle);
 	}

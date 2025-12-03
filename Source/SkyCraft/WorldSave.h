@@ -67,6 +67,7 @@ public:
 	UPROPERTY() int32 StaminaMaxLevel = 1000;
 	UPROPERTY() int32 StrengthMaxLevel = 1000;
 	UPROPERTY() int32 EssenceFlowMaxLevel = 100;
+	UPROPERTY() bool bRespawnNPCs = true;
 	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< World Settings
 
 	// Key: Hashed Coords

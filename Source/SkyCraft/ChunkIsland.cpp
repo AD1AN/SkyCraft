@@ -15,6 +15,8 @@ AChunkIsland::AChunkIsland()
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
 
+	SetReplicates(false);
+
 	Root = CreateDefaultSubobject<USceneComponent>("Root");
 	SetRootComponent(Root);
 
@@ -79,9 +81,9 @@ void AChunkIsland::DestroyChunk()
 void AChunkIsland::UpdateLOD()
 {
 	int32 ClosestChunkDistance = INDEX_NONE;
-	for (UChunker*& Chunker : Chunkers)
+	for (auto& Chunker : Chunkers)
 	{
-		if (!Chunker) continue;
+		if (!IsValid(Chunker)) continue;
 		const int32 DistanceX = FMath::Abs(Chunker->CurrentCoords.X - Coords.X);
 		const int32 DistanceY = FMath::Abs(Chunker->CurrentCoords.Y - Coords.Y);
 		const int32 ChunkDistance = FMath::Max(DistanceX, DistanceY);

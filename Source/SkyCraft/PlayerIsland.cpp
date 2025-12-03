@@ -116,7 +116,7 @@ void APlayerIsland::Tick(float DeltaSeconds)
 	}
 
 	// Island Corruption
-	if (HasAuthority() && GSS->PlayerIslandsCorruption)
+	if (HasAuthority() && GSS->bCorruptionEventEnabled)
 	{
 		CorruptionTime += DeltaSeconds;
 		if (CorruptionTime >= GSS->PlayerIslandsCorruptionTime)

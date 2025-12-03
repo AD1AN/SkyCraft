@@ -8,13 +8,16 @@
 #include "GMS.h"
 #include "GSS.h"
 #include "NPC.h"
+#include "RepHelpers.h"
 #include "WorldSave.h"
 #include "AI/NavigationSystemBase.h"
 #include "Components/GrowingResourcesComponent.h"
 #include "Components/EntityComponent.h"
+#include "Components/NPCSpawner.h"
 #include "Components/TerrainChunk.h"
 #include "DataAssets/DA_Foliage.h"
 #include "DataAssets/DA_IslandBiome.h"
+#include "DataAssets/DA_NPC.h"
 #include "DataAssets/DA_Resource.h"
 #include "SkyCraft/Components/FoliageHISM.h"
 #include "Net/UnrealNetwork.h"
@@ -42,6 +45,7 @@ AIsland::AIsland()
 	AttachSimulatedBodies->SetupAttachment(RootComponent);
 
 	GrowingResourcesComponent = CreateDefaultSubobject<UGrowingResourcesComponent>("GrowingResourcesComponent");
+	NPCSpawnerComponent = CreateDefaultSubobject<UNPCSpawner>("NPCSpawnerComponent");
 }
 
 #if WITH_EDITOR
@@ -495,8 +499,6 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 	
 	if (HasAuthority())
 	{
-		LoadedLowestLOD = FMath::Max(GSS->ChunkRenderRange, DA_IslandBiome->IslandLODs.Num());
-		
 		for (int32 i = 0; i < 4; ++i)
 		{
 			UTerrainChunk* TerrainChunk = NewObject<UTerrainChunk>(this);
@@ -510,17 +512,22 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 			LoadBuildings();
 			LoadDroppedItems();
 		}
-		if (bLoadFromSave) LoadIsland();
+		
+		if (bLoadFromSave)
+		{
+			LoadIsland();
+		}
 		else
 		{
-			for (int32 LoadLowestLOD = LoadedLowestLOD-1; LoadLowestLOD >= ServerLOD; --LoadLowestLOD)
+			for (int32 LOD = GetLastLOD(); LOD >= ServerLOD; --LOD)
 			{
-				GenerateLOD(LoadLowestLOD);
+				GenerateLOD(LOD);
 			}
 		}
+		
 		if (!LoadLOD(INDEX_NONE)) GenerateLOD(INDEX_NONE); // Load/Generate AlwaysLOD;
 		
-		LoadedLowestLOD = ServerLOD;
+		LowestServerLOD = ServerLOD;
 	}
 	
 	PMC_Main->CreateMeshSection(0, IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopNormals, IslandData.TopUVs, {}, IslandData.TopTangents, true);
@@ -556,7 +563,7 @@ void AIsland::SetServerLOD(int32 NewLOD)
 		InitialGenerateComplete(_ID);
 	}
 	
-	if (bFullGenerated && NewLOD < LoadedLowestLOD)
+	if (bFullGenerated && NewLOD < LowestServerLOD)
 	{
 		if (NewLOD == 0)
 		{
@@ -565,17 +572,15 @@ void AIsland::SetServerLOD(int32 NewLOD)
 			LoadDroppedItems();
 		}
 
-		for (int32 LoadLowestLOD = LoadedLowestLOD-1; LoadLowestLOD >= NewLOD; --LoadLowestLOD)
+		for (int32 LOD = LowestServerLOD-1; LOD >= NewLOD; --LOD)
 		{
-			if (!LoadLOD(LoadLowestLOD)) GenerateLOD(LoadLowestLOD);
+			if (!LoadLOD(LOD)) GenerateLOD(LOD);
 		}
 		
-		LoadedLowestLOD = NewLOD;
+		LowestServerLOD = NewLOD;
 	}
 	
-	ServerLOD = NewLOD;
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, ServerLOD, this);
-	OnServerLOD.Broadcast();
+	REP_SET(ServerLOD, NewLOD);
 }
 
 void AIsland::FoliageRemove(FVector_NetQuantize Location, float Radius)
@@ -777,7 +782,7 @@ void AIsland::DestroyLODs()
 		// Destroy NPCs
 		for (auto& NPCInstance : SpawnedLOD.Value.NPCInstances)
 		{
-			for (auto& NPC : NPCInstance.NPCs)
+			for (auto& NPC : NPCInstance.SpawnedNPCs)
 			{
 				if (!IsValid(NPC)) continue;
 				NPC->Destroy();
@@ -785,90 +790,6 @@ void AIsland::DestroyLODs()
 		}
 	}
 	SpawnedLODs.Empty();
-}
-
-void AIsland::LoadIsland()
-{
-	// Foliage Loads themselves in FoliageHISM
-
-	// Load/Generate IslandLODs
-	int32 LowestLOD = FMath::Max(DA_IslandBiome->IslandLODs.Num()-1, SS_Island.IslandLODs.Num()-1);
-	for (int32 LOD = LowestLOD; LOD >= ServerLOD; --LOD)
-	{
-		if (!LoadLOD(LOD)) GenerateLOD(LOD);
-	}
-
-	// Load EditedVertices
-	int32 i = 0;
-	for (FSS_TerrainChunk& SS_TerrainChunk : SS_Island.TerrainChunks)
-	{
-		if (!TerrainChunks.IsValidIndex(i)) continue;
-		if (!IsValid(TerrainChunks[i])) continue;
-		TerrainChunks[i]->EditedVertices = SS_TerrainChunk.EditedVertices;
-		if (TerrainChunks[i]->EditedVertices.IsEmpty()) continue;
-		for (const FEditedVertex& EditedVertex : TerrainChunks[i]->EditedVertices)
-		{
-			IslandData.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
-		}
-		++i;
-	}
-	CalculateNormalsAndTangents(IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopUVs, IslandData.TopNormals, IslandData.TopTangents);
-	SS_Island.TerrainChunks.Empty();
-}
-
-bool AIsland::LoadLOD(int32 LoadLODIndex)
-{
-	for (auto& SS_IslandLOD : SS_Island.IslandLODs)
-	{
-		if (SS_IslandLOD.LOD != LoadLODIndex) continue;
-		FSpawnedIslandLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
-
-		// Load Resources.
-		for (const auto& SS_Resource : SS_IslandLOD.Resources)
-		{
-			if (!SS_Resource.DA_Resource) continue;
-			FTransform ResTransform;
-			ResTransform.SetLocation(SS_Resource.RelativeLocation);
-			ResTransform.SetRotation(FQuat(SS_Resource.RelativeRotation));
-			TSubclassOf<AResource> ResourceClass = (SS_Resource.DA_Resource->OverrideResourceClass) ? SS_Resource.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
-			AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
-			SpawnedRes->bLoaded = true;
-			SpawnedRes->Island = this;
-			SpawnedRes->EntityComponent->OverrideHealth(SS_Resource.Health);
-			SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
-			SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
-			SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
-			SpawnedRes->Growing = SS_Resource.Growing;
-			SpawnedRes->CurrentGrowTime = SS_Resource.CurrentGrowTime;
-			SpawnedRes->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-			SpawnedRes->FinishSpawning(ResTransform);
-			SpawnedLOD.Resources.Add(SpawnedRes);
-		}
-
-		// Load NPCs
-		for (auto& SS_NPCInstance : SS_IslandLOD.NPCInstances)
-		{
-			if (!IsValid(SS_NPCInstance.NPC_Class)) continue;
-			FNPCInstance NPCInstance;
-			NPCInstance.NPCClass = SS_NPCInstance.NPC_Class;
-			NPCInstance.MaxInstances = SS_NPCInstance.MaxInstances;
-			for (auto& SS_NPC : SS_NPCInstance.NPCs)
-			{
-				FTransform LoadTransform = SS_NPC.Transform;
-				LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,60));
-				ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPCInstance.NPC_Class, LoadTransform);
-				SpawnedNPC->ParentIsland = this;
-				SpawnedNPC->SetBase(PMC_Main, NAME_None, false);
-				SpawnedNPC->IslandLODIndex = LoadLODIndex;
-				SpawnedNPC->FinishSpawning(LoadTransform);
-				SpawnedNPC->LoadNPC(SS_NPC);
-				NPCInstance.NPCs.Add(SpawnedNPC);
-			}
-			SpawnedLOD.NPCInstances.Add(NPCInstance);
-		}
-		return true;
-	}
-	return false;
 }
 
 void AIsland::GenerateLOD(int32 GenerateLODIndex)
@@ -1002,11 +923,11 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 	// Generate NPCs
 	for (auto& NPC : IslandLOD.NPCs)
 	{
-		ensureAlways(NPC.NPC_Class);
-		if (!NPC.NPC_Class) continue;
+		ensureAlways(NPC.DA_NPC);
+		if (!NPC.DA_NPC) continue;
 
 		FNPCInstance InstanceNPC;
-		InstanceNPC.NPCClass = NPC.NPC_Class;
+		InstanceNPC.DA_NPC = NPC.DA_NPC;
 		InstanceNPC.MaxInstances = FMath::Lerp(NPC.MaxSpawnPoints/10, NPC.MaxSpawnPoints, IslandSize);
 		
 		int32 SpawnedNPCs = 0;
@@ -1030,16 +951,105 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 			}
 
 			FTransform NpcTransform(GetActorLocation() + RandomPoint + FVector(0,0,60));
-			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(NPC.NPC_Class, NpcTransform);
+			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(NPC.DA_NPC->NPCClass, NpcTransform);
 			SpawnedNPC->ParentIsland = this;
 			SpawnedNPC->IslandLODIndex = GenerateLODIndex;
 			SpawnedNPC->FinishSpawning(NpcTransform);
-			InstanceNPC.NPCs.Add(SpawnedNPC);
+			InstanceNPC.SpawnedNPCs.Add(SpawnedNPC);
 			++SpawnedNPCs;
 			Attempts = 0;
 		}
 		SpawnedLOD.NPCInstances.Add(InstanceNPC);
 	}
+}
+
+int32 AIsland::GetLastLOD()
+{
+	return FMath::Max(0, DA_IslandBiome->IslandLODs.Num()-1);
+}
+
+void AIsland::LoadIsland()
+{
+	// Foliage Loads themselves in FoliageHISM
+
+	// Load/Generate IslandLODs
+	int32 LowestLOD = FMath::Max(GetLastLOD(), SS_Island.IslandLODs.Num()-1);
+	for (int32 LOD = LowestLOD; LOD >= ServerLOD; --LOD)
+	{
+		if (!LoadLOD(LOD)) GenerateLOD(LOD);
+	}
+
+	// Load EditedVertices
+	int32 i = 0;
+	for (FSS_TerrainChunk& SS_TerrainChunk : SS_Island.TerrainChunks)
+	{
+		if (!TerrainChunks.IsValidIndex(i)) continue;
+		if (!IsValid(TerrainChunks[i])) continue;
+		TerrainChunks[i]->EditedVertices = SS_TerrainChunk.EditedVertices;
+		if (TerrainChunks[i]->EditedVertices.IsEmpty()) continue;
+		for (const FEditedVertex& EditedVertex : TerrainChunks[i]->EditedVertices)
+		{
+			IslandData.TopVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
+		}
+		++i;
+	}
+	CalculateNormalsAndTangents(IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopUVs, IslandData.TopNormals, IslandData.TopTangents);
+	SS_Island.TerrainChunks.Empty();
+}
+
+bool AIsland::LoadLOD(int32 LoadLODIndex)
+{
+	for (auto& SS_IslandLOD : SS_Island.IslandLODs)
+	{
+		if (SS_IslandLOD.LOD != LoadLODIndex) continue;
+		FSpawnedIslandLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
+
+		// Load Resources.
+		for (const auto& SS_Resource : SS_IslandLOD.Resources)
+		{
+			if (!SS_Resource.DA_Resource) continue;
+			FTransform ResTransform;
+			ResTransform.SetLocation(SS_Resource.RelativeLocation);
+			ResTransform.SetRotation(FQuat(SS_Resource.RelativeRotation));
+			TSubclassOf<AResource> ResourceClass = (SS_Resource.DA_Resource->OverrideResourceClass) ? SS_Resource.DA_Resource->OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+			AResource* SpawnedRes = GetWorld()->SpawnActorDeferred<AResource>(ResourceClass, ResTransform);
+			SpawnedRes->bLoaded = true;
+			SpawnedRes->Island = this;
+			SpawnedRes->EntityComponent->OverrideHealth(SS_Resource.Health);
+			SpawnedRes->DA_Resource = SS_Resource.DA_Resource;
+			SpawnedRes->ResourceSize = SS_Resource.ResourceSize;
+			SpawnedRes->SM_Variety = SS_Resource.SM_Variety;
+			SpawnedRes->Growing = SS_Resource.Growing;
+			SpawnedRes->CurrentGrowTime = SS_Resource.CurrentGrowTime;
+			SpawnedRes->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+			SpawnedRes->FinishSpawning(ResTransform);
+			SpawnedLOD.Resources.Add(SpawnedRes);
+		}
+
+		// Load NPCs
+		for (auto& SS_NPCInstance : SS_IslandLOD.NPCInstances)
+		{
+			if (!IsValid(SS_NPCInstance.DA_NPC)) continue;
+			FNPCInstance NPCInstance;
+			NPCInstance.DA_NPC = SS_NPCInstance.DA_NPC;
+			NPCInstance.MaxInstances = SS_NPCInstance.MaxInstances;
+			for (auto& SS_NPC : SS_NPCInstance.SpawnedNPCs)
+			{
+				FTransform LoadTransform = SS_NPC.Transform;
+				LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,60));
+				ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPCInstance.DA_NPC->NPCClass, LoadTransform);
+				SpawnedNPC->ParentIsland = this;
+				SpawnedNPC->SetBase(PMC_Main, NAME_None, false);
+				SpawnedNPC->IslandLODIndex = LoadLODIndex;
+				SpawnedNPC->FinishSpawning(LoadTransform);
+				SpawnedNPC->LoadNPC(SS_NPC);
+				NPCInstance.SpawnedNPCs.Add(SpawnedNPC);
+			}
+			SpawnedLOD.NPCInstances.Add(NPCInstance);
+		}
+		return true;
+	}
+	return false;
 }
 
 void AIsland::LoadBuildings()
@@ -1136,14 +1146,14 @@ TArray<FSS_IslandLOD> AIsland::SaveLODs()
 		for (auto& NPCInstance : SpawnedLOD.Value.NPCInstances)
 		{
 			FSS_NPCInstance SS_NPCInstance;
-			SS_NPCInstance.NPC_Class = NPCInstance.NPCClass;
+			SS_NPCInstance.DA_NPC = NPCInstance.DA_NPC;
 			SS_NPCInstance.MaxInstances = NPCInstance.MaxInstances;
-			for (auto& NPC : NPCInstance.NPCs)
+			for (auto& NPC : NPCInstance.SpawnedNPCs)
 			{
 				if (!IsValid(NPC)) continue;
 				FSS_NPC SS_NPC;
 				SS_NPC = NPC->SaveNPC();
-				SS_NPCInstance.NPCs.Add(SS_NPC);
+				SS_NPCInstance.SpawnedNPCs.Add(SS_NPC);
 			}
 			SS_IslandLOD.NPCInstances.Add(SS_NPCInstance);
 		}

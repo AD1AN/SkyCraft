@@ -7,6 +7,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/CorruptionOverlayEffect.h"
 #include "Components/SuffocationComponent.h"
+#include "DataAssets/DA_NPC.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
@@ -171,9 +172,9 @@ void ANPC::RemoveFromIsland() // TODO: for NightNPCs
 	FSpawnedIslandLOD& SpawnedLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
 	for (auto& NPCInstance : SpawnedLOD.NPCInstances)
 	{
-		if (NPCInstance.NPCClass == GetClass())
+		if (NPCInstance.DA_NPC->NPCClass == GetClass())
 		{
-			NPCInstance.NPCs.RemoveSingle(this);
+			NPCInstance.SpawnedNPCs.RemoveSingle(this);
 		}
 	}
 	ParentIsland->OnServerLOD.RemoveDynamic(this, &ANPC::ChangedLOD);
@@ -190,9 +191,9 @@ void ANPC::AddToIsland(AIsland* NewIsland)
 	FSpawnedIslandLOD& SpawnedLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
 	for (auto& NPCInstance : SpawnedLOD.NPCInstances)
 	{
-		if (NPCInstance.NPCClass == GetClass())
+		if (NPCInstance.DA_NPC->NPCClass == GetClass())
 		{
-			NPCInstance.NPCs.Add(this);
+			NPCInstance.SpawnedNPCs.Add(this);
 		}
 	}
 	

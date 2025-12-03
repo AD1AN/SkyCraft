@@ -22,7 +22,7 @@ enum class ENPCType : uint8
 	Nocturnal
 };
 
-UCLASS()
+UCLASS(Abstract)
 class SKYCRAFT_API ANPC : public AAdianCharacter, public IEntityInterface, public IIslandInterface
 {
 	GENERATED_BODY()

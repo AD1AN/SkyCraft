@@ -7,6 +7,7 @@
 #include "SkyCraft/Components/FoliageHISM.h"
 #include "SS_Island.generated.h"
 
+class UDA_NPC;
 class UDA_Foliage;
 class UDA_Resource;
 class ANPC;
@@ -38,9 +39,9 @@ USTRUCT()
 struct FSS_NPCInstance
 {
 	GENERATED_BODY()
-	UPROPERTY() TSubclassOf<ANPC> NPC_Class = nullptr;
+	UPROPERTY() UDA_NPC* DA_NPC = nullptr;
 	UPROPERTY() int32 MaxInstances = 1;
-	UPROPERTY() TArray<FSS_NPC> NPCs;
+	UPROPERTY() TArray<FSS_NPC> SpawnedNPCs;
 };
 
 USTRUCT()
@@ -83,6 +84,7 @@ struct FSS_Island
 	UPROPERTY() TArray<FSS_TerrainChunk> TerrainChunks;
 	UPROPERTY() TArray<FSS_Foliage> Foliage;
 	UPROPERTY() TArray<FSS_IslandLOD> IslandLODs;
+	UPROPERTY() TArray<FSS_NPCInstance> NPCNocturneInstances;
 	UPROPERTY() TArray<FSS_Building> Buildings;
 	UPROPERTY() TArray<FSS_DroppedItem> DroppedItems;
 };

@@ -25,7 +25,7 @@
 
 #define LOCTEXT_NAMESPACE "GMS"
 
-AGMS::AGMS(){}
+AGMS::AGMS() {}
 
 APlayerController* AGMS::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {

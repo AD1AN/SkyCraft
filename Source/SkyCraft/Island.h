@@ -8,8 +8,11 @@
 #include "Structs/SS_Island.h"
 #include "ProceduralMeshComponent.h"
 #include "Structs/Coords.h"
+#include "Structs/NPCInstance.h"
 #include "Island.generated.h"
 
+class UDA_NPC;
+class UNPCSpawner;
 class ANavMeshBoundsVolume;
 class UDA_IslandBiome;
 class AChunkIsland;
@@ -25,15 +28,6 @@ class AResource;
 class ANPC;
 class ABM;
 struct FSS_Building;
-
-USTRUCT()
-struct FNPCInstance
-{
-	GENERATED_BODY()
-	UPROPERTY() TSubclassOf<ANPC> NPCClass;
-	UPROPERTY() int32 MaxInstances = 0;
-	UPROPERTY() TArray<ANPC*> NPCs;
-};
 
 USTRUCT()
 struct FSpawnedIslandLOD
@@ -95,6 +89,7 @@ public:
 	UPROPERTY(VisibleAnywhere) TArray<TObjectPtr<UInstancedStaticMeshComponent>> CliffsComponents;
 	UPROPERTY(VisibleAnywhere) TArray<TObjectPtr<UFoliageHISM>> FoliageComponents;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UGrowingResourcesComponent> GrowingResourcesComponent;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UNPCSpawner> NPCSpawnerComponent;
 	
 	bool bPlayerIsland = false;
 	
@@ -141,18 +136,32 @@ public:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, meta=(ExposeOnSpawn)) bool bLoadFromSave = false;
 	UPROPERTY() FSS_Island SS_Island;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) bool bIslandCanSave = false;
+
+	// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Island LOD
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnServerLOD OnServerLOD;
+
+	// Current LOD.
+	// Calculated by closest chunker distance.
+	// In AChunkIsland::UpdateLOD set via SetServerLOD.
+	UPROPERTY(VisibleInstanceOnly, ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly)
+	int32 ServerLOD = -1;
+
+	UFUNCTION(BlueprintCallable)
+	void SetServerLOD(int32 NewLOD);
+
+	UFUNCTION() void OnRep_ServerLOD() { OnServerLOD.Broadcast(); }
 	
-	UPROPERTY(BlueprintAssignable, BlueprintCallable) FOnServerLOD OnServerLOD;
-	UPROPERTY(VisibleInstanceOnly, ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly, meta=(ExposeOnSpawn)) int32 ServerLOD = -1;
-	UPROPERTY(VisibleInstanceOnly) int32 LoadedLowestLOD = 666; // Only decreases.
-	UPROPERTY(VisibleInstanceOnly) int32 ClientLOD = -1; // TODO: Implement Client LOD system, maybe for future needs.
-	UFUNCTION(BlueprintCallable) void SetServerLOD(int32 NewLOD);
-	
-	// Key: LOD index. INDEX_NONE(-1) = AlwaysLOD.
-	UPROPERTY(VisibleInstanceOnly) TMap<int32, FSpawnedIslandLOD> SpawnedLODs;
+	// Generated or loaded lowest LOD.
+	// Only decreases.
+	UPROPERTY(VisibleInstanceOnly)
+	int32 LowestServerLOD = 666;
+	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Island LOD
 
 	TMap<UDA_Resource*, TMap<int32, FVector>> ResourcesGridMap;
-	TArray<FNPCInstance> NightNPCInstances;
+
+	// Key: LOD index. INDEX_NONE(-1) = AlwaysLOD.
+	TMap<int32, FSpawnedIslandLOD> SpawnedLODs;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ABM*> Buildings;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ADroppedItem*> DroppedItems;
@@ -178,6 +187,7 @@ public:
 	UFUNCTION(BlueprintCallable) void DestroyLODs();
 
 	void GenerateLOD(int32 GenerateLODIndex);
+	int32 GetLastLOD();
 
 	UFUNCTION(BlueprintCallable) void LoadIsland();
 	bool LoadLOD(int32 LoadLODIndex);
@@ -212,8 +222,6 @@ public:
 	TArray<int32> FindVerticesInRadius(const FVector Location, float Radius); // Maybe for future needs
 
 	uint8 TerrainChunkIndex(int32 X, int32 Y, int32 HalfResolution);
-
-	UFUNCTION() void OnRep_ServerLOD() { OnServerLOD.Broadcast(); }
 
 private:
 	UPROPERTY() TArray<ANPC*> CorruptedNPCs;

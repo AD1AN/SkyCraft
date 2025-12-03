@@ -53,16 +53,13 @@ public:
 	UPROPERTY(BlueprintReadWrite) float PlayerIslandSpawnXY = 75000.0;
 	UPROPERTY(BlueprintReadWrite) FFloatMinMax PlayerIslandSpawnZ = FFloatMinMax(80000, 95000);
 	UPROPERTY(BlueprintReadWrite) float SkyEssenceDensity = 1.0f;
-	UPROPERTY(BlueprintReadWrite, Replicated) bool BuildingInfiniteHeight = false;
+	UPROPERTY(BlueprintReadWrite, Replicated) bool bBuildingInfiniteHeight = false;
 	UPROPERTY(BlueprintReadWrite, Replicated) uint8 GroundedMax = 15;
-	UPROPERTY(BlueprintReadWrite, Replicated) bool CheatsEnabled = false;
+	UPROPERTY(BlueprintReadWrite, Replicated) bool bCheatsEnabled = false;
 	UPROPERTY(BlueprintReadWrite) float PlayerHunger = 1.0f;
-	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_PlayerIslandCorruptionSettings) bool PlayerIslandsCorruption = true; // Corruption = Скверна
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_PlayerIslandCorruptionSettings) bool bCorruptionEventEnabled = true; // Corruption = Скверна
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_PlayerIslandCorruptionSettings) float PlayerIslandsCorruptionTime = 3600.0f; // Seconds
 	UPROPERTY(BlueprintReadWrite) float PlayerIslandsCorruptionScale = 1.0f;
-	UPROPERTY(BlueprintReadWrite, Replicated) bool WildIslandsCorruption = true; // Corruption on wild Islands on night.
-	UPROPERTY(BlueprintReadWrite) uint8 WildIslandsCorruptionCycle = 0; // Cycle of Nights. 0 = Every night corruption.
-	UPROPERTY(BlueprintReadWrite) float WildIslandsCorruptionScale = 1.0f;
 	UPROPERTY(BlueprintReadWrite, Replicated) int32 EssenceRequireForLevel = 1000;
 	UPROPERTY(BlueprintReadWrite, Replicated) int32 StaminaPerLevel = 1;
 	UPROPERTY(BlueprintReadWrite, Replicated) int32 StrengthPerLevel = 1;
@@ -71,6 +68,13 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated) int32 StaminaMaxLevel = 1000;
 	UPROPERTY(BlueprintReadWrite, Replicated) int32 StrengthMaxLevel = 1000;
 	UPROPERTY(BlueprintReadWrite, Replicated) int32 EssenceFlowMaxLevel = 100;
+	UPROPERTY(BlueprintReadWrite) bool bNocturneEventEnabled = true;
+	UPROPERTY(BlueprintReadWrite) float NocturneStartTime = 1900;
+	UPROPERTY(BlueprintReadWrite) float NocturneEndTime = 300;
+	UPROPERTY(BlueprintReadWrite) float NocturneIntensity = 1.0f;
+	UPROPERTY(BlueprintReadWrite) bool bRespawnNPCs = true;
+	UPROPERTY(BlueprintReadWrite) float TimeFallingMeteors = 10000;
+	UPROPERTY(BlueprintReadWrite) float TimeTravelingMeteors = 10000;
 
 	UFUNCTION(BlueprintCallable) void OnRep_PlayerIslandCorruptionSettings() { OnPlayerIslandCorruptionSettings.Broadcast(); }
 	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<< World Settings

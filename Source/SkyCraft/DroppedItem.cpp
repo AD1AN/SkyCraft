@@ -81,6 +81,8 @@ void ADroppedItem::BeginPlay()
 	
 	if (HasAuthority())
 	{
+		SetActorRotation(FRotator(0.0f, FMath::RandRange(0.0f, 360.0f), 0.0f));
+		
 		SphereComponent->SetNotifyRigidBodyCollision(true);
 		
 		if (DropDirectionType == EDropDirectionType::RandomDirection)

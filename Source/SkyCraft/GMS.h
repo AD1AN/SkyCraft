@@ -26,13 +26,14 @@ UCLASS()
 class SKYCRAFT_API AGMS : public AGameModeBase
 {
 	GENERATED_BODY()
-
 public:
+	
 	AGMS();
 
 	UPROPERTY() TObjectPtr<UGIS> GIS;
 	UPROPERTY() TObjectPtr<AGSS> GSS;
 	UPROPERTY() TObjectPtr<UNavigationSystemV1> NavSystem;
+	UPROPERTY() TObjectPtr<class AWorldEvents> WorldEvents;
 	
 	UPROPERTY(BlueprintReadOnly) TObjectPtr<UWorldSave> WorldSave;
 

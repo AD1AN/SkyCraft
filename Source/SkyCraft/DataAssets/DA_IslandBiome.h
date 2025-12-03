@@ -11,12 +11,13 @@
 class ANPC;
 class UDA_Resource;
 class UDA_Foliage;
+class UDA_NPC;
 
 USTRUCT(BlueprintType)
 struct FIslandNPC
 {
 	GENERATED_BODY()
-	UPROPERTY(EditDefaultsOnly) TSubclassOf<ANPC> NPC_Class;
+	UPROPERTY(EditDefaultsOnly) UDA_NPC* DA_NPC = nullptr;
 	UPROPERTY(EditDefaultsOnly) int32 MaxSpawnPoints = 1000;
 };
 
