@@ -31,16 +31,11 @@ public:
 	
 	AChunkIsland();
 	
-	UPROPERTY()
-	AGMS* GMS = nullptr;
-
-	UPROPERTY(BlueprintReadOnly)
-	AIsland* Island = nullptr;
+	UPROPERTY() AGMS* GMS = nullptr;
+	UPROPERTY(BlueprintReadOnly) AIsland* Island = nullptr;
 	
 	TArray<UChunker*> Chunkers;
-
 	FCoords Coords;
-	
 	FRandomStream ChunkSeed;
 	
 	// Calculated by distance to the closest chunker.

@@ -282,6 +282,12 @@ void APlayerNormal::OnHunger()
 	}
 }
 
+AIsland* APlayerNormal::GetIsland()
+{
+	if (GetMovementBase()) return Cast<AIsland>(GetMovementBase()->GetOwner());
+	else return nullptr;
+}
+
 void APlayerNormal::Server_SetQSI_Implementation(bool bIsMainQSI, int32 QSI)
 {
 	if (bIsMainQSI)

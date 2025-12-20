@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "RepHelpers.h"
 #include "GameFramework/GameState.h"
 #include "Structs/FloatMinMax.h"
 #include "Structs/Cue.h"
@@ -18,6 +19,7 @@ class APSS;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerIslandCorruptionSettings);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnConnectedPlayers);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCheatsEnabled);
 
 UCLASS()
 class SKYCRAFT_API AGSS : public AGameStateBase
@@ -48,14 +50,14 @@ public:
 	UPROPERTY(BlueprintReadWrite) float ChunkSize = 100000;
 	UPROPERTY(BlueprintReadWrite) float IslandsProbability = 0.5f; // From 0 to 1.
 	UPROPERTY(BlueprintReadWrite) FFloatMinMax IslandsAltitude = FFloatMinMax(90000, 100000);
-	UPROPERTY(BlueprintReadWrite, Replicated) FFloatMinMax TraversalAltitude = FFloatMinMax(30000, 110000);
-	UPROPERTY(BlueprintReadWrite) FFloatMinMax Suffocation = FFloatMinMax(80000, 150000);
+	UPROPERTY(BlueprintReadWrite, Replicated) FFloatMinMax TraversalAltitude = FFloatMinMax(70000, 110000);
+	UPROPERTY(BlueprintReadWrite) FFloatMinMax Suffocation = FFloatMinMax(50000, 150000);
 	UPROPERTY(BlueprintReadWrite) float PlayerIslandSpawnXY = 75000.0;
 	UPROPERTY(BlueprintReadWrite) FFloatMinMax PlayerIslandSpawnZ = FFloatMinMax(80000, 95000);
 	UPROPERTY(BlueprintReadWrite) float SkyEssenceDensity = 1.0f;
 	UPROPERTY(BlueprintReadWrite, Replicated) bool bBuildingInfiniteHeight = false;
 	UPROPERTY(BlueprintReadWrite, Replicated) uint8 GroundedMax = 15;
-	UPROPERTY(BlueprintReadWrite, Replicated) bool bCheatsEnabled = false;
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_bCheatsEnabled) bool bCheatsEnabled = false;
 	UPROPERTY(BlueprintReadWrite) float PlayerHunger = 1.0f;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_PlayerIslandCorruptionSettings) bool bCorruptionEventEnabled = true; // Corruption = Скверна
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_PlayerIslandCorruptionSettings) float PlayerIslandsCorruptionTime = 3600.0f; // Seconds
@@ -115,11 +117,17 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class UCorruptionOverlayEffect> CorruptionOverlayEffectClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class AIslandCrystal> IslandCrystalClass = nullptr;
 	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class APawnIslandControl> PawnIslandControl = nullptr;
+	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TObjectPtr<class UDA_DamageAction> NocturnePerishDeathDamage;
+	UPROPERTY(EditDefaultsOnly, Category="Blueprint Classes") TSubclassOf<class ATradeCityActor> TradeCityActorClass;
 	// <<<<<<<<<<<<<<<<<<<<<<<<<<< Blueprint Classes
 	
 	UPROPERTY(BlueprintAssignable) FOnConnectedPlayers OnConnectedPlayers;
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing=OnRep_ConnectedPlayers) TArray<APSS*> ConnectedPlayers;
 	UFUNCTION() void OnRep_ConnectedPlayers() { OnConnectedPlayers.Broadcast(); }
+
+	UPROPERTY(BlueprintAssignable) FOnCheatsEnabled OnCheatsEnabled;
+	UFUNCTION() void OnRep_bCheatsEnabled() { OnCheatsEnabled.Broadcast(); }
+	UFUNCTION(BlueprintCallable) void Set_bCheatsEnabled(bool NewValue) { REP_SET(bCheatsEnabled, NewValue); }
 
 	UFUNCTION(BlueprintImplementableEvent) float GetTimeOfDay();
 	

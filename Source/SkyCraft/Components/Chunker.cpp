@@ -3,12 +3,12 @@
 #pragma once
 
 #include "Chunker.h"
-
 #include "SkyCraft/ChunkIsland.h"
 #include "SkyCraft/GIS.h"
 #include "SkyCraft/GMS.h"
 #include "SkyCraft/GSS.h"
 #include "SkyCraft/Island.h"
+#include "SkyCraft/TradeCityActor.h"
 #include "SkyCraft/WorldSave.h"
 #include "SkyCraft/DataAssets/DA_IslandBiome.h"
 
@@ -119,31 +119,48 @@ void UChunker::SpawnChunks()
 						GSS->GMS->SpawnedChunkIslands.Add(SpawnedChunk);
 						GSS->GMS->SpawnedChunkIslandsCoords.Add(ChunkCoords);
 						
-						if (ChunkSeed.FRand() <= GSS->IslandsProbability) // Decide if there's Island in this chunk.
+						if (ChunkCoords.X == 0 && ChunkCoords.Y == 0)
 						{
-							UDA_IslandBiome* DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(ChunkSeed);
-							float IslandSize = ChunkSeed.FRandRange(DA_IslandBiome->IslandSize.Min, DA_IslandBiome->IslandSize.Max);
-							FTransform IslandTransform;
-							FVector IslandLocation = ChunkTransform.GetLocation();
-							
-							IslandLocation.Z = ChunkSeed.RandRange(GSS->IslandsAltitude.Min, GSS->IslandsAltitude.Max);
-							IslandTransform.SetLocation(IslandLocation);
-							AIsland* SpawnedIsland = GetWorld()->SpawnActorDeferred<AIsland>(AIsland::StaticClass(), IslandTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-							SpawnedIsland->GSS = GSS;
-							SpawnedIsland->DA_IslandBiome = DA_IslandBiome;
-							// Load island from save.
-							if (FSS_Island* SS_Island = GSS->GMS->WorldSave->SavedIslands.Find(ChunkCoords.HashCoords()))
+							// Do not spawn anything here. This chunk for players island.
+						}
+						else if (ChunkCoords.X == 2 && ChunkCoords.Y == 0) // shipping build: 10000 & 10000
+						{
+							FTransform TradeCityTransform;
+							TradeCityTransform.SetLocation(ChunkTransform.GetLocation());
+
+							ATradeCityActor* TradeCityActor = GetWorld()->SpawnActorDeferred<ATradeCityActor>(GSS->TradeCityActorClass, TradeCityTransform);
+							TradeCityActor->Chunk = SpawnedChunk;
+							TradeCityActor->FinishSpawning(TradeCityTransform);
+						}
+						else
+						{
+							// Decide if there's Island in this chunk.
+							if (ChunkSeed.FRand() <= GSS->IslandsProbability)
 							{
-								SpawnedIsland->bLoadFromSave = true;
-								SpawnedIsland->SS_Island = *SS_Island;
+								UDA_IslandBiome* DA_IslandBiome = GSS->GMS->GetRandomIslandBiome(ChunkSeed);
+								float IslandSize = ChunkSeed.FRandRange(DA_IslandBiome->IslandSize.Min, DA_IslandBiome->IslandSize.Max);
+								FTransform IslandTransform;
+								FVector IslandLocation = ChunkTransform.GetLocation();
+							
+								IslandLocation.Z = ChunkSeed.RandRange(GSS->IslandsAltitude.Min, GSS->IslandsAltitude.Max);
+								IslandTransform.SetLocation(IslandLocation);
+								AIsland* SpawnedIsland = GetWorld()->SpawnActorDeferred<AIsland>(AIsland::StaticClass(), IslandTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+								SpawnedIsland->GSS = GSS;
+								SpawnedIsland->DA_IslandBiome = DA_IslandBiome;
+								// Load island from save.
+								if (FSS_Island* SS_Island = GSS->GMS->WorldSave->SavedIslands.Find(ChunkCoords.HashCoords()))
+								{
+									SpawnedIsland->bLoadFromSave = true;
+									SpawnedIsland->SS_Island = *SS_Island;
+								}
+								SpawnedIsland->ChunkIsland = SpawnedChunk;
+								SpawnedIsland->Coords = ChunkCoords;
+								SpawnedIsland->Seed = ChunkSeed;
+								SpawnedIsland->IslandSize = IslandSize;
+								SpawnedIsland->ServerLOD = SpawnedChunk->ServerLOD;
+								SpawnedIsland->FinishSpawning(IslandTransform);
+								SpawnedChunk->Island = SpawnedIsland;
 							}
-							SpawnedIsland->ChunkIsland = SpawnedChunk;
-							SpawnedIsland->Coords = ChunkCoords;
-							SpawnedIsland->Seed = ChunkSeed;
-							SpawnedIsland->IslandSize = IslandSize;
-							SpawnedIsland->ServerLOD = SpawnedChunk->ServerLOD;
-							SpawnedIsland->FinishSpawning(IslandTransform);
-							SpawnedChunk->Island = SpawnedIsland;
 						}
 					}
 					else

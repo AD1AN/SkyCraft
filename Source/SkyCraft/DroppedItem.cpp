@@ -71,6 +71,13 @@ void ADroppedItem::BeginPlay()
 {
 	Super::BeginPlay();
 	SetReplicateMovement(true);
+
+	ensureAlways(Slot.DA_Item);
+	if (!Slot.DA_Item)
+	{
+		if (HasAuthority()) Destroy();
+		return;
+	}
 	
 	if (IsValid(AttachedToIsland))
 	{
@@ -114,13 +121,6 @@ void ADroppedItem::BeginPlay()
 				SphereComponent->AddImpulse(DropDirection, NAME_None, true);
 			}
 		}
-	}
-
-	ensureAlways(Slot.DA_Item);
-	if (!Slot.DA_Item)
-	{
-		if (HasAuthority()) Destroy();
-		return;
 	}
 
 	StaticMeshComponent->SetRelativeRotation(Slot.DA_Item->RotationOffset);

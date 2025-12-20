@@ -1,8 +1,10 @@
 ﻿// ADIAN Copyrighted
 
 #include "NPC.h"
-
 #include "AdianFL.h"
+#include "GMS.h"
+#include "GSS.h"
+#include "WorldEvents.h"
 #include "Island.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/CorruptionOverlayEffect.h"
@@ -18,7 +20,7 @@ ANPC::ANPC()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
-	PrimaryActorTick.TickInterval = 0.1f;
+	PrimaryActorTick.TickInterval = 1;
 
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 	
@@ -41,18 +43,38 @@ void ANPC::BeginActor_Implementation()
 {
 	Super::BeginActor_Implementation();
 
+	if (!GSS) GSS = GetWorld()->GetGameState<AGSS>();
+	check(DA_NPC);
+	for (auto& OverrideMaterial : DA_NPC->OverrideMaterials)
+	{
+		if (OverrideMaterial.Material.IsNull())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("DA_NPC: %s contains null override material."), *DA_NPC->GetName());
+			continue;
+		}
+		
+		if (UMaterialInterface* LoadedMaterial = OverrideMaterial.Material.LoadSynchronous())
+		{
+			GetMesh()->SetMaterial(OverrideMaterial.Index, LoadedMaterial);
+		}
+	}
+
 	if (NPCType == ENPCType::Corrupted)
 	{
 		if (ParentIsland) ParentIsland->AddCorruptedNPC(this);
+		
+		if (SpawnWithCorruptionOverlayEffect)
+		{
+			UCorruptionOverlayEffect* CorruptionOverlayEffect = NewObject<UCorruptionOverlayEffect>(this, SpawnWithCorruptionOverlayEffect);
+			CorruptionOverlayEffect->RegisterComponent();
+			CorruptionOverlayEffect->SkeletalMeshComponent = GetMesh();
+			CorruptionOverlayEffect->StartOverlay();
+			if (HasAuthority()) CorruptionOverlayEffect->OnComponentDeactivated.AddDynamic(this, &ANPC::OnCorruptionOverlayEffectDestroyed);
+		}
 	}
-	
-	if (SpawnWithCorruptionOverlayEffect)
+	else if (NPCType == ENPCType::Nocturnal)
 	{
-		UCorruptionOverlayEffect* CorruptionOverlayEffect = NewObject<UCorruptionOverlayEffect>(this, SpawnWithCorruptionOverlayEffect);
-		CorruptionOverlayEffect->RegisterComponent();
-		CorruptionOverlayEffect->SkeletalMeshComponent = GetMesh();
-		CorruptionOverlayEffect->StartOverlay();
-		if (HasAuthority()) CorruptionOverlayEffect->OnComponentDeactivated.AddDynamic(this, &ANPC::OnCorruptionOverlayEffectDestroyed);
+		NocturnePerishTimeMax = FMath::FRandRange(5.0f, 20.0f);
 	}
 	
 	if (!HasAuthority()) return;
@@ -63,6 +85,26 @@ void ANPC::BeginActor_Implementation()
 	UpdateSettings();
 
 	ParentIsland->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
+}
+
+void ANPC::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (NPCType == ENPCType::Nocturnal)
+	{
+		if (!GSS->GMS->WorldEvents->bNocturneTime)
+		{
+			NocturnePerishTime += GetActorTickInterval();
+			if (NocturnePerishTime >= NocturnePerishTimeMax)
+			{
+				FDamageInfo DamageInfo;
+				DamageInfo.DA_DamageAction = GSS->NocturnePerishDeathDamage;
+				DamageInfo.WorldLocation = GetActorLocation();
+				EntityComponent->AuthDie(DamageInfo);
+			}
+		}
+	}
 }
 
 void ANPC::NativeOnDie(const FDamageInfo& DamageInfo)
@@ -155,21 +197,27 @@ void ANPC::UpdateSettings()
 	ensureAlways(ParentIsland);
 	if (!IsValid(ParentIsland)) return;
 	
-	if (ParentIsland->ServerLOD == 0)
+	if (ParentIsland->ServerLOD == 0 && !bIsActive)
 	{
 		SetActorTickEnabled(true);
-		SetActorTickInterval(FMath::FRandRange(0.09f, 0.11f));
+		SetActorTickInterval(FMath::FRandRange(0.9f, 1.1f));
+		GetCharacterMovement()->SetActive(true);
+		GetController()->SetActorTickEnabled(true);
+		bIsActive = true;
 	}
-	else
+	else if (ParentIsland->ServerLOD != 0 && bIsActive)
 	{
 		SetActorTickEnabled(false);
+		GetCharacterMovement()->SetActive(false);
+		GetController()->SetActorTickEnabled(false);
+		bIsActive = false;
 	}
 }
 
 void ANPC::RemoveFromIsland() // TODO: for NightNPCs
 {
 	if (!IsValid(ParentIsland)) return;
-	FSpawnedIslandLOD& SpawnedLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
+	FIslandSpawnedLOD& SpawnedLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
 	for (auto& NPCInstance : SpawnedLOD.NPCInstances)
 	{
 		if (NPCInstance.DA_NPC->NPCClass == GetClass())
@@ -188,7 +236,7 @@ void ANPC::AddToIsland(AIsland* NewIsland)
 	ParentIsland = NewIsland;
 	MARK_PROPERTY_DIRTY_FROM_NAME(ANPC, ParentIsland, this);
 	ParentIsland->OnServerLOD.AddDynamic(this, &ANPC::ChangedLOD);
-	FSpawnedIslandLOD& SpawnedLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
+	FIslandSpawnedLOD& SpawnedLOD = ParentIsland->SpawnedLODs.FindOrAdd(IslandLODIndex);
 	for (auto& NPCInstance : SpawnedLOD.NPCInstances)
 	{
 		if (NPCInstance.DA_NPC->NPCClass == GetClass())
@@ -222,6 +270,7 @@ void ANPC::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifeti
 	Params.bIsPushBased = true;
 	Params.RepNotifyCondition = REPNOTIFY_OnChanged;
 	
+	DOREPLIFETIME_WITH_PARAMS_FAST(ANPC, DA_NPC, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ANPC, ParentIsland, Params);
 	DOREPLIFETIME_WITH_PARAMS_FAST(ANPC, SpawnWithCorruptionOverlayEffect, Params);
 }

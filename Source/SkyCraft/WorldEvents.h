@@ -20,6 +20,8 @@ public:
 	UPROPERTY() TObjectPtr<class AGSS> GSS;
 
 	UPROPERTY(VisibleAnywhere) bool bNocturneTime = false;
+	UPROPERTY(VisibleAnywhere) float NocturneTimeStart = 2000;
+	UPROPERTY(VisibleAnywhere) float NocturneTimeStop = 600;
 	UPROPERTY(EditAnywhere) TArray<FNPCInstance> NocturneDefault;
 
 	UPROPERTY(VisibleInstanceOnly) float CurrentTimeFallingMeteors = 0;

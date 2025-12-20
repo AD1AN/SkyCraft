@@ -3,8 +3,6 @@
 #include "WorldEvents.h"
 #include "GMS.h"
 #include "GSS.h"
-#include "Island.h"
-#include "ChunkIsland.h"
 
 AWorldEvents::AWorldEvents()
 {
@@ -26,15 +24,30 @@ void AWorldEvents::BeginPlay()
 void AWorldEvents::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	float Time = GSS->GetTimeOfDay();
+	bool bIsNight = (Time >= NocturneTimeStart || Time <= NocturneTimeStop);
 
-	if (!bNocturneTime && GSS->GetTimeOfDay() <= 600 || GSS->GetTimeOfDay() >= 2000)
+	if (!bNocturneTime && bIsNight)
 	{
 		StartNocturneTime();
 	}
-	else if (bNocturneTime && GSS->GetTimeOfDay() > 600 || GSS->GetTimeOfDay() < 2000)
+	else if (bNocturneTime && !bIsNight)
 	{
 		StopNocturneTime();
 	}
+
+	CurrentTimeFallingMeteors += DeltaTime;
+	if (CurrentTimeFallingMeteors >= GSS->TimeFallingMeteors)
+	{
+		// Meteor falls
+	}
+
+	CurrentTimeTravelingMeteors += DeltaTime;
+	if (CurrentTimeTravelingMeteors >= GSS->TimeFallingMeteors)
+	{
+		// Traveling Meteor appears
+	}
+
 }
 
 void AWorldEvents::StartNocturneTime()

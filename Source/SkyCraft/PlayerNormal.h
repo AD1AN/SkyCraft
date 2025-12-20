@@ -4,14 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "AdianActor.h"
-#include "Island.h"
-#include "GameFramework/Character.h"
 #include "Components/PrimitiveComponent.h"
 #include "Interfaces/EssenceInterface.h"
 #include "Interfaces/IslandInterface.h"
 #include "Interfaces/PlayerFormInterface.h"
 #include "PlayerNormal.generated.h"
 
+class UDA_Item;
 class APlayerIsland;
 class APlayerPhantom;
 class USkySpringArmComponent;
@@ -132,11 +131,7 @@ public:
 	// Called on hunger change. If (health < Max && hunger < than half) then enable health regen. 
 	UFUNCTION() void OnHunger();
 
-	virtual AIsland* GetIsland() override
-	{
-		if (GetMovementBase()) return Cast<AIsland>(GetMovementBase()->GetOwner());
-		else return nullptr;
-	}
+	virtual AIsland* GetIsland() override;
 
 protected:
 	UFUNCTION(BlueprintImplementableEvent) void EnableCameraLag();

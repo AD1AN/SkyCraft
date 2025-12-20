@@ -30,11 +30,11 @@ class ABM;
 struct FSS_Building;
 
 USTRUCT()
-struct FSpawnedIslandLOD
+struct FIslandSpawnedLOD
 {
 	GENERATED_BODY()
 	UPROPERTY() TArray<AResource*> Resources;
-	UPROPERTY() TArray<FNPCInstance> NPCInstances;
+	UPROPERTY(VisibleInstanceOnly) TArray<FNPCInstance> NPCInstances;
 };
 
 struct FCliffData
@@ -161,7 +161,7 @@ public:
 	TMap<UDA_Resource*, TMap<int32, FVector>> ResourcesGridMap;
 
 	// Key: LOD index. INDEX_NONE(-1) = AlwaysLOD.
-	TMap<int32, FSpawnedIslandLOD> SpawnedLODs;
+	UPROPERTY(VisibleInstanceOnly) TMap<int32, FIslandSpawnedLOD> SpawnedLODs;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ABM*> Buildings;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite) TArray<ADroppedItem*> DroppedItems;
@@ -242,7 +242,7 @@ public:
 	
 #if WITH_EDITOR
 	virtual void OnConstruction(const FTransform& Transform) override;
-	void IslandDebugs();
+	void IslandGeometryDebug();
 #endif
 
 protected:

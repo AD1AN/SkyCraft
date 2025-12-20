@@ -47,11 +47,12 @@ void UNPCSpawner::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 		{
 			for (auto& NPCInstance : Island->SpawnedLODs[LOD_Index].NPCInstances)
 			{
+				// Remove all non-valid NPCs.
 				NPCInstance.SpawnedNPCs.RemoveAll([](const ANPC* NPC)
 				{
 					return !IsValid(NPC);
 				});
-			
+
 				if (NPCInstance.SpawnedNPCs.Num() < NPCInstance.MaxInstances)
 				{
 					float PopulationRatio = 1.0f;
@@ -87,11 +88,12 @@ void UNPCSpawner::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 							}
 
 							FTransform NpcTransform(Island->GetActorLocation() + RandomPoint + FVector(0,0,60));
-							ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(NPCInstance.DA_NPC->NPCClass, NpcTransform);
-							SpawnedNPC->ParentIsland = Island;
-							SpawnedNPC->IslandLODIndex = LOD_Index;
-							SpawnedNPC->FinishSpawning(NpcTransform);
-							NPCInstance.SpawnedNPCs.Add(SpawnedNPC);
+							ANPC* RespawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(NPCInstance.DA_NPC->NPCClass, NpcTransform);
+							RespawnedNPC->DA_NPC = NPCInstance.DA_NPC;
+							RespawnedNPC->ParentIsland = Island;
+							RespawnedNPC->IslandLODIndex = LOD_Index;
+							RespawnedNPC->FinishSpawning(NpcTransform);
+							NPCInstance.SpawnedNPCs.Add(RespawnedNPC);
 							NPCInstance.CurrentSpawnTime = 0;
 							break;
 						}
@@ -155,11 +157,13 @@ void UNPCSpawner::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 							}
 
 							FTransform NpcTransform(Island->GetActorLocation() + RandomPoint + FVector(0,0,60));
-							ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(Instance.DA_NPC->NPCClass, NpcTransform);
-							SpawnedNPC->ParentIsland = Island;
-							SpawnedNPC->IslandLODIndex = 0;
-							SpawnedNPC->FinishSpawning(NpcTransform);
-							Instance.SpawnedNPCs.Add(SpawnedNPC);
+							ANPC* SpawnedNocturne = GetWorld()->SpawnActorDeferred<ANPC>(Instance.DA_NPC->NPCClass, NpcTransform);
+							SpawnedNocturne->DA_NPC = Instance.DA_NPC;
+							SpawnedNocturne->NPCType = ENPCType::Nocturnal;
+							SpawnedNocturne->ParentIsland = Island;
+							SpawnedNocturne->IslandLODIndex = 0;
+							SpawnedNocturne->FinishSpawning(NpcTransform);
+							Instance.SpawnedNPCs.Add(SpawnedNocturne);
 							Instance.CurrentSpawnTime = 0;
 							break;
 						}

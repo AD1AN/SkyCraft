@@ -1,7 +1,6 @@
 // ADIAN Copyrighted
 
 #include "HungerComponent.h"
-
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"

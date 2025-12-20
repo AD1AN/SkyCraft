@@ -44,8 +44,8 @@ public:
 	UPROPERTY() float ChunkSize = 100000;
 	UPROPERTY() float IslandsProbability = 0.5f; // From 0 to 1.
 	UPROPERTY() FFloatMinMax IslandsAltitude = FFloatMinMax(90000, 95000);
-	UPROPERTY() FFloatMinMax TraversalAltitude = FFloatMinMax(30000, 100000);
-	UPROPERTY() FFloatMinMax Suffocation = FFloatMinMax(80000, 150000);
+	UPROPERTY() FFloatMinMax TraversalAltitude = FFloatMinMax(70000, 100000);
+	UPROPERTY() FFloatMinMax Suffocation = FFloatMinMax(50000, 150000);
 	UPROPERTY() float PlayerIslandSpawnXY = 75000.0;
 	UPROPERTY() FFloatMinMax PlayerIslandSpawnZ = FFloatMinMax(80000, 95000);
 	UPROPERTY() float SkyEssenceDensity = 1.0f;

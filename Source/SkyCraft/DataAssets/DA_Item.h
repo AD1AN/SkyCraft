@@ -10,21 +10,13 @@
 #include "SkyCraft/Structs/ItemComponentParameters.h"
 #include "SkyCraft/Enums/ItemHandType.h"
 #include "SkyCraft/Structs/EntityStatsModifier.h"
+#include "SkyCraft/Structs/OverrideMaterial.h"
 #include "StructUtils/InstancedStruct.h"
 #include "DA_Item.generated.h"
 
 class UDA_AnalyzeEntity;
 class UDA_EquipmentStats;
 class UDA_SkyTag;
-
-USTRUCT(BlueprintType)
-struct FOverrideMaterial
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) int32 Index = 0;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) TSoftObjectPtr<UMaterialInterface> Material;
-};
 
 UCLASS(BlueprintType)
 class SKYCRAFT_API UDA_Item : public UDataAsset

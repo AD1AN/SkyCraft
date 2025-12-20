@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "SkyCraft/Structs/OverrideMaterial.h"
 #include "DA_NPC.generated.h"
 
 class ANPC;
@@ -22,4 +23,6 @@ public:
 	
 	// In Seconds.
 	UPROPERTY(EditDefaultsOnly, meta=(EditCondition="bCanRespawn")) float SpawnTime = 120.0f;
+	
+	UPROPERTY(EditDefaultsOnly) TArray<FOverrideMaterial> OverrideMaterials;
 };

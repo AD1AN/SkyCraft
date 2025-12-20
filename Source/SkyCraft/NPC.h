@@ -7,6 +7,8 @@
 #include "Interfaces/IslandInterface.h"
 #include "NPC.generated.h"
 
+class UDA_NPC;
+class AGSS;
 class AIslandCrystal;
 class UCorruptionOverlayEffect;
 class UEntityComponent;
@@ -31,11 +33,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<USuffocationComponent> SuffocationComponent;
 
 	ANPC();
+
+	UPROPERTY() AGSS* GSS = nullptr;
+
+	UPROPERTY(VisibleInstanceOnly, Replicated) UDA_NPC* DA_NPC = nullptr;
 	
-	UPROPERTY(BlueprintReadWrite, Replicated) AIsland* ParentIsland = nullptr;
-	UPROPERTY(BlueprintReadOnly) int32 IslandLODIndex = 0;
+	UPROPERTY(BlueprintReadWrite, Replicated, VisibleInstanceOnly) AIsland* ParentIsland = nullptr;
+	UPROPERTY(BlueprintReadOnly, VisibleInstanceOnly) int32 IslandLODIndex = 0;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) ENPCType NPCType = ENPCType::Normal;
+	UPROPERTY(VisibleInstanceOnly) float NocturnePerishTime = 0;
+	UPROPERTY(VisibleInstanceOnly) float NocturnePerishTimeMax;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere) AIslandCrystal* IslandCrystal = nullptr; // Used for NPC to attack.
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly) void RemoveFromIsland();
@@ -45,16 +53,20 @@ public:
 	UFUNCTION() void OnCorruptionOverlayEffectDestroyed(UActorComponent* Component);
 	
 	virtual void BeginActor_Implementation() override;
+	virtual void Tick(float DeltaSeconds) override;
 
+	UPROPERTY(VisibleInstanceOnly) bool bIsActive = true;
+	
+	UFUNCTION() void ChangedLOD();
+	UFUNCTION() void UpdateSettings();
+	
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNewBase);
 	UPROPERTY(BlueprintAssignable) FOnNewBase OnNewBase;
 	virtual void SetBase(UPrimitiveComponent* NewBase, const FName BoneName, bool bNotifyActor) override;
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) FSS_NPC SaveNPC();
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable) bool LoadNPC(const FSS_NPC& NPC_Parameters);
-	UFUNCTION() void ChangedLOD();
-	UFUNCTION() void UpdateSettings();
-
+	
 	UFUNCTION() void DelayedDestroy();
 	void NextFrameDestroy();
 

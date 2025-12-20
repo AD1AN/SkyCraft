@@ -482,7 +482,7 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 		bIsGenerating = false;
 		OnFullGenerated.Broadcast();
 		OnIslandFullGenerated.Broadcast(this);
-		IslandDebugs();
+		IslandGeometryDebug();
 		return;
 	}
 #endif
@@ -806,7 +806,7 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 	}
 	
 	const float VertexOffset = (Resolution * CellSize) / 2;
-	FSpawnedIslandLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLODIndex);
+	FIslandSpawnedLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLODIndex);
 
 	// Generate Resources
 	for (auto& IslandResource : IslandLOD.Resources)
@@ -952,6 +952,7 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 
 			FTransform NpcTransform(GetActorLocation() + RandomPoint + FVector(0,0,60));
 			ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(NPC.DA_NPC->NPCClass, NpcTransform);
+			SpawnedNPC->DA_NPC = NPC.DA_NPC;
 			SpawnedNPC->ParentIsland = this;
 			SpawnedNPC->IslandLODIndex = GenerateLODIndex;
 			SpawnedNPC->FinishSpawning(NpcTransform);
@@ -1002,7 +1003,7 @@ bool AIsland::LoadLOD(int32 LoadLODIndex)
 	for (auto& SS_IslandLOD : SS_Island.IslandLODs)
 	{
 		if (SS_IslandLOD.LOD != LoadLODIndex) continue;
-		FSpawnedIslandLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
+		FIslandSpawnedLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
 
 		// Load Resources.
 		for (const auto& SS_Resource : SS_IslandLOD.Resources)
@@ -1038,6 +1039,7 @@ bool AIsland::LoadLOD(int32 LoadLODIndex)
 				FTransform LoadTransform = SS_NPC.Transform;
 				LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0,0,60));
 				ANPC* SpawnedNPC = GetWorld()->SpawnActorDeferred<ANPC>(SS_NPCInstance.DA_NPC->NPCClass, LoadTransform);
+				SpawnedNPC->DA_NPC = SS_NPCInstance.DA_NPC;
 				SpawnedNPC->ParentIsland = this;
 				SpawnedNPC->SetBase(PMC_Main, NAME_None, false);
 				SpawnedNPC->IslandLODIndex = LoadLODIndex;
@@ -1419,7 +1421,7 @@ void AIsland::RemoveCorruptedNPC(ANPC* InNPC)
 }
 
 #if WITH_EDITOR
-void AIsland::IslandDebugs()
+void AIsland::IslandGeometryDebug()
 {
 	if (DebugAllVertices)
 	{
