@@ -11,11 +11,12 @@
 #include "Structs/NPCInstance.h"
 #include "Island.generated.h"
 
+class AIslandChunk;
 class UDA_NPC;
 class UNPCSpawner;
 class ANavMeshBoundsVolume;
 class UDA_IslandBiome;
-class AChunkIsland;
+class ASkyChunk;
 class UTerrainChunk;
 class AGSS;
 class UDA_Foliage;
@@ -96,7 +97,7 @@ public:
 	AIsland();
 
 	UPROPERTY(BlueprintReadOnly) AGSS* GSS = nullptr;
-	UPROPERTY() AChunkIsland* ChunkIsland = nullptr;
+	UPROPERTY() ASkyChunk* SkyChunk = nullptr;
 	UPROPERTY(BlueprintReadOnly, meta=(ExposeOnSpawn)) FCoords Coords;
 	UPROPERTY(Replicated, EditAnywhere) UDA_IslandBiome* DA_IslandBiome = nullptr;
 	
@@ -105,23 +106,26 @@ public:
 	FThreadSafeBool bIsGenerating = false;
 
 	UPROPERTY(BlueprintReadOnly) FIslandData IslandData;
+	UPROPERTY(VisibleInstanceOnly) TArray<AIslandChunk*> IslandChunks;
+
+	UPROPERTY(VisibleAnywhere) float VertexDistance = 100.0f; // Static, i like 100 units.
+	UPROPERTY(EditAnywhere) int32 Resolution = 100; // Dynamic, calculated by farthest shape point. Do not use odd numbers. Produces bad terrain.
+	UPROPERTY(VisibleAnywhere) int32 ChunkResolution = 50; // Static, i like 50 units.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly) float ShapeRadius = 1000.0f;
+	UPROPERTY(EditAnywhere) int32 ShapePoints = 20;
+	UPROPERTY(EditAnywhere) float InterpShapePointLength = 1500.0f;
+	UPROPERTY(EditAnywhere) float ScalePerlinNoise1D = 0.25f;
 	
-	UPROPERTY(EditDefaultsOnly) int32 ShapePoints = 20;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) float ShapeRadius = 1000.0f;
-	UPROPERTY(EditDefaultsOnly) int32 Resolution = 150; // Try not using odd numbers
-	UPROPERTY(EditDefaultsOnly) float CellSize = 100.0f;
-	UPROPERTY(EditDefaultsOnly) float InterpShapePointLength = 1500.0f;
-	UPROPERTY(EditDefaultsOnly) float ScalePerlinNoise1D = 0.25f;
-	UPROPERTY(EditDefaultsOnly) float ScaleRandomShape = 0.5f;
-	UPROPERTY(EditDefaultsOnly) float SmallNoiseScale = 0.0025;
-	UPROPERTY(EditDefaultsOnly) float SmallNoiseStrength = 75.0f;
-	UPROPERTY(EditDefaultsOnly) float SmallNoiseHeight = -50.0f;
-	UPROPERTY(EditDefaultsOnly) float BigNoiseScale = 0.0005f;
-	UPROPERTY(EditDefaultsOnly) float BigNoiseStrength = 200.0f;
-	UPROPERTY(EditDefaultsOnly) float BigNoiseHeight = -25.0f;
-	UPROPERTY(EditDefaultsOnly) float BottomUVScale = 0.0005f;
-	UPROPERTY(EditDefaultsOnly) float BottomRandomHorizontal = 0.025f;
-	UPROPERTY(EditDefaultsOnly) float BottomRandomVertical = 0.05f;
+	UPROPERTY(EditAnywhere) float ScaleRandomShape = 0.5f;
+	UPROPERTY(EditAnywhere) float SmallNoiseScale = 0.0025;
+	UPROPERTY(EditAnywhere) float SmallNoiseStrength = 75.0f;
+	UPROPERTY(EditAnywhere) float SmallNoiseHeight = -50.0f;
+	UPROPERTY(EditAnywhere) float BigNoiseScale = 0.0005f;
+	UPROPERTY(EditAnywhere) float BigNoiseStrength = 200.0f;
+	UPROPERTY(EditAnywhere) float BigNoiseHeight = -25.0f;
+	UPROPERTY(EditAnywhere) float BottomUVScale = 0.0005f;
+	UPROPERTY(EditAnywhere) float BottomRandomHorizontal = 0.025f;
+	UPROPERTY(EditAnywhere) float BottomRandomVertical = 0.05f;
 
 	// --------------------------------------------------
 	
@@ -142,8 +146,8 @@ public:
 	FOnServerLOD OnServerLOD;
 
 	// Current LOD.
-	// Calculated by closest chunker distance.
-	// In AChunkIsland::UpdateLOD set via SetServerLOD.
+	// Calculated by closest USkyChunkRenderer distance.
+	// In ASkyChunk::UpdateLOD set via SetServerLOD.
 	UPROPERTY(VisibleInstanceOnly, ReplicatedUsing=OnRep_ServerLOD, BlueprintReadOnly)
 	int32 ServerLOD = -1;
 
@@ -206,8 +210,15 @@ public:
 	FIslandData GenerateIsland();
 	void InitialGenerateComplete(const FIslandData& _ID);
 
+	bool IsPointInBox(const FVector2D& P, const FVector2D& Min, const FVector2D& Max);
+	bool SegmentsIntersect(const FVector2D& A, const FVector2D& B,	const FVector2D& C, const FVector2D& D);
+	bool DoesChunkIntersectShape(int32 ChunkX, int32 ChunkY, float ChunkWorldSize, const TArray<FVector2D>& Shape);
+
 	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const;
 	bool IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints);
+	UPROPERTY(EditAnywhere) int32 ANGLE_SAMPLES = 512;
+	TArray<float> RadiusByAngle;
+	bool IsInsideIslandRadial(const FVector2D& Vertex);
 	void CalculateNormalsAndTangents(const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector2D>& UVs, TArray<FVector>& OutNormals, TArray<FProcMeshTangent>& OutTangents);
 	float SeededNoise2D(float X, float Y, int32 InSeed);
 	float TriangleArea(const FVector& V0, const FVector& V1, const FVector& V2); // Maybe for future needs
@@ -233,7 +244,9 @@ public:
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere) bool bOnConstruction = false;
-	UPROPERTY(EditAnywhere) bool DebugAllVertices = false;
+	UPROPERTY(EditAnywhere) bool DebugTerrainVertices = false;
+	UPROPERTY(EditAnywhere) bool DebugOutsideVertices = false;
+	TArray<FVector> OutsideVertices;
 	UPROPERTY(EditAnywhere) bool DebugEdgeVertices = false;
 	UPROPERTY(EditAnywhere) bool DebugKeyShapePoints = false;
 	UPROPERTY(EditAnywhere) bool DebugInterpShapePoints = false;
@@ -242,7 +255,7 @@ public:
 	
 #if WITH_EDITOR
 	virtual void OnConstruction(const FTransform& Transform) override;
-	void IslandGeometryDebug();
+	void DebugIslandGeometry();
 #endif
 
 protected:

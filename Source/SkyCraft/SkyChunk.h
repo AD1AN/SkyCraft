@@ -5,17 +5,17 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Structs/Coords.h"
-#include "ChunkIsland.generated.h"
+#include "SkyChunk.generated.h"
 
 class AIsland;
 class AGMS;
-class UChunker;
+class USkyChunkRenderer;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangeLOD);
 
 // Only server side.
 UCLASS(Blueprintable)
-class SKYCRAFT_API AChunkIsland : public AActor
+class SKYCRAFT_API ASkyChunk : public AActor // TODO: Rename it to SkyChunk and transfer logic from EssenceChunk to here.
 {
 	GENERATED_BODY()
 	
@@ -29,16 +29,16 @@ public:
 	void UpdateText();
 #endif
 	
-	AChunkIsland();
+	ASkyChunk();
 	
 	UPROPERTY() AGMS* GMS = nullptr;
 	UPROPERTY(BlueprintReadOnly) AIsland* Island = nullptr;
 	
-	TArray<UChunker*> Chunkers;
+	TArray<USkyChunkRenderer*> Renderers;
 	FCoords Coords;
-	FRandomStream ChunkSeed;
+	FRandomStream SkyChunkSeed;
 	
-	// Calculated by distance to the closest chunker.
+	// Calculated by distance to the closest USkyChunkRenderer.
 	int32 ServerLOD = 666;
 	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
@@ -46,8 +46,8 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void RemoveChunker(UChunker* Chunker);
-	void AddChunker(UChunker* Chunker);
-	void DestroyChunk();
+	void RemoveRenderer(USkyChunkRenderer* InRenderer);
+	void AddRenderer(USkyChunkRenderer* InRenderer);
+	void DestroySkyChunk();
 	void UpdateLOD();
 };

@@ -1,5 +1,7 @@
 ## New:
-* 
+* Added item: Regular Hide.
+* Tenbor drops Regular Hide.
+
 
 ## Changes/Improvements:
 * 

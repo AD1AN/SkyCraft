@@ -7,7 +7,7 @@
 #include "TradeCityActor.generated.h"
 
 class AGSS;
-class AChunkIsland;
+class ASkyChunk;
 
 UCLASS(Abstract, Blueprintable)
 class SKYCRAFT_API ATradeCityActor : public APackedLevelActor
@@ -18,7 +18,7 @@ public:
 	ATradeCityActor();
 	
 	UPROPERTY() AGSS* GSS = nullptr;
-	UPROPERTY(VisibleInstanceOnly) AChunkIsland* Chunk = nullptr;
+	UPROPERTY(VisibleInstanceOnly) ASkyChunk* Chunk = nullptr;
 
 	virtual void BeginPlay() override;
 	UFUNCTION() void OnChunkDestroyed(AActor* DestroyedActor);

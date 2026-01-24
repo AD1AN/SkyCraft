@@ -5,18 +5,18 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "SkyCraft/Structs/Coords.h"
-#include "Chunker.generated.h"
+#include "SkyChunkRenderer.generated.h"
 
-class AChunkIsland;
+class ASkyChunk;
 class AGSS;
 
 UCLASS(meta=(BlueprintSpawnableComponent))
-class SKYCRAFT_API UChunker : public UActorComponent
+class SKYCRAFT_API USkyChunkRenderer : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	UChunker();
+	USkyChunkRenderer();
 
 	UPROPERTY() AGSS* GSS = nullptr;
 	
@@ -28,7 +28,7 @@ public:
 	
 	TArray<FCoords> RenderingCoords;
 	
-	TArray<AChunkIsland*> RenderingChunks;
+	TArray<ASkyChunk*> RenderingChunks;
 	
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

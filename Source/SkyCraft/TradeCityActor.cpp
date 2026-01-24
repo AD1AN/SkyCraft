@@ -1,7 +1,7 @@
 ﻿// ADIAN Copyrighted
 
 #include "TradeCityActor.h"
-#include "ChunkIsland.h"
+#include "SkyChunk.h"
 #include "GSS.h"
 
 ATradeCityActor::ATradeCityActor()

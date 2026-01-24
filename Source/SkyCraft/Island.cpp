@@ -7,6 +7,7 @@
 #include "DroppedItem.h"
 #include "GMS.h"
 #include "GSS.h"
+#include "IslandChunk.h"
 #include "NPC.h"
 #include "RepHelpers.h"
 #include "WorldSave.h"
@@ -58,9 +59,16 @@ void AIsland::OnConstruction(const FTransform& Transform)
 	if (Resolution % 2 != 0) Resolution += 1;
 	for (UInstancedStaticMeshComponent* ISM : CliffsComponents) if (IsValid(ISM)) ISM->DestroyComponent();
 	CliffsComponents.Empty();
+	SpawnCliffsComponents();
 	if (IsValid(PMC_Main)) PMC_Main->ClearAllMeshSections();
 	IslandData.TopVertices.Empty();
 	IslandData.TopVerticesAxis.Empty();
+	OutsideVertices.Empty();
+	for (int32 i = IslandChunks.Num() - 1; i >= 0; --i)
+	{
+		IslandChunks[i]->Destroy();
+	}
+	IslandChunks.Empty();
 	Seed.Reset();
 	const FIslandData _ID = GenerateIsland();
 	InitialGenerateComplete(_ID);
@@ -73,88 +81,6 @@ void AIsland::BeginPlay()
 	if (HasAuthority()) CurrentNMBV = GSS->GMS->NMBV_Use(this);
 	// Read GMS about BeginPlay() order.
 	if (!bPlayerIsland) StartIsland();
-}
-
-TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
-{
-	TArray<FSS_DroppedItem> SS_DroppedItems;
-	for (auto*& DroppedItem : DroppedItems)
-	{
-		if (!DroppedItem) continue;
-		FSS_DroppedItem SS_DroppedItem;
-		SS_DroppedItem.RelativeLocation = DroppedItem->GetRootComponent()->GetRelativeLocation();
-		SS_DroppedItem.Slot = DroppedItem->Slot;
-		SS_DroppedItems.Add(SS_DroppedItem);
-	}
-	return SS_DroppedItems;
-}
-
-void AIsland::LoadDroppedItems()
-{
-	for (auto& SS_DroppedItem : SS_Island.DroppedItems)
-	{
-		FTransform SpawnTransform;
-		SpawnTransform.SetLocation(SS_DroppedItem.RelativeLocation);
-		ADroppedItem* SpawnedDroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
-		SpawnedDroppedItem->Slot = SS_DroppedItem.Slot;
-		SpawnedDroppedItem->AttachedToIsland = this;
-		SpawnedDroppedItem->FinishSpawning(SpawnTransform);
-		DroppedItems.Add(SpawnedDroppedItem);
-	}
-}
-
-void AIsland::AddConstellation(FSS_Astralon NewConstellation)
-{
-	SS_Astralons.Add(NewConstellation);
-	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Astralons, this);
-}
-
-void AIsland::RemoveConstellation(FSS_Astralon RemoveConstellation)
-{
-	for (int32 i = 0; i < SS_Astralons.Num(); i++)
-	{
-		if (SS_Astralons[i].DA_Astralon == RemoveConstellation.DA_Astralon)
-		{
-			SS_Astralons.RemoveAt(i);
-			MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Astralons, this);
-			return;
-		}
-	}
-}
-
-void AIsland::SpawnCliffsComponents()
-{
-	if (!DA_IslandBiome) return;
-	for(auto& StaticMesh : DA_IslandBiome->Cliffs)
-	{
-		if (!StaticMesh) continue;
-		
-		UInstancedStaticMeshComponent* Cliff = NewObject<UInstancedStaticMeshComponent>(this);
-		Cliff->SetStaticMesh(StaticMesh);
-		if (DA_IslandBiome->BottomMaterial) Cliff->SetMaterial(0, DA_IslandBiome->BottomMaterial);
-		Cliff->SetCollisionProfileName(TEXT("Island"));
-		Cliff->SetupAttachment(RootComponent);
-		Cliff->SetCullDistances(900000, 900000);
-		Cliff->RegisterComponent();
-		CliffsComponents.Add(Cliff);
-	}
-}
-
-void AIsland::SpawnFoliageComponents()
-{
-	if (IsNetMode(NM_Client)) return;
-	if (!DA_IslandBiome) return;
-	for(auto& DA_Foliage : DA_IslandBiome->Foliage)
-	{
-		if (!DA_Foliage) continue;
-		if (!DA_Foliage->StaticMesh) continue;
-	
-		UFoliageHISM* FHISM = NewObject<UFoliageHISM>(this);
-		FHISM->SetStaticMesh(DA_Foliage->StaticMesh);
-		FHISM->SetupAttachment(PMC_Main);
-		FHISM->DA_Foliage = DA_Foliage;
-		FHISM->RegisterComponent();
-	}
 }
 
 void AIsland::StartIsland()
@@ -195,48 +121,50 @@ void AIsland::StartAsyncGenerate()
 
 FIslandData AIsland::GenerateIsland()
 {
+	QUICK_SCOPE_CYCLE_COUNTER(STAT_GenerateIsland);
 	Seed.Reset();
 	FIslandData _IslandData;
 	FVector2D FromZeroToOne = FVector2D(0, 1);
 	
 	// Scale parameters by IslandSize
-	if (bPlayerIsland)
-	{
-		ShapeRadius = 1000 + (IslandSize * 100) * 100;
-		InterpShapePointLength = FMath::GetMappedRangeValueClamped(FVector2D(0,1), FVector2D(275,1050), IslandSize);
-	}
-	else
-	{
-		// Random from seed
-		ShapePoints = Seed.FRandRange(15, 20 * (IslandSize + 1));
-		ScalePerlinNoise1D = Seed.FRandRange(0.25f, 0.5f);
-		if (0.8f > Seed.FRandRange(0, 1)) ScaleRandomShape = Seed.FRandRange(0.5f, 0.7f);
-		else ScaleRandomShape = Seed.FRandRange(0.15f, 0.35f);
-		
-		// Random from IslandSize
-		ShapeRadius = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(2000,10000), IslandSize);
-		Resolution = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(50,320), IslandSize);
-		InterpShapePointLength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(300,1100), IslandSize);
-		SmallNoiseStrength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(15,100), IslandSize);
-		BigNoiseStrength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(20,200), IslandSize);
-	}
-	
+	// if (bPlayerIsland)
+	// {
+	// 	ShapeRadius = 1000 + (IslandSize * 100) * 100;
+	// 	InterpShapePointLength = FMath::GetMappedRangeValueClamped(FVector2D(0,1), FVector2D(275,1050), IslandSize);
+	// }
+	// else
+	// {
+	// 	// Random from seed
+	// 	ShapePoints = Seed.FRandRange(15, 20 * (IslandSize + 1));
+	// 	ScalePerlinNoise1D = Seed.FRandRange(0.25f, 0.5f);
+	// 	if (0.8f > Seed.FRandRange(0, 1)) ScaleRandomShape = Seed.FRandRange(0.5f, 0.7f);
+	// 	else ScaleRandomShape = Seed.FRandRange(0.15f, 0.35f);
+	// 	
+	// 	// Random from IslandSize
+	// 	ShapeRadius = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(2000,10000), IslandSize);
+	// 	Resolution = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(50,320), IslandSize);
+	// 	InterpShapePointLength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(300,1100), IslandSize);
+	// 	SmallNoiseStrength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(15,100), IslandSize);
+	// 	BigNoiseStrength = FMath::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(20,200), IslandSize);
+	// }
+
 	// Generate KeyShapePoints
+	float MaxShapePointDistance = 0.0f;
 	const float Angle = 6.2832f / ShapePoints;
 	for (int32 i = 0; i < ShapePoints; ++i)
 	{
-		// Randomize the radius for a smooth but irregular shape
+		QUICK_SCOPE_CYCLE_COUNTER(KeyShapePoints);
 		float RandomRadius = ShapeRadius * (1 + FMath::PerlinNoise1D(i * ScalePerlinNoise1D) * ScaleRandomShape);
-
 		float X = FMath::Cos(i * Angle) * RandomRadius;
 		float Y = FMath::Sin(i * Angle) * RandomRadius;
-
+		MaxShapePointDistance = FMath::Max3(FMath::Abs(X), FMath::Abs(Y), MaxShapePointDistance);
 		_IslandData.KeyShapePoints.Add(FVector2D(X, Y));
 	}
 	
 	// Interpolate Shape Points
 	for (int32 i = 0; i < _IslandData.KeyShapePoints.Num(); ++i)
 	{
+		QUICK_SCOPE_CYCLE_COUNTER(InterpolateShapePoints);
 		const FVector2D& CurrentPoint = _IslandData.KeyShapePoints[i];
 		const FVector2D& NextPoint = _IslandData.KeyShapePoints[(i + 1) % _IslandData.KeyShapePoints.Num()];
 
@@ -254,6 +182,111 @@ FIslandData AIsland::GenerateIsland()
 				_IslandData.AllShapePoints.Add(CurrentPoint + Step * j);
 			}
 		}
+	}
+
+	// Compute shape bounds (AABB)
+	FVector2D Min(FLT_MAX, FLT_MAX);
+	FVector2D Max(-FLT_MAX, -FLT_MAX);
+	for (const FVector2D& Point : _IslandData.KeyShapePoints)
+	{
+		Min.X = FMath::Min(Min.X, Point.X);
+		Min.Y = FMath::Min(Min.Y, Point.Y);
+		Max.X = FMath::Max(Max.X, Point.X);
+		Max.Y = FMath::Max(Max.Y, Point.Y);
+	}
+
+	// Convert bounds → chunk index range
+	const float ChunkWorldSize = ChunkResolution * VertexDistance;
+	const float HalfChunkWorldSize = ChunkWorldSize / 2;
+	// chunk indices in island-local space
+	const int32 MinChunkX = FMath::FloorToInt(Min.X / ChunkWorldSize);
+	const int32 MaxChunkX = FMath::CeilToInt (Max.X / ChunkWorldSize);
+	const int32 MinChunkY = FMath::FloorToInt(Min.Y / ChunkWorldSize);
+	const int32 MaxChunkY = FMath::CeilToInt (Max.Y / ChunkWorldSize);
+
+	// Spawn ONLY intersecting chunks
+	for (int32 ChunkX = MinChunkX; ChunkX <= MaxChunkX; ++ChunkX)
+	{
+		for (int32 ChunkY = MinChunkY; ChunkY <= MaxChunkY; ++ChunkY)
+		{
+			if (!DoesChunkIntersectShape(ChunkX, ChunkY, ChunkWorldSize, _IslandData.KeyShapePoints))
+			{
+				continue; // ❌ truly empty
+			}
+
+			const float LocX = ChunkX * ChunkWorldSize + HalfChunkWorldSize;
+			const float LocY = ChunkY * ChunkWorldSize + HalfChunkWorldSize;
+
+			FVector ChunkLocation = GetActorLocation() + FVector(LocX, LocY, 0.f);
+
+			AIslandChunk* Chunk =
+				GetWorld()->SpawnActor<AIslandChunk>(
+					AIslandChunk::StaticClass(),
+					ChunkLocation,
+					FRotator::ZeroRotator
+				);
+
+			// Chunk->ChunkCoord = FIntPoint(ChunkX, ChunkY);
+			Chunk->Island = this;
+			Chunk->BeginBounds();
+
+			IslandChunks.Add(Chunk);
+		}
+	}
+	
+	// Resolution by MaxShapePointDistance
+	// DrawDebugLine(GetWorld(), GetActorLocation() + FVector(ShapeRadius, 0, 0), GetActorLocation() + FVector(ShapeRadius, 0, 1000.0f), FColor::Green, false, 8.0f, 0, 30.0f);
+	// DrawDebugLine(GetWorld(), GetActorLocation() + FVector(MaxShapePointDistance, 0, 0), GetActorLocation() + FVector(MaxShapePointDistance, 0, 1000.0f), FColor::Red, false, 8.0f, 0, 30.0f);
+	// Resolution = (ChunkResolution * 2) * FMath::CeilToFloat(FMath::GetMappedRangeValueClamped(FVector2D(5000.0f, 14000.0f), FVector2D(0, 4), MaxShapePointDistance));
+	
+	const float RequiredDiameter = MaxShapePointDistance * 2.0f;
+
+	int32 InChunksPerAxis = FMath::CeilToInt(RequiredDiameter / ChunkWorldSize);
+
+	// enforce even chunk counts (symmetry, no half chunks)
+	if (InChunksPerAxis % 2 != 0)
+	{
+		++InChunksPerAxis;
+	}
+
+	Resolution = InChunksPerAxis * ChunkResolution;
+	
+	// Calculate RadiusByAngle.
+	RadiusByAngle.SetNum(ANGLE_SAMPLES);
+	for (int32 i = 0; i < ANGLE_SAMPLES; ++i)
+	{
+		QUICK_SCOPE_CYCLE_COUNTER(CalculateRadiusByAngle);
+		float rbAngle = (2.f * PI * i) / ANGLE_SAMPLES;
+		FVector2D RayDir(FMath::Cos(rbAngle), FMath::Sin(rbAngle));
+
+		float ClosestT = TNumericLimits<float>::Max();
+
+		for (int32 e = 0; e < _IslandData.KeyShapePoints.Num(); ++e)
+		{
+			const FVector2D& A = _IslandData.KeyShapePoints[e];
+			const FVector2D& B = _IslandData.KeyShapePoints[(e + 1) % _IslandData.KeyShapePoints.Num()];
+
+			FVector2D Edge = B - A;
+
+			// Solve: O + t*RayDir = A + u*Edge
+			float Det = RayDir.X * (-Edge.Y) - RayDir.Y * (-Edge.X);
+			if (FMath::Abs(Det) < 1e-6f)
+				continue;
+
+			FVector2D AO = A; // origin is (0,0)
+
+			float t = (AO.X * (-Edge.Y) - AO.Y * (-Edge.X)) / Det;
+			float u = (RayDir.X * AO.Y - RayDir.Y * AO.X) / Det;
+
+			if (t > 0.f && u >= 0.f && u <= 1.f)
+			{
+				ClosestT = FMath::Min(ClosestT, t);
+			}
+		}
+
+		RadiusByAngle[i] = (ClosestT < TNumericLimits<float>::Max())
+			? ClosestT
+			: 0.f;
 	}
 
 	// Generate Cliff instances on AllShapePoints
@@ -277,19 +310,38 @@ FIslandData AIsland::GenerateIsland()
 			_IslandData.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, CliffsComponents.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
 		}
 	}
+
+	// Generate Chunks
+	const float MeshOffset = (Resolution * VertexDistance) / 2;
+	// const float HalfChunkWorldSize = ChunkWorldSize / 2;
+	// int32 ChunksPerAxis = FMath::CeilToInt((float)Resolution / ChunkResolution);
+	// for (int32 X = 0; X < ChunksPerAxis; ++X)
+	// {
+	// 	for (int32 Y = 0; Y < ChunksPerAxis; ++Y)
+	// 	{
+	// 		const float LocX = (X * ChunkWorldSize + HalfChunkWorldSize) - MeshOffset;
+	// 		const float LocY = (Y * ChunkWorldSize + HalfChunkWorldSize) - MeshOffset;
+	// 		FVector ChunkLocation(LocX, LocY, 0.f);
+	// 		ChunkLocation += GetActorLocation();
+	// 		AIslandChunk* IslandChunk = GetWorld()->SpawnActor<AIslandChunk>(AIslandChunk::StaticClass(), ChunkLocation, FRotator::ZeroRotator);
+	// 		IslandChunk->Island = this;
+	// 		IslandChunk->BeginBounds();
+	// 		IslandChunks.Add(IslandChunk);
+	// 	}
+	// }
+	
 	
 	// Generate TopVertices
 	_IslandData.TopVertices.Reserve(Resolution * Resolution);
 	_IslandData.TopUVs.Reserve(Resolution * Resolution);
 	int32 HalfResolution = Resolution / 2;
 	int32 CurrentVertexIndex = 0;
-	const float VertexOffset = (Resolution * CellSize) / 2;
 	for (int32 X = 0; X < Resolution; ++X)
 	{
 		for (int32 Y = 0; Y < Resolution; ++Y)
 		{
-			FVector2D Vertex(X * CellSize - VertexOffset, Y * CellSize - VertexOffset);
-			if (IsInsideShape(Vertex, _IslandData.KeyShapePoints))
+			FVector2D Vertex(X * VertexDistance - MeshOffset, Y * VertexDistance - MeshOffset);
+			if (IsInsideIslandRadial(Vertex))
 			{
 				_IslandData.TopVerticesAxis.Add(FVector2D(X, Y));
 				FVertexData VertexData;
@@ -299,6 +351,12 @@ FIslandData AIsland::GenerateIsland()
 				_IslandData.TopVertices.Add(FVector(Vertex, 0));
 				_IslandData.TopUVs.Add(FVector2D(Vertex.X / (Resolution - 1), Vertex.Y / (Resolution - 1)));
 			}
+			#if WITH_EDITOR
+			else
+			{
+				OutsideVertices.Add(FVector(Vertex, 0));
+			}
+			#endif
 		}
 	}
 
@@ -482,7 +540,7 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 		bIsGenerating = false;
 		OnFullGenerated.Broadcast();
 		OnIslandFullGenerated.Broadcast(this);
-		IslandGeometryDebug();
+		DebugIslandGeometry();
 		return;
 	}
 #endif
@@ -497,38 +555,38 @@ void AIsland::InitialGenerateComplete(const FIslandData& _ID)
 		CliffsComponents[i]->AddInstances(_ID.GeneratedCliffs[i].Instances, false);
 	}
 	
-	if (HasAuthority())
-	{
-		for (int32 i = 0; i < 4; ++i)
-		{
-			UTerrainChunk* TerrainChunk = NewObject<UTerrainChunk>(this);
-			TerrainChunk->RegisterComponent();
-			TerrainChunks.Add(TerrainChunk);
-		}
-		
-		if (ServerLOD == 0)
-		{
-			SpawnFoliageComponents();
-			LoadBuildings();
-			LoadDroppedItems();
-		}
-		
-		if (bLoadFromSave)
-		{
-			LoadIsland();
-		}
-		else
-		{
-			for (int32 LOD = GetLastLOD(); LOD >= ServerLOD; --LOD)
-			{
-				GenerateLOD(LOD);
-			}
-		}
-		
-		if (!LoadLOD(INDEX_NONE)) GenerateLOD(INDEX_NONE); // Load/Generate AlwaysLOD;
-		
-		LowestServerLOD = ServerLOD;
-	}
+	// if (HasAuthority())
+	// {
+	// 	for (int32 i = 0; i < 4; ++i)
+	// 	{
+	// 		UTerrainChunk* TerrainChunk = NewObject<UTerrainChunk>(this);
+	// 		TerrainChunk->RegisterComponent();
+	// 		TerrainChunks.Add(TerrainChunk);
+	// 	}
+	// 	
+	// 	if (ServerLOD == 0)
+	// 	{
+	// 		SpawnFoliageComponents();
+	// 		LoadBuildings();
+	// 		LoadDroppedItems();
+	// 	}
+	// 	
+	// 	if (bLoadFromSave)
+	// 	{
+	// 		LoadIsland();
+	// 	}
+	// 	else
+	// 	{
+	// 		for (int32 LOD = GetLastLOD(); LOD >= ServerLOD; --LOD)
+	// 		{
+	// 			GenerateLOD(LOD);
+	// 		}
+	// 	}
+	// 	
+	// 	if (!LoadLOD(INDEX_NONE)) GenerateLOD(INDEX_NONE); // Load/Generate AlwaysLOD;
+	// 	
+	// 	LowestServerLOD = ServerLOD;
+	// }
 	
 	PMC_Main->CreateMeshSection(0, IslandData.TopVertices, IslandData.TopTriangles, IslandData.TopNormals, IslandData.TopUVs, {}, IslandData.TopTangents, true);
 	PMC_Main->CreateMeshSection(1, IslandData.BottomVertices, IslandData.BottomTriangles, IslandData.BottomNormals, IslandData.BottomUVs, {}, IslandData.BottomTangents, true);
@@ -581,6 +639,88 @@ void AIsland::SetServerLOD(int32 NewLOD)
 	}
 	
 	REP_SET(ServerLOD, NewLOD);
+}
+
+TArray<FSS_DroppedItem> AIsland::SaveDroppedItems()
+{
+	TArray<FSS_DroppedItem> SS_DroppedItems;
+	for (auto*& DroppedItem : DroppedItems)
+	{
+		if (!DroppedItem) continue;
+		FSS_DroppedItem SS_DroppedItem;
+		SS_DroppedItem.RelativeLocation = DroppedItem->GetRootComponent()->GetRelativeLocation();
+		SS_DroppedItem.Slot = DroppedItem->Slot;
+		SS_DroppedItems.Add(SS_DroppedItem);
+	}
+	return SS_DroppedItems;
+}
+
+void AIsland::LoadDroppedItems()
+{
+	for (auto& SS_DroppedItem : SS_Island.DroppedItems)
+	{
+		FTransform SpawnTransform;
+		SpawnTransform.SetLocation(SS_DroppedItem.RelativeLocation);
+		ADroppedItem* SpawnedDroppedItem = GetWorld()->SpawnActorDeferred<ADroppedItem>(ADroppedItem::StaticClass(), SpawnTransform);
+		SpawnedDroppedItem->Slot = SS_DroppedItem.Slot;
+		SpawnedDroppedItem->AttachedToIsland = this;
+		SpawnedDroppedItem->FinishSpawning(SpawnTransform);
+		DroppedItems.Add(SpawnedDroppedItem);
+	}
+}
+
+void AIsland::AddConstellation(FSS_Astralon NewConstellation)
+{
+	SS_Astralons.Add(NewConstellation);
+	MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Astralons, this);
+}
+
+void AIsland::RemoveConstellation(FSS_Astralon RemoveConstellation)
+{
+	for (int32 i = 0; i < SS_Astralons.Num(); i++)
+	{
+		if (SS_Astralons[i].DA_Astralon == RemoveConstellation.DA_Astralon)
+		{
+			SS_Astralons.RemoveAt(i);
+			MARK_PROPERTY_DIRTY_FROM_NAME(AIsland, SS_Astralons, this);
+			return;
+		}
+	}
+}
+
+void AIsland::SpawnCliffsComponents()
+{
+	if (!DA_IslandBiome) return;
+	for(auto& StaticMesh : DA_IslandBiome->Cliffs)
+	{
+		if (!StaticMesh) continue;
+		
+		UInstancedStaticMeshComponent* Cliff = NewObject<UInstancedStaticMeshComponent>(this);
+		Cliff->SetStaticMesh(StaticMesh);
+		if (DA_IslandBiome->BottomMaterial) Cliff->SetMaterial(0, DA_IslandBiome->BottomMaterial);
+		Cliff->SetCollisionProfileName(TEXT("Island"));
+		Cliff->SetupAttachment(RootComponent);
+		Cliff->SetCullDistances(900000, 900000);
+		Cliff->RegisterComponent();
+		CliffsComponents.Add(Cliff);
+	}
+}
+
+void AIsland::SpawnFoliageComponents()
+{
+	if (IsNetMode(NM_Client)) return;
+	if (!DA_IslandBiome) return;
+	for(auto& DA_Foliage : DA_IslandBiome->Foliage)
+	{
+		if (!DA_Foliage) continue;
+		if (!DA_Foliage->StaticMesh) continue;
+	
+		UFoliageHISM* FHISM = NewObject<UFoliageHISM>(this);
+		FHISM->SetStaticMesh(DA_Foliage->StaticMesh);
+		FHISM->SetupAttachment(PMC_Main);
+		FHISM->DA_Foliage = DA_Foliage;
+		FHISM->RegisterComponent();
+	}
 }
 
 void AIsland::FoliageRemove(FVector_NetQuantize Location, float Radius)
@@ -684,11 +824,11 @@ TArray<int32> AIsland::FindVerticesInRadius(const FVector Location, float Radius
 	
 	float RadiusSqr = Radius * Radius;
 
-	const float VertexOffset = (Resolution * CellSize) / 2;
-	int32 MinX = FMath::Clamp(FMath::FloorToInt((Location.X - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-	int32 MaxX = FMath::Clamp(FMath::CeilToInt((Location.X + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-	int32 MinY = FMath::Clamp(FMath::FloorToInt((Location.Y - Radius + VertexOffset) / CellSize), 0, Resolution - 1);
-	int32 MaxY = FMath::Clamp(FMath::CeilToInt((Location.Y + Radius + VertexOffset) / CellSize), 0, Resolution - 1);
+	const float VertexOffset = (Resolution * VertexDistance) / 2;
+	int32 MinX = FMath::Clamp(FMath::FloorToInt((Location.X - Radius + VertexOffset) / VertexDistance), 0, Resolution - 1);
+	int32 MaxX = FMath::Clamp(FMath::CeilToInt((Location.X + Radius + VertexOffset) / VertexDistance), 0, Resolution - 1);
+	int32 MinY = FMath::Clamp(FMath::FloorToInt((Location.Y - Radius + VertexOffset) / VertexDistance), 0, Resolution - 1);
+	int32 MaxY = FMath::Clamp(FMath::CeilToInt((Location.Y + Radius + VertexOffset) / VertexDistance), 0, Resolution - 1);
 	
 	// Iterate through the possible grid points
 	for (int32 X = MinX; X <= MaxX; ++X)
@@ -805,7 +945,7 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 		IslandLOD = DA_IslandBiome->IslandLODs[GenerateLODIndex];
 	}
 	
-	const float VertexOffset = (Resolution * CellSize) / 2;
+	const float VertexOffset = (Resolution * VertexDistance) / 2;
 	FIslandSpawnedLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLODIndex);
 
 	// Generate Resources
@@ -831,8 +971,8 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 			// Avoid Island Edge
 			if (IslandResource.DA_Resource->AvoidIslandEdge)
 			{
-				const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / CellSize);
-				const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / CellSize);
+				const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / VertexDistance);
+				const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / VertexDistance);
 				if (IslandData.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
 				{
 					++Attempts;
@@ -942,8 +1082,8 @@ void AIsland::GenerateLOD(int32 GenerateLODIndex)
 			FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 
 			// Avoid Island Edge
-			const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / CellSize);
-			const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / CellSize);
+			const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / VertexDistance);
+			const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / VertexDistance);
 			if (IslandData.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
 			{
 				++Attempts;
@@ -1232,9 +1372,9 @@ void AIsland::CancelAsyncGenerate()
 
 bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const
 {
-	const float VertexOffset = (Resolution * CellSize) / 2;
-	const int32 X = (Vertex.X + VertexOffset) / CellSize;
-	const int32 Y = (Vertex.Y + VertexOffset) / CellSize;
+	const float VertexOffset = (Resolution * VertexDistance) / 2;
+	const int32 X = (Vertex.X + VertexOffset) / VertexDistance;
+	const int32 Y = (Vertex.Y + VertexOffset) / VertexDistance;
 
 	for (int32 OffsetX = -EdgeThickness; OffsetX <= EdgeThickness; ++OffsetX)
 	{
@@ -1249,6 +1389,7 @@ bool AIsland::IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>
 
 bool AIsland::IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& GeneratedShapePoints)
 {
+	QUICK_SCOPE_CYCLE_COUNTER(STAT_IsInsideShape);
 	int32 Crossings = 0;
 
 	for (int32 i = 0; i < GeneratedShapePoints.Num(); ++i)
@@ -1262,6 +1403,22 @@ bool AIsland::IsInsideShape(const FVector2D& Point, const TArray<FVector2D>& Gen
 		}
 	}
 	return Crossings % 2 == 1; // Odd number of crossings means inside
+}
+
+bool AIsland::IsInsideIslandRadial(const FVector2D& Vertex)
+{
+	QUICK_SCOPE_CYCLE_COUNTER(STAT_IsInsideIslandRadial);
+	float Dist = Vertex.Size();
+	if (Dist < 1.f)
+		return true;
+
+	float InAngle = FMath::Atan2(Vertex.Y, Vertex.X);
+	if (InAngle < 0) InAngle += 2.f * PI;
+
+	int32 Index = FMath::FloorToInt(InAngle / (2.f * PI) * ANGLE_SAMPLES);
+	Index = FMath::Clamp(Index, 0, ANGLE_SAMPLES - 1);
+
+	return Dist <= RadiusByAngle[Index];
 }
 
 void AIsland::CalculateNormalsAndTangents(const TArray<FVector>& Vertices, const TArray<int32>& Triangles, const TArray<FVector2D>& UVs, TArray<FVector>& OutNormals, TArray<FProcMeshTangent>& OutTangents)
@@ -1420,10 +1577,103 @@ void AIsland::RemoveCorruptedNPC(ANPC* InNPC)
 	}
 }
 
-#if WITH_EDITOR
-void AIsland::IslandGeometryDebug()
+bool AIsland::IsPointInBox(const FVector2D& P, const FVector2D& Min, const FVector2D& Max)
 {
-	if (DebugAllVertices)
+	return P.X >= Min.X && P.X <= Max.X &&
+		   P.Y >= Min.Y && P.Y <= Max.Y;
+}
+
+bool AIsland::SegmentsIntersect(
+	const FVector2D& A, const FVector2D& B,
+	const FVector2D& C, const FVector2D& D)
+{
+	auto Cross = [](const FVector2D& U, const FVector2D& V)
+	{
+		return U.X * V.Y - U.Y * V.X;
+	};
+
+	FVector2D AB = B - A;
+	FVector2D AC = C - A;
+	FVector2D AD = D - A;
+	FVector2D CD = D - C;
+	FVector2D CA = A - C;
+	FVector2D CB = B - C;
+
+	float D1 = Cross(AB, AC);
+	float D2 = Cross(AB, AD);
+	float D3 = Cross(CD, CA);
+	float D4 = Cross(CD, CB);
+
+	return (D1 * D2 < 0.0f) && (D3 * D4 < 0.0f);
+}
+
+bool AIsland::DoesChunkIntersectShape(
+	int32 ChunkX,
+	int32 ChunkY,
+	float ChunkWorldSize,
+	const TArray<FVector2D>& Shape)
+{
+	const FVector2D BoxMin(
+		ChunkX * ChunkWorldSize,
+		ChunkY * ChunkWorldSize
+	);
+
+	const FVector2D BoxMax = BoxMin + FVector2D(ChunkWorldSize);
+
+	// 1️⃣ Any shape vertex inside chunk
+	for (const FVector2D& P : Shape)
+	{
+		if (IsPointInBox(P, BoxMin, BoxMax))
+		{
+			return true;
+		}
+	}
+
+	// 2️⃣ Any chunk corner inside shape
+	const FVector2D BoxCorners[4] =
+	{
+		BoxMin,
+		FVector2D(BoxMax.X, BoxMin.Y),
+		FVector2D(BoxMin.X, BoxMax.Y),
+		BoxMax
+	};
+
+	for (const FVector2D& C : BoxCorners)
+	{
+		if (IsInsideShape(C, Shape))
+		{
+			return true;
+		}
+	}
+
+	// 3️⃣ Edge intersection
+	const int32 Num = Shape.Num();
+	for (int32 i = 0; i < Num; ++i)
+	{
+		const FVector2D A = Shape[i];
+		const FVector2D B = Shape[(i + 1) % Num];
+
+		for (int32 e = 0; e < 4; ++e)
+		{
+			const FVector2D C = BoxCorners[e];
+			const FVector2D D = BoxCorners[(e + 1) % 4];
+
+			if (SegmentsIntersect(A, B, C, D))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+#if WITH_EDITOR
+void AIsland::DebugIslandGeometry()
+{
+	float DebugTime = 8.0f;
+	
+	if (DebugTerrainVertices)
 	{
 		for (int32 i = 0; i < IslandData.TopVertices.Num(); ++i)
 		{
@@ -1441,7 +1691,15 @@ void AIsland::IslandGeometryDebug()
 			// Create the color based on the intensities
 			FColor MixedColor = FColor((uint8)RedIntensity, (uint8)GreenIntensity, 0);
 			
-			DrawDebugPoint(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], 5.0f, MixedColor, false, 10.0f);
+			DrawDebugPoint(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], 5.0f, MixedColor, false, DebugTime);
+		}
+	}
+
+	if (DebugOutsideVertices)
+	{
+		for (int32 i = 0; i < OutsideVertices.Num(); ++i)
+		{
+			DrawDebugPoint(GetWorld(), GetActorLocation()+OutsideVertices[i], 5.0f, FColor::Cyan, false, DebugTime);
 		}
 	}
 
@@ -1449,7 +1707,7 @@ void AIsland::IslandGeometryDebug()
 	{
 		for (FVector2D ShapePoint : IslandData.KeyShapePoints)
 		{
-			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(ShapePoint, 250.0f), 10.0f, FColor::Yellow, false, 10.0f);
+			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(ShapePoint, 250.0f), 10.0f, FColor::Yellow, false, DebugTime);
 		}
 	}
 	
@@ -1457,7 +1715,7 @@ void AIsland::IslandGeometryDebug()
 	{
 		for (FVector2D InterpShapePoint : IslandData.InterpShapePoints)
 		{
-			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(InterpShapePoint, 250.0f), 10.0f, FColor::Red, false, 10.0f);
+			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(InterpShapePoint, 250.0f), 10.0f, FColor::Red, false, DebugTime);
 		}
 	}
 	
@@ -1466,7 +1724,7 @@ void AIsland::IslandGeometryDebug()
 		for (TPair<int32, int32>& Pair : IslandData.EdgeTopVerticesMap)
 		{
 			const FVector Vertex = IslandData.TopVertices[Pair.Value];
-			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(Vertex.X, Vertex.Y, 100.0f), 5.0f, FColor::Blue, false, 10.0f);
+			DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(Vertex.X, Vertex.Y, 100.0f), 5.0f, FColor::Blue, false, DebugTime);
 		}
 		UE_LOG(LogTemp, Warning, TEXT("Edge Vertices: %d"), IslandData.EdgeTopVerticesMap.Num());
 	}
@@ -1475,8 +1733,8 @@ void AIsland::IslandGeometryDebug()
 	{
 		for (int32 i = 0; i < IslandData.TopVertices.Num(); i++)
 		{
-			DrawDebugLine(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], GetActorLocation()+IslandData.TopVertices[i] + IslandData.TopNormals[i] * 100.0f, FColor::Green, false, 10.0f, 0, 1.0f);
-			DrawDebugLine(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], GetActorLocation()+IslandData.TopVertices[i] + IslandData.TopTangents[i].TangentX * 100.0f, FColor::Blue, false, 10.0f, 0, 1.0f);
+			DrawDebugLine(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], GetActorLocation()+IslandData.TopVertices[i] + IslandData.TopNormals[i] * 100.0f, FColor::Green, false, DebugTime, 0, 1.0f);
+			DrawDebugLine(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], GetActorLocation()+IslandData.TopVertices[i] + IslandData.TopTangents[i].TangentX * 100.0f, FColor::Blue, false, DebugTime, 0, 1.0f);
 		}
 	}
 	

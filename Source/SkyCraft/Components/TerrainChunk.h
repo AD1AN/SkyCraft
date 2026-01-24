@@ -10,7 +10,7 @@
 class AIsland;
 
 UCLASS()
-class SKYCRAFT_API UTerrainChunk : public UActorComponent
+class SKYCRAFT_API UTerrainChunk : public UActorComponent // TODO: When IslandChunk is implemented, this will be obsolete.
 {
 	GENERATED_BODY()
 

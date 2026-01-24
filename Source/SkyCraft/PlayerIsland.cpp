@@ -148,8 +148,8 @@ void APlayerIsland::Tick(float DeltaSeconds)
 					FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
 					
 					// Avoid Island Edge
-					const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + (Resolution * CellSize) / 2) / CellSize);
-					const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + (Resolution * CellSize) / 2) / CellSize);
+					const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + (Resolution * VertexDistance) / 2) / VertexDistance);
+					const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + (Resolution * VertexDistance) / 2) / VertexDistance);
 					if (IslandData.EdgeTopVerticesMap.Contains(ClosestX * Resolution + ClosestY)) 
 					{
 						++Attempts;

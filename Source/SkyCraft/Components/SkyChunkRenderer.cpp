@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "Chunker.h"
-#include "SkyCraft/ChunkIsland.h"
+#include "SkyChunkRenderer.h"
+#include "SkyCraft/SkyChunk.h"
 #include "SkyCraft/GIS.h"
 #include "SkyCraft/GMS.h"
 #include "SkyCraft/GSS.h"
@@ -12,14 +12,14 @@
 #include "SkyCraft/WorldSave.h"
 #include "SkyCraft/DataAssets/DA_IslandBiome.h"
 
-UChunker::UChunker()
+USkyChunkRenderer::USkyChunkRenderer()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 	PrimaryComponentTick.TickInterval = 1;
 }
 
-void UChunker::BeginPlay()
+void USkyChunkRenderer::BeginPlay()
 {
 	Super::BeginPlay();
 	if (!GetOwner()->HasAuthority()) return;
@@ -38,23 +38,23 @@ void UChunker::BeginPlay()
 	UpdateChunks();
 }
 
-void UChunker::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void USkyChunkRenderer::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	UpdateChunks();
 }
 
-void UChunker::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void USkyChunkRenderer::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	if (!GetOwner()->HasAuthority()) return;
 	for (auto RenderingChunk : RenderingChunks)
 	{
-		RenderingChunk->RemoveChunker(this);
+		RenderingChunk->RemoveRenderer(this);
 	}
 }
 
-void UChunker::UpdateChunks()
+void USkyChunkRenderer::UpdateChunks()
 {
 	CurrentCoords.X = FMath::RoundToInt(GetOwner()->GetActorLocation().X / GSS->ChunkSize);
 	CurrentCoords.Y = FMath::RoundToInt(GetOwner()->GetActorLocation().Y / GSS->ChunkSize);
@@ -66,7 +66,7 @@ void UChunker::UpdateChunks()
 	}
 }
 
-void UChunker::DestroyChunks()
+void USkyChunkRenderer::DestroyChunks()
 {
 	for (int32 i = RenderingCoords.Num() - 1; i >= 0; --i)
 	{
@@ -75,14 +75,14 @@ void UChunker::DestroyChunks()
 		const float MaxChunkDistanceSqr = FMath::Square(GSS->ChunkRenderRange * GSS->ChunkSize);
 		if (FVector2D::DistSquared(ChunkLocation, CurrentLocation) >= MaxChunkDistanceSqr)
 		{
-			RenderingChunks[i]->RemoveChunker(this);
+			RenderingChunks[i]->RemoveRenderer(this);
 			RenderingChunks.RemoveAt(i);
 			RenderingCoords.RemoveAt(i);
 		}
 	}
 }
 
-void UChunker::SpawnChunks()
+void USkyChunkRenderer::SpawnChunks()
 {
 	for (int32 X = -GSS->ChunkRenderRange; X <= GSS->ChunkRenderRange; ++X)
 	{
@@ -107,11 +107,11 @@ void UChunker::SpawnChunks()
 						FRandomStream ChunkSeed(CombinedSeed);
 						FTransform ChunkTransform;
 						ChunkTransform.SetLocation(FVector(ChunkCoords.X * GSS->ChunkSize, ChunkCoords.Y * GSS->ChunkSize, GSS->IslandsAltitude.Max));
-						AChunkIsland* SpawnedChunk = GetWorld()->SpawnActorDeferred<AChunkIsland>(AChunkIsland::StaticClass(), ChunkTransform);
+						ASkyChunk* SpawnedChunk = GetWorld()->SpawnActorDeferred<ASkyChunk>(ASkyChunk::StaticClass(), ChunkTransform);
 						SpawnedChunk->GMS = GSS->GMS;
 						SpawnedChunk->Coords = ChunkCoords;
-						SpawnedChunk->ChunkSeed = ChunkSeed;
-						SpawnedChunk->Chunkers.Add(this);
+						SpawnedChunk->SkyChunkSeed = ChunkSeed;
+						SpawnedChunk->Renderers.Add(this);
 						SpawnedChunk->FinishSpawning(ChunkTransform);
 						
 						RenderingChunks.Add(SpawnedChunk);
@@ -153,7 +153,7 @@ void UChunker::SpawnChunks()
 									SpawnedIsland->bLoadFromSave = true;
 									SpawnedIsland->SS_Island = *SS_Island;
 								}
-								SpawnedIsland->ChunkIsland = SpawnedChunk;
+								SpawnedIsland->SkyChunk = SpawnedChunk;
 								SpawnedIsland->Coords = ChunkCoords;
 								SpawnedIsland->Seed = ChunkSeed;
 								SpawnedIsland->IslandSize = IslandSize;
@@ -167,7 +167,7 @@ void UChunker::SpawnChunks()
 					{
 						RenderingCoords.Add(ChunkCoords);
 						RenderingChunks.Add(GSS->GMS->SpawnedChunkIslands[FoundChunk]);
-						GSS->GMS->SpawnedChunkIslands[FoundChunk]->AddChunker(this);
+						GSS->GMS->SpawnedChunkIslands[FoundChunk]->AddRenderer(this);
 					}
 				}
 				else

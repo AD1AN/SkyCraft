@@ -61,7 +61,7 @@ void UFoliageHISM::StartComponent()
 
 void UFoliageHISM::Generate_InitialInstances(const FIslandData& _ID)
 {
-	const float VertexOffset = (Island->Resolution * Island->CellSize) / 2;
+	const float VertexOffset = (Island->Resolution * Island->VertexDistance) / 2;
     const float SpacingSqr = FMath::Square(DA_Foliage->Spacing);
     int32 InstanceIndex = 0;
     int32 Attempts = 0;
@@ -77,8 +77,8 @@ void UFoliageHISM::Generate_InitialInstances(const FIslandData& _ID)
         FVector Candidate = Island->RandomPointInTriangle(V0, V1, V2);
 
         // Check if Edge
-        const int32 ClosestX = FMath::RoundToInt((Candidate.X + VertexOffset) / Island->CellSize);
-        const int32 ClosestY = FMath::RoundToInt((Candidate.Y + VertexOffset) / Island->CellSize);
+        const int32 ClosestX = FMath::RoundToInt((Candidate.X + VertexOffset) / Island->VertexDistance);
+        const int32 ClosestY = FMath::RoundToInt((Candidate.Y + VertexOffset) / Island->VertexDistance);
         if (_ID.EdgeTopVerticesMap.Contains(ClosestX * Island->Resolution + ClosestY)) 
         {
         	++Attempts;

@@ -1,16 +1,16 @@
 // ADIAN Copyrighted
 
-#include "ChunkIsland.h"
+#include "SkyChunk.h"
 
 #include "GIS.h"
 #include "GMS.h"
 #include "GSS.h"
 #include "Island.h"
-#include "Components/Chunker.h"
+#include "Components/SkyChunkRenderer.h"
 #include "Components/BoxComponent.h"
 #include "Components/TextRenderComponent.h"
 
-AChunkIsland::AChunkIsland()
+ASkyChunk::ASkyChunk()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.bStartWithTickEnabled = false;
@@ -37,7 +37,7 @@ AChunkIsland::AChunkIsland()
 #endif
 }
 
-void AChunkIsland::BeginPlay()
+void ASkyChunk::BeginPlay()
 {
 	Super::BeginPlay();
 #if WITH_EDITOR
@@ -51,24 +51,24 @@ void AChunkIsland::BeginPlay()
 	UpdateLOD();
 }
 
-void AChunkIsland::RemoveChunker(UChunker* Chunker)
+void ASkyChunk::RemoveRenderer(USkyChunkRenderer* InRenderer)
 {
-	Chunkers.RemoveSingle(Chunker);
-	for (int32 i = Chunkers.Num() - 1; i >= 0; --i)
+	Renderers.RemoveSingle(InRenderer);
+	for (int32 i = Renderers.Num() - 1; i >= 0; --i)
 	{
-		if (!IsValid(Chunkers[i]->GetOwner())) Chunkers.RemoveAt(i);
+		if (!IsValid(Renderers[i]->GetOwner())) Renderers.RemoveAt(i);
 	}
-	if (Chunkers.IsEmpty()) DestroyChunk();
+	if (Renderers.IsEmpty()) DestroySkyChunk();
 	else UpdateLOD();
 }
 
-void AChunkIsland::AddChunker(UChunker* Chunker)
+void ASkyChunk::AddRenderer(USkyChunkRenderer* InRenderer)
 {
-	Chunkers.Add(Chunker);
+	Renderers.Add(InRenderer);
 	UpdateLOD();
 }
 
-void AChunkIsland::DestroyChunk()
+void ASkyChunk::DestroySkyChunk()
 {
 	const int32 ChunkIndex = GMS->SpawnedChunkIslands.Find(this);
 	if (ChunkIndex == INDEX_NONE) return;
@@ -78,10 +78,10 @@ void AChunkIsland::DestroyChunk()
 	Destroy();
 }
 
-void AChunkIsland::UpdateLOD()
+void ASkyChunk::UpdateLOD()
 {
 	int32 ClosestChunkDistance = INDEX_NONE;
-	for (auto& Chunker : Chunkers)
+	for (auto& Chunker : Renderers)
 	{
 		if (!IsValid(Chunker)) continue;
 		const int32 DistanceX = FMath::Abs(Chunker->CurrentCoords.X - Coords.X);
@@ -103,7 +103,7 @@ void AChunkIsland::UpdateLOD()
 
 
 #if WITH_EDITOR
-void AChunkIsland::UpdateText()
+void ASkyChunk::UpdateText()
 {
 	FString DisplayText = FString::Printf(
 		TEXT("XY: %d / %d\n"
@@ -111,8 +111,8 @@ void AChunkIsland::UpdateText()
 			"ChunkSeed: %d\n"
 			"ServerLOD: %d"),
 			Coords.X, Coords.Y,
-			Chunkers.Num(),
-			ChunkSeed.GetInitialSeed(),
+			Renderers.Num(),
+			SkyChunkSeed.GetInitialSeed(),
 			ServerLOD);
 
 	TextRenderComponent->SetText(FText::FromString(DisplayText));

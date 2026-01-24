@@ -37,7 +37,7 @@ void UNPCSpawner::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
-	const float VertexOffset = (Island->Resolution * Island->CellSize) / 2;
+	const float VertexOffset = (Island->Resolution * Island->VertexDistance) / 2;
 
 	// Respawn island NPCs.
 	if (Island->GSS->bRespawnNPCs)
@@ -79,8 +79,8 @@ void UNPCSpawner::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 							FVector RandomPoint = Island->RandomPointInTriangle(V0, V1, V2);
 
 							// Avoid Island Edge
-							const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / Island->CellSize);
-							const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / Island->CellSize);
+							const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / Island->VertexDistance);
+							const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / Island->VertexDistance);
 							if (Island->IslandData.EdgeTopVerticesMap.Contains(ClosestX * Island->Resolution + ClosestY)) 
 							{
 								++Attempts;
@@ -148,8 +148,8 @@ void UNPCSpawner::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 							FVector RandomPoint = Island->RandomPointInTriangle(V0, V1, V2);
 
 							// Avoid Island Edge
-							const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / Island->CellSize);
-							const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / Island->CellSize);
+							const int32 ClosestX = FMath::RoundToInt((RandomPoint.X + VertexOffset) / Island->VertexDistance);
+							const int32 ClosestY = FMath::RoundToInt((RandomPoint.Y + VertexOffset) / Island->VertexDistance);
 							if (Island->IslandData.EdgeTopVerticesMap.Contains(ClosestX * Island->Resolution + ClosestY)) 
 							{
 								++Attempts;

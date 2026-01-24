@@ -18,7 +18,7 @@ class APlayerNormal;
 class AResource;
 class AGSS;
 class UDA_IslandBiome;
-class AChunkIsland;
+class ASkyChunk;
 class ANavMeshBoundsVolume;
 class UNavigationSystemV1;
 
@@ -47,7 +47,7 @@ public:
 	UFUNCTION(BlueprintCallable) ANavMeshBoundsVolume* NMBV_Use(AActor* ActorAttach, FVector Scale = FVector(200,200,50));
 	UFUNCTION(BlueprintCallable) void NMBV_Unuse(ANavMeshBoundsVolume* NMBV);
 	
-	UPROPERTY(BlueprintReadOnly) TArray<AChunkIsland*> SpawnedChunkIslands;
+	UPROPERTY(BlueprintReadOnly) TArray<ASkyChunk*> SpawnedChunkIslands;
 	UPROPERTY(BlueprintReadOnly) TArray<FCoords> SpawnedChunkIslandsCoords;
 
 	UPROPERTY(EditDefaultsOnly) TArray<TObjectPtr<UDA_IslandBiome>> DA_IslandBiomes;
