@@ -27,7 +27,7 @@ public:
 	virtual void BeginPlay() override;
 	void BeginBounds();
 	
-#if WITH_EDITOR
-	virtual void OnConstruction(const FTransform& Transform) override;
-#endif
+// #if WITH_EDITOR
+// 	virtual void OnConstruction(const FTransform& Transform) override;
+// #endif
 };

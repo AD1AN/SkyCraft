@@ -16,30 +16,30 @@ AIslandChunk::AIslandChunk()
 	PMC->SetCullDistance(900000.0f);
 	SetRootComponent(PMC);
 
-#if WITH_EDITOR
-	Bounds = CreateDefaultSubobject<UBoxComponent>("Bounds");
-	Bounds->SetupAttachment(RootComponent);
-	Bounds->bIsEditorOnly = true;
-	Bounds->SetCollisionProfileName("NoCollision");
-#endif
+// #if WITH_EDITOR
+// 	Bounds = CreateDefaultSubobject<UBoxComponent>("Bounds");
+// 	Bounds->SetupAttachment(RootComponent);
+// 	Bounds->bIsEditorOnly = true;
+// 	Bounds->SetCollisionProfileName("NoCollision");
+// #endif
 }
 
 void AIslandChunk::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	// BeginBounds();
 }
 
-#if WITH_EDITOR
-void AIslandChunk::OnConstruction(const FTransform& Transform)
-{
-	Super::OnConstruction(Transform);
-
-	if (!Island || !Island->bOnConstruction) return;
-
-	BeginBounds();
-}
-#endif
+// #if WITH_EDITOR
+// void AIslandChunk::OnConstruction(const FTransform& Transform)
+// {
+// 	Super::OnConstruction(Transform);
+//
+// 	if (!Island || !Island->bOnConstruction) return;
+//
+// 	BeginBounds();
+// }
+// #endif
 
 void AIslandChunk::BeginBounds()
 {

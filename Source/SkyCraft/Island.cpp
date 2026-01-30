@@ -219,18 +219,18 @@ FIslandData AIsland::GenerateIsland()
 
 			FVector ChunkLocation = GetActorLocation() + FVector(LocX, LocY, 0.f);
 
-			AIslandChunk* Chunk =
-				GetWorld()->SpawnActor<AIslandChunk>(
-					AIslandChunk::StaticClass(),
-					ChunkLocation,
-					FRotator::ZeroRotator
-				);
-
-			// Chunk->ChunkCoord = FIntPoint(ChunkX, ChunkY);
-			Chunk->Island = this;
-			Chunk->BeginBounds();
-
-			IslandChunks.Add(Chunk);
+			// AIslandChunk* Chunk =
+			// 	GetWorld()->SpawnActor<AIslandChunk>(
+			// 		AIslandChunk::StaticClass(),
+			// 		ChunkLocation,
+			// 		FRotator::ZeroRotator
+			// 	);
+			//
+			// // Chunk->ChunkCoord = FIntPoint(ChunkX, ChunkY);
+			// Chunk->Island = this;
+			// Chunk->BeginBounds();
+			//
+			// IslandChunks.Add(Chunk);
 		}
 	}
 	
