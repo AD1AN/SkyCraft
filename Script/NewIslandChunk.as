@@ -48,7 +48,7 @@ class ANewIslandChunk : AActor
 					int32 Key = X * Stride + Y;
 					TopVerticesMap.Add(Key, VertexData);
 					TopVertices.Add(FVector(Vertex.X, Vertex.Y, 0));
-					TopUVs.Add(FVector2D(Vertex.X / (Island.ChunkResolution - 1), Vertex.Y / (Island.ChunkResolution - 1)));
+					TopUVs.Add(FVector2D(WorldVertex.X / (Island.ChunkResolution - 1), WorldVertex.Y / (Island.ChunkResolution - 1)));
 				}
                 #if EDITOR
                 else
@@ -68,9 +68,11 @@ class ANewIslandChunk : AActor
 				FVector WorldVertex = TopVertices[i] + GetActorLocation();
 				const float SmallNoise = SeededNoise2D(WorldVertex.X * Island.SmallNoiseScale, WorldVertex.Y * Island.SmallNoiseScale, Island.Seed.GetInitialSeed()) * Island.SmallNoiseStrength + Island.SmallNoiseHeight;
 				const float BigNoise = SeededNoise2D(WorldVertex.X * Island.BigNoiseScale, WorldVertex.Y * Island.BigNoiseScale, Island.Seed.GetInitialSeed() + 1) * Island.BigNoiseStrength + Island.BigNoiseHeight;
-				float Mask = Island.GetGeneralHeightMask(WorldVertex - Island.GetActorLocation());
-				float Edge = Math::SmoothStep(0.0f, 0.25f, Mask);
-				TopVertices[i].Z = (BigNoise + SmallNoise) * Edge;
+				float FalloffMask = Island.GetGeneralFalloffMask(WorldVertex - Island.GetActorLocation());
+				float Edge = Math::SmoothStep(0.0f, 0.25f, FalloffMask);
+				float Mountain = Math::SmoothStep(0.0f, .5f, FalloffMask) * 5000;
+
+				TopVertices[i].Z = (BigNoise + SmallNoise + Mountain) * Edge;
 			}
 		}
 
@@ -97,7 +99,12 @@ class ANewIslandChunk : AActor
             }
         }
 
-        TArray<FVector2D> emptyUv;
+		if (!Island.bLoadFromSave) // If load then do it in LoadIsland()
+		{
+			Island.CalculateNormalsAndTangents(TopVertices, TopTriangles, TopUVs, TopNormals, TopTangents);
+		}
+
+		TArray<FVector2D> emptyUv;
         TArray<FLinearColor> emptyColor;
 
         PMC.CreateMeshSection_LinearColor(0, TopVertices, TopTriangles, TopNormals, TopUVs, emptyUv, emptyUv, emptyUv, emptyColor, TopTangents, true);

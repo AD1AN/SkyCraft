@@ -41,12 +41,21 @@ class ANewIsland : AActor
 	UPROPERTY(DefaultComponent)
 	UProceduralMeshComponent PMC;
 
+	UPROPERTY()
+	TArray<UInstancedStaticMeshComponent> CliffsComponents;
+
 	bool bPlayerIsland = false;
 	bool bLoadFromSave = false;
 	UPROPERTY() UDA_NewIslandBiome DA_IslandBiome = nullptr;
 
 	UPROPERTY(Replicated)
 	FRandomStream Seed;
+
+	UPROPERTY(ReplicatedUsing=OnRep_IslandSize)
+	float IslandSize = 0.5f; // 0 = smallest. 1 = biggest.
+	
+	UFUNCTION()
+	void OnRep_IslandSize() {}
 
 	FIslandDataAs IslandData;
 	UPROPERTY() TArray<ANewIslandChunk> IslandChunks;
@@ -88,9 +97,15 @@ class ANewIsland : AActor
 		if (CurrentReloadCooldown >= 1.f)
 		{
 			APlayerController PC = GetGameInstance().GetFirstLocalPlayerController();
-			if (PC.IsInputKeyDown(EKeys::R))
+			if (PC.IsInputKeyDown(EKeys::R) || PC.IsInputKeyDown(EKeys::E))
 			{
 				Print("Island reloaded!", 2.f, FLinearColor::Blue);
+				DebugNormalsTangents = !DebugNormalsTangents;
+				for (auto Cliff : CliffsComponents)
+				{
+					Cliff.DestroyComponent();
+				}
+				CliffsComponents.Empty();
 				CurrentReloadCooldown = 0;
 				for (auto Chunk : IslandChunks)
 				{
@@ -115,6 +130,29 @@ class ANewIsland : AActor
 	{
 		Seed.Reset();
 		FIslandDataAs _IslandDataAs;
+		SpawnCliffsComponents();
+		FVector2D FromZeroToOne = FVector2D(0, 1);
+
+		// Scale parameters by IslandSize
+		if (bPlayerIsland)
+		{
+			ShapeRadius = 1000 + (IslandSize * 100) * 100;
+			InterpShapePointLength = Math::GetMappedRangeValueClamped(FVector2D(0,1), FVector2D(275,1050), IslandSize);
+		}
+		else
+		{
+			// // Random from seed
+			// ShapePoints = Seed.RandRange(15, int32(20 * (IslandSize + 1)));
+			// ScalePerlinNoise1D = Seed.RandRange(0.25f, 0.5f);
+			// if (0.8f > Seed.RandRange(0, 1)) ScaleRandomShape = Seed.RandRange(0.5f, 0.7f);
+			// else ScaleRandomShape = Seed.RandRange(0.15f, 0.35f);
+		
+			// // Random from IslandSize
+			// ShapeRadius = Math::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(2000,10000), IslandSize);
+			// InterpShapePointLength = Math::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(300,1100), IslandSize);
+			// // SmallNoiseStrength = Math::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(15,100), IslandSize);
+			// // BigNoiseStrength = Math::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(20,200), IslandSize);
+		}
 
 		// Generate KeyShapePoints
 		float MaxShapePointDistance = 0.0f;
@@ -147,6 +185,25 @@ class ANewIsland : AActor
 					_IslandDataAs.InterpShapePoints.Add(CurrentPoint + Step * j);
 					_IslandDataAs.AllShapePoints.Add(CurrentPoint + Step * j);
 				}
+			}
+		}
+
+		// Generate Cliff instances on AllShapePoints
+		float CliffScale = Math::GetMappedRangeValueClamped(FromZeroToOne, FVector2D(0.25f, 1.0f), IslandSize);
+		for (int32 i = 0; i < _IslandDataAs.AllShapePoints.Num(); ++i)
+		{
+			const FVector2D& CurrentPoint = _IslandDataAs.AllShapePoints[i];
+			const FVector2D& PrevPoint = _IslandDataAs.AllShapePoints[(i - 1 + _IslandDataAs.AllShapePoints.Num()) % _IslandDataAs.AllShapePoints.Num()];
+			const FVector2D& NextPoint = _IslandDataAs.AllShapePoints[(i + 1) % _IslandDataAs.AllShapePoints.Num()];
+
+			FVector2D ForwardDir = (NextPoint - PrevPoint).GetSafeNormal();
+			FRotator InstanceRotation(0.0f, Math::Atan2(ForwardDir.Y, ForwardDir.X) * 180.0f / PI, 0.0f);
+			FVector InstanceLocation(CurrentPoint.X, CurrentPoint.Y, 0.0f);
+			FVector InstanceScale(1, 1, Seed.RandRange(0.8f, 1.5f));
+
+			if (!CliffsComponents.IsEmpty())
+			{
+				_IslandDataAs.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, CliffsComponents.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
 			}
 		}
 
@@ -221,6 +278,7 @@ class ANewIsland : AActor
 
 				ANewIslandChunk Chunk = SpawnActor(ANewIslandChunk, ChunkLocation, FRotator(), NAME_None, true);
 				Chunk.Island = this;
+				Chunk.AttachToActor(this);
 				FinishSpawningActor(Chunk);
 				IslandChunks.Add(Chunk);
 			}
@@ -309,10 +367,7 @@ class ANewIsland : AActor
 		{
 			_IslandDataAs.BottomUVs.Add(FVector2D(Vertex.X, Vertex.Y) * BottomUVScale);
 		}
-		if (!bLoadFromSave) // If load then do it in LoadIsland()
-		{
-			CalculateNormalsAndTangents(_IslandDataAs.TopVertices, _IslandDataAs.TopTriangles, _IslandDataAs.TopUVs, _IslandDataAs.TopNormals, _IslandDataAs.TopTangents);
-		}
+
 		CalculateNormalsAndTangents(_IslandDataAs.BottomVertices, _IslandDataAs.BottomTriangles, _IslandDataAs.BottomUVs, _IslandDataAs.BottomNormals, _IslandDataAs.BottomTangents);
 
 		TArray<FVector2D> emptyUvs;
@@ -332,7 +387,31 @@ class ANewIsland : AActor
 		// OnFullGenerated.Broadcast();
 		// OnIslandFullGenerated.Broadcast(this);
 
+		for (int32 i = 0; i < _IslandDataAs.GeneratedCliffs.Num(); ++i)
+		{
+			CliffsComponents[i].AddInstances(_IslandDataAs.GeneratedCliffs[i].Instances, false);
+		}
+
 		return _IslandDataAs;
+	}
+
+	void SpawnCliffsComponents()
+	{
+		if (DA_IslandBiome == nullptr)
+			return;
+		for (auto& StaticMesh : DA_IslandBiome.Cliffs)
+		{
+			if (StaticMesh == nullptr)
+				continue;
+
+			UInstancedStaticMeshComponent Cliff = UInstancedStaticMeshComponent::Create(this);
+			Cliff.AttachToComponent(RootComponent);
+			Cliff.SetStaticMesh(StaticMesh);
+			if (DA_IslandBiome.BottomMaterial != nullptr) Cliff.SetMaterial(0, DA_IslandBiome.BottomMaterial);
+			Cliff.SetCollisionProfileName(n"Island");
+			Cliff.SetCullDistances(900000, 900000);
+			CliffsComponents.Add(Cliff);
+		}
 	}
 
 	private bool DoesChunkIntersectShape(int32 ChunkX, int32 ChunkY, float ChunkWorldSize, const TArray<FVector2D>& Shape)
@@ -516,7 +595,7 @@ class ANewIsland : AActor
 		}
 	}
 
-	float GetGeneralHeightMask(const FVector& WorldVertex) const
+	float GetGeneralFalloffMask(const FVector& WorldVertex) const
 	{
 		FVector2D P(WorldVertex.X, WorldVertex.Y);
 
@@ -585,7 +664,7 @@ class ANewIsland : AActor
 					FVector RandomOffset = FVector(Math::RandRange(-3.f, 3.f));
 					FLinearColor TerrainVertexColor = DebugTerrainVerticesRandomColors ? RandomChunkColor : FLinearColor::Blue;
 					// System::DrawDebugPoint(Chunk.GetActorLocation() + Vertex + RandomOffset, 5, TerrainVertexColor, 100000);
-					float Mask = GetGeneralHeightMask(Chunk.GetActorLocation() + Vertex - GetActorLocation());
+					float Mask = GetGeneralFalloffMask(Chunk.GetActorLocation() + Vertex - GetActorLocation());
 					Mask = Math::SmoothStep(0.0f, 0.25f, Mask);
 					// Mask = Math::SmoothStep(0.25f, 1.f, Mask);
 					// Mask = Math::RoundToFloat(Mask);
@@ -623,24 +702,17 @@ class ANewIsland : AActor
 			}
 		}
 		
-		// if (DebugEdgeVertices)
-		// {
-		// 	for (TPair<int32, int32>& Pair : IslandData.EdgeTopVerticesMap)
-		// 	{
-		// 		const FVector Vertex = IslandData.TopVertices[Pair.Value];
-		// 		DrawDebugPoint(GetWorld(), GetActorLocation()+FVector(Vertex.X, Vertex.Y, 100.0f), 5.0f, FColor::Blue, false, DebugTime);
-		// 	}
-		// 	UE_LOG(LogTemp, Warning, TEXT("Edge Vertices: %d"), IslandData.EdgeTopVerticesMap.Num());
-		// }
-		
-		// if (DebugNormalsTangents)
-		// {
-		// 	for (int32 i = 0; i < IslandData.TopVertices.Num(); i++)
-		// 	{
-		// 		DrawDebugLine(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], GetActorLocation()+IslandData.TopVertices[i] + IslandData.TopNormals[i] * 100.0f, FColor::Green, false, DebugTime, 0, 1.0f);
-		// 		DrawDebugLine(GetWorld(), GetActorLocation()+IslandData.TopVertices[i], GetActorLocation()+IslandData.TopVertices[i] + IslandData.TopTangents[i].TangentX * 100.0f, FColor::Blue, false, DebugTime, 0, 1.0f);
-		// 	}
-		// }
+		if (DebugNormalsTangents)
+		{
+			for (auto Chunk : IslandChunks)
+			{
+				for (int32 i = 0; i < Chunk.TopVertices.Num(); i++)
+				{
+					System::DrawDebugLine(Chunk.GetActorLocation() + Chunk.TopVertices[i], Chunk.GetActorLocation() + Chunk.TopVertices[i] + Chunk.TopNormals[i] * 100.0f, FLinearColor::Green, 100000, 1);
+					System::DrawDebugLine(Chunk.GetActorLocation() + Chunk.TopVertices[i], Chunk.GetActorLocation() + Chunk.TopVertices[i] + Chunk.TopTangents[i].TangentX * 100.0f, FLinearColor::Blue, 100000, 1);
+				}
+			}
+		}
 		
 		// UE_LOG(LogTemp, Warning, TEXT("Vertices: %d, Triangles: %d"), IslandData.TopVertices.Num(), IslandData.TopTriangles.Num() / 3);
 	}

@@ -45,8 +45,8 @@ AIsland::AIsland()
 	AttachSimulatedBodies = CreateDefaultSubobject<USceneComponent>("AttachSimulatedBodies");
 	AttachSimulatedBodies->SetupAttachment(RootComponent);
 
-	GrowingResourcesComponent = CreateDefaultSubobject<UGrowingResourcesComponent>("GrowingResourcesComponent");
-	NPCSpawnerComponent = CreateDefaultSubobject<UNPCSpawner>("NPCSpawnerComponent");
+	// GrowingResourcesComponent = CreateDefaultSubobject<UGrowingResourcesComponent>("GrowingResourcesComponent");
+	// NPCSpawnerComponent = CreateDefaultSubobject<UNPCSpawner>("NPCSpawnerComponent");
 }
 
 #if WITH_EDITOR
@@ -78,7 +78,7 @@ void AIsland::OnConstruction(const FTransform& Transform)
 void AIsland::BeginPlay()
 {
 	Super::BeginPlay();
-	if (HasAuthority()) CurrentNMBV = GSS->GMS->NMBV_Use(this);
+	// if (HasAuthority()) CurrentNMBV = GSS->GMS->NMBV_Use(this);
 	// Read GMS about BeginPlay() order.
 	if (!bPlayerIsland) StartIsland();
 }
@@ -896,16 +896,16 @@ void AIsland::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 	
-	if (HasAuthority() && EndPlayReason != EEndPlayReason::Quit)
-	{
-		if (!bPlayerIsland) SaveIsland();
-		DestroyLODs();
-		for (int32 i = Buildings.Num() - 1; i >= 0; --i)
-		{
-			if (IsValid(Buildings[i])) Buildings[i]->Destroy();
-		}
-		GSS->GMS->NMBV_Unuse(CurrentNMBV);
-	}
+	// if (HasAuthority() && EndPlayReason != EEndPlayReason::Quit)
+	// {
+	// 	if (!bPlayerIsland) SaveIsland();
+	// 	DestroyLODs();
+	// 	for (int32 i = Buildings.Num() - 1; i >= 0; --i)
+	// 	{
+	// 		if (IsValid(Buildings[i])) Buildings[i]->Destroy();
+	// 	}
+	// 	GSS->GMS->NMBV_Unuse(CurrentNMBV);
+	// }
 }
 
 void AIsland::DestroyLODs()
