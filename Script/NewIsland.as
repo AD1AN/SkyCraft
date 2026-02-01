@@ -15,15 +15,6 @@ struct FIslandDataAs
 	TArray<FVector2D> InterpShapePoints;
 	TArray<FVector2D> AllShapePoints;
 	TMap<int32, FCliffData> GeneratedCliffs;
-	TArray<FVector2D> TopVerticesAxis; // Raw Axis = (X,Y)
-	TMap<int32, FVertexData> TopVerticesMap; // VertexKey: Combined Axis = X * Stride + Y
-	TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
-	TMap<int32, int32> EdgeTopVerticesMap; // VertexKey
-	TMap<int32, int32> DeadVerticesMap; // VertexKey. For PlayerIsland's bIsCrystal and maybe for future needs.
-	TArray<int32> TopTriangles;
-	TArray<FVector2D> TopUVs;
-	TArray<FVector> TopNormals;
-	TArray<FProcMeshTangent> TopTangents;
 	TArray<FVector> BottomVertices;
 	TArray<int32> BottomTriangles;
 	TArray<FVector2D> BottomUVs;
@@ -100,7 +91,12 @@ class ANewIsland : AActor
 			if (PC.IsInputKeyDown(EKeys::R) || PC.IsInputKeyDown(EKeys::E))
 			{
 				Print("Island reloaded!", 2.f, FLinearColor::Blue);
-				DebugNormalsTangents = !DebugNormalsTangents;
+
+				if (PC.IsInputKeyDown(EKeys::E))
+				{
+					DebugNormalsTangents = !DebugNormalsTangents;
+				}
+
 				for (auto Cliff : CliffsComponents)
 				{
 					Cliff.DestroyComponent();
