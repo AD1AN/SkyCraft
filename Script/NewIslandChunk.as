@@ -9,6 +9,12 @@ class ANewIslandChunk : AActor
     default Bounds.bVisible = true;
     default Bounds.bHiddenInGame = false;
 
+	UPROPERTY()
+	int32 ChunkX = -1;
+
+	UPROPERTY()
+	int32 ChunkY = -1;
+
     ANewIsland Island;
 
 	TArray<FVector2D> TopVerticesAxis; // Raw Axis = (X,Y)
@@ -25,7 +31,6 @@ class ANewIslandChunk : AActor
     void BeginPlay()
     {
         BeginBounds();
-		FLinearColor RandomChunkColor = FLinearColor(Math::RandRange(0.f, 1.f), Math::RandRange(0.f, 1.f), Math::RandRange(0.f, 1.f), 1.f);
 		const float MeshOffset = Island.ChunkResolution * Island.VertexDistance / 2;
 		const int32 Stride = Island.ChunkResolution + 1;
 
@@ -39,15 +44,23 @@ class ANewIslandChunk : AActor
             {
                 FVector Vertex(X * Island.VertexDistance - MeshOffset, Y * Island.VertexDistance - MeshOffset, 0);
                 FVector WorldVertex = GetActorLocation() + Vertex;
+
 				if (Island.IsInsideIslandRadial(WorldVertex - Island.GetActorLocation()))
 				{
+					// Generate random height.
+					const float SmallNoise = SeededNoise2D(WorldVertex.X * Island.SmallNoiseScale, WorldVertex.Y * Island.SmallNoiseScale, Island.Seed.GetInitialSeed()) * Island.SmallNoiseStrength + Island.SmallNoiseHeight;
+					const float BigNoise = SeededNoise2D(WorldVertex.X * Island.BigNoiseScale, WorldVertex.Y * Island.BigNoiseScale, Island.Seed.GetInitialSeed() + 1) * Island.BigNoiseStrength + Island.BigNoiseHeight;
+					float FalloffMask = Island.GetGeneralFalloffMask(WorldVertex - Island.GetActorLocation());
+					FalloffMask = Math::SmoothStep(0.05f, 0.25f, FalloffMask);
+					Vertex.Z = (BigNoise + SmallNoise) * FalloffMask;
+
 					FVertexData VertexData;
 					VertexData.VertexIndex = CurrentVertexIndex;
                     CurrentVertexIndex++;
 					TopVerticesAxis.Add(FVector2D(X, Y));
 					int32 Key = X * Stride + Y;
 					TopVerticesMap.Add(Key, VertexData);
-					TopVertices.Add(FVector(Vertex.X, Vertex.Y, 0));
+					TopVertices.Add(Vertex);
 					TopUVs.Add(FVector2D(WorldVertex.X / (Island.ChunkResolution - 1), WorldVertex.Y / (Island.ChunkResolution - 1)));
 				}
                 #if EDITOR
@@ -59,23 +72,6 @@ class ANewIslandChunk : AActor
 			}
         }
 
-		// TopVertices Random Height
-		for (int32 i = 0; i < TopVertices.Num(); ++i)
-		{
-			const int32 Key = int32(TopVerticesAxis[i].X * Stride + TopVerticesAxis[i].Y);
-			if (!EdgeTopVerticesMap.Contains(Key) && !DeadVerticesMap.Contains(Key))
-			{
-				FVector WorldVertex = TopVertices[i] + GetActorLocation();
-				const float SmallNoise = SeededNoise2D(WorldVertex.X * Island.SmallNoiseScale, WorldVertex.Y * Island.SmallNoiseScale, Island.Seed.GetInitialSeed()) * Island.SmallNoiseStrength + Island.SmallNoiseHeight;
-				const float BigNoise = SeededNoise2D(WorldVertex.X * Island.BigNoiseScale, WorldVertex.Y * Island.BigNoiseScale, Island.Seed.GetInitialSeed() + 1) * Island.BigNoiseStrength + Island.BigNoiseHeight;
-				float FalloffMask = Island.GetGeneralFalloffMask(WorldVertex - Island.GetActorLocation());
-				float Edge = Math::SmoothStep(0.0f, 0.25f, FalloffMask);
-				float Mountain = Math::SmoothStep(0.0f, .5f, FalloffMask) * 5000;
-
-				TopVertices[i].Z = (BigNoise + SmallNoise + Mountain) * Edge;
-			}
-		}
-
 		// Generate TopTriangles
         for (int32 X = 1; X <= Island.ChunkResolution; ++X)
         {
@@ -86,33 +82,27 @@ class ANewIslandChunk : AActor
 				int32 BL = (X - 1) * Stride + Y;
 				int32 BR = X * Stride + Y;
 
-				if (TopVerticesMap.Contains(TL) && TopVerticesMap.Contains(TR) &&
-                    TopVerticesMap.Contains(BL) && TopVerticesMap.Contains(BR))
+				if (TopVerticesMap.Contains(TL) && TopVerticesMap.Contains(TR) && TopVerticesMap.Contains(BL) && TopVerticesMap.Contains(BR))
                 {
                     TopTriangles.Add(TopVerticesMap[TL].VertexIndex);
                     TopTriangles.Add(TopVerticesMap[BL].VertexIndex);
                     TopTriangles.Add(TopVerticesMap[BR].VertexIndex);
+
                     TopTriangles.Add(TopVerticesMap[TL].VertexIndex);
                     TopTriangles.Add(TopVerticesMap[BR].VertexIndex);
                     TopTriangles.Add(TopVerticesMap[TR].VertexIndex);
                 }
             }
         }
-
-		if (!Island.bLoadFromSave) // If load then do it in LoadIsland()
-		{
-			Island.CalculateNormalsAndTangents(TopVertices, TopTriangles, TopUVs, TopNormals, TopTangents);
-		}
-
+		
 		TArray<FVector2D> emptyUv;
         TArray<FLinearColor> emptyColor;
-
-        PMC.CreateMeshSection_LinearColor(0, TopVertices, TopTriangles, TopNormals, TopUVs, emptyUv, emptyUv, emptyUv, emptyColor, TopTangents, true);
+		Island.CalculateNormalsAndTangents(TopVertices, TopTriangles, TopUVs, TopNormals, TopTangents);
+		PMC.CreateMeshSection_LinearColor(0, TopVertices, TopTriangles, TopNormals, TopUVs, emptyUv, emptyUv, emptyUv, emptyColor, TopTangents, true);
 
 		if (IsValid(Island.DA_IslandBiome))
 		{
-			if (Island.DA_IslandBiome.TopMaterial != nullptr)
-				PMC.SetMaterial(0, Island.DA_IslandBiome.TopMaterial);
+			if (Island.DA_IslandBiome.TopMaterial != nullptr) PMC.SetMaterial(0, Island.DA_IslandBiome.TopMaterial);
 		}
 	}
 
