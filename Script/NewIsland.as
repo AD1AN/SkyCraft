@@ -641,9 +641,9 @@ class ANewIsland : AActor
 			{
 				FLinearColor RandomChunkColor = FLinearColor(Math::RandRange(0.f, 1.f), Math::RandRange(0.f, 1.f), Math::RandRange(0.f, 1.f), 1.f);
 
-				for (int32 i = 0; i < Chunk.TopVertices.Num(); ++i)
+				for (int32 i = 0; i < Chunk.RenderVertices.Num(); ++i)
 				{
-					FVector Vertex = Chunk.TopVertices[i];
+					FVector Vertex = Chunk.RenderVertices[i];
 					// // Get the absolute values of the x and y components to determine dominance
 					// float AbsX = Math::Abs(IslandData.TopVerticesAxis[i].X);
 					// float AbsY = Math::Abs(IslandData.TopVerticesAxis[i].Y);
@@ -703,10 +703,10 @@ class ANewIsland : AActor
 		{
 			for (auto Chunk : IslandChunks)
 			{
-				for (int32 i = 0; i < Chunk.TopVertices.Num(); i++)
+				for (int32 i = 0; i < Chunk.RenderVertices.Num(); i++)
 				{
-					System::DrawDebugLine(Chunk.GetActorLocation() + Chunk.TopVertices[i], Chunk.GetActorLocation() + Chunk.TopVertices[i] + Chunk.TopNormals[i] * 100.0f, FLinearColor::Green, 100000, 1);
-					System::DrawDebugLine(Chunk.GetActorLocation() + Chunk.TopVertices[i], Chunk.GetActorLocation() + Chunk.TopVertices[i] + Chunk.TopTangents[i].TangentX * 100.0f, FLinearColor::Blue, 100000, 1);
+					System::DrawDebugLine(Chunk.GetActorLocation() + Chunk.RenderVertices[i], Chunk.GetActorLocation() + Chunk.RenderVertices[i] + Chunk.RenderNormals[i] * 100.0f, FLinearColor::Green, 100000, 1);
+					System::DrawDebugLine(Chunk.GetActorLocation() + Chunk.RenderVertices[i], Chunk.GetActorLocation() + Chunk.RenderVertices[i] + Chunk.RenderTangents[i].TangentX * 100.0f, FLinearColor::Blue, 100000, 1);
 				}
 			}
 		}

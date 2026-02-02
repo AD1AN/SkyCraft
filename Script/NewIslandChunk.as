@@ -17,88 +17,138 @@ class ANewIslandChunk : AActor
 
     ANewIsland Island;
 
-	TArray<FVector2D> TopVerticesAxis; // Raw Axis = (X,Y)
-	TMap<int32, FVertexData> TopVerticesMap; // Key: Combined Axis = (X * Island.ChunkResolution + Y)
-	TArray<FVector> TopVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
-    TArray<int32> TopTriangles;
-	TArray<FVector2D> TopUVs;
-	TArray<FVector> TopNormals;
-	TArray<FProcMeshTangent> TopTangents;
-	TMap<int32, int32> EdgeTopVerticesMap; // VertexKey
-	TMap<int32, int32> DeadVerticesMap;	   // VertexKey. For PlayerIsland's bIsCrystal and maybe for future needs.
+	TArray<FVector2D> RenderVerticesAxis; // Raw Axis = (X,Y)
+	TMap<int32, FVertexData> RenderVerticesMap; // Key: Combined Axis = (X * Island.ChunkResolution + Y)
+	TArray<FVector> RenderVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
+    TArray<int32> RenderTriangles;
+	TArray<FVector2D> RenderUVs;
+	TArray<FVector> RenderNormals;
+	TArray<FProcMeshTangent> RenderTangents;
+	TMap<int32, int32> RenderDeadVerticesMap;	   // VertexKey. For PlayerIsland's bIsCrystal and maybe for future needs.
 
 	UFUNCTION(BlueprintOverride)
     void BeginPlay()
     {
-        BeginBounds();
-		const float MeshOffset = Island.ChunkResolution * Island.VertexDistance / 2;
+		BeginBounds();
+		const int32 Border = 1;
+		const FVector ChunkLocation = GetActorLocation();
+		const FVector IslandLocation = Island.GetActorLocation();
+		const int32 IslandSeed = Island.Seed.GetInitialSeed();
+		const int32 IslandSeed1 = IslandSeed + 1;
 		const int32 Stride = Island.ChunkResolution + 1;
-
-        // Generate TopVertices
-        TopVertices.Reserve(Island.ChunkResolution * Island.ChunkResolution);
-		TopUVs.Reserve(Island.ChunkResolution * Island.ChunkResolution);
+		const float MeshOffset = Island.ChunkResolution * Island.VertexDistance / 2;
+		const float InvUVScale = 1.0f / float(Stride - 1);
+		const int32 StrideWithBorder = Stride + 2 * Border;
+		const int32 TotalVertexCount = StrideWithBorder * StrideWithBorder;
+		TArray<FVector> AllVertices;	   // include border
+		TArray<int32> AllVertexIndicesMap; // map to main vertex index (-1 if border)
+		TArray<FVector2D> AllUVs;
+		AllVertices.Reserve(TotalVertexCount);
+		AllVertexIndicesMap.Reserve(TotalVertexCount);
+		AllUVs.Reserve(TotalVertexCount);
+		RenderVertices.Reserve(StrideWithBorder * StrideWithBorder);
+		RenderUVs.Reserve(StrideWithBorder * StrideWithBorder);
 		int32 CurrentVertexIndex = 0;
-		for (int32 X = 0; X <= Island.ChunkResolution; ++X)
-        {
-            for (int32 Y = 0; Y <= Island.ChunkResolution; ++Y)
-            {
-                FVector Vertex(X * Island.VertexDistance - MeshOffset, Y * Island.VertexDistance - MeshOffset, 0);
-                FVector WorldVertex = GetActorLocation() + Vertex;
+		for (int32 X = -Border; X <= Island.ChunkResolution + Border; ++X)
+		{
+			for (int32 Y = -Border; Y <= Island.ChunkResolution + Border; ++Y)
+			{
+				FVector Vertex(X * Island.VertexDistance - MeshOffset, Y * Island.VertexDistance - MeshOffset, 0);
+				FVector WorldVertex = ChunkLocation + Vertex;
 
-				if (Island.IsInsideIslandRadial(WorldVertex - Island.GetActorLocation()))
+				// Random height.
+				const float SmallNoise = SeededNoise2D(WorldVertex.X * Island.SmallNoiseScale, WorldVertex.Y * Island.SmallNoiseScale, IslandSeed) * Island.SmallNoiseStrength + Island.SmallNoiseHeight;
+				const float BigNoise = SeededNoise2D(WorldVertex.X * Island.BigNoiseScale, WorldVertex.Y * Island.BigNoiseScale, IslandSeed1) * Island.BigNoiseStrength + Island.BigNoiseHeight;
+				float FalloffMask = Island.GetGeneralFalloffMask(WorldVertex - IslandLocation);
+				FalloffMask = Math::SmoothStep(0.05f, 0.25f, FalloffMask);
+				Vertex.Z = (BigNoise + SmallNoise) * FalloffMask;
+
+				// Determine if vertex is inside island
+				bool bInside = Island.IsInsideIslandRadial(WorldVertex - IslandLocation);
+				FVector2D UV(WorldVertex.X * InvUVScale, WorldVertex.Y * InvUVScale);
+				AllVertices.Add(Vertex);
+				AllUVs.Add(UV);
+
+				if (bInside && X >= 0 && X <= Island.ChunkResolution && Y >= 0 && Y <= Island.ChunkResolution)
 				{
-					// Generate random height.
-					const float SmallNoise = SeededNoise2D(WorldVertex.X * Island.SmallNoiseScale, WorldVertex.Y * Island.SmallNoiseScale, Island.Seed.GetInitialSeed()) * Island.SmallNoiseStrength + Island.SmallNoiseHeight;
-					const float BigNoise = SeededNoise2D(WorldVertex.X * Island.BigNoiseScale, WorldVertex.Y * Island.BigNoiseScale, Island.Seed.GetInitialSeed() + 1) * Island.BigNoiseStrength + Island.BigNoiseHeight;
-					float FalloffMask = Island.GetGeneralFalloffMask(WorldVertex - Island.GetActorLocation());
-					FalloffMask = Math::SmoothStep(0.05f, 0.25f, FalloffMask);
-					Vertex.Z = (BigNoise + SmallNoise) * FalloffMask;
-
+					// Core vertex
 					FVertexData VertexData;
 					VertexData.VertexIndex = CurrentVertexIndex;
-                    CurrentVertexIndex++;
-					TopVerticesAxis.Add(FVector2D(X, Y));
+					RenderVerticesAxis.Add(FVector2D(X, Y));
 					int32 Key = X * Stride + Y;
-					TopVerticesMap.Add(Key, VertexData);
-					TopVertices.Add(Vertex);
-					TopUVs.Add(FVector2D(WorldVertex.X / (Island.ChunkResolution - 1), WorldVertex.Y / (Island.ChunkResolution - 1)));
+					RenderVerticesMap.Add(Key, VertexData);
+					RenderVertices.Add(Vertex);
+					RenderUVs.Add(UV);
+					AllVertexIndicesMap.Add(CurrentVertexIndex);
+					CurrentVertexIndex++;
 				}
-                #if EDITOR
-                else
-                {
-                    Island.OutsideVertices.Add(Vertex);
-                }
-                #endif
+				else
+				{
+					// Border vertex: index -1
+					AllVertexIndicesMap.Add(-1);
+				}
 			}
-        }
+		}
 
-		// Generate TopTriangles
-        for (int32 X = 1; X <= Island.ChunkResolution; ++X)
-        {
-            for (int32 Y = 1; Y <= Island.ChunkResolution; ++Y)
-            {
-				int32 TL = (X - 1) * Stride + (Y - 1);
-				int32 TR = X * Stride + (Y - 1);
-				int32 BL = (X - 1) * Stride + Y;
-				int32 BR = X * Stride + Y;
+		// Generate triangles using all vertices ---
+		TArray<int32> AllTriangles;
+		for (int32 X = 0; X < StrideWithBorder - 1; ++X)
+		{
+			for (int32 Y = 0; Y < StrideWithBorder - 1; ++Y)
+			{
+				int32 TL = X * StrideWithBorder + Y;
+				int32 TR = TL + 1;
+				int32 BL = TL + StrideWithBorder;
+				int32 BR = BL + 1;
 
-				if (TopVerticesMap.Contains(TL) && TopVerticesMap.Contains(TR) && TopVerticesMap.Contains(BL) && TopVerticesMap.Contains(BR))
-                {
-                    TopTriangles.Add(TopVerticesMap[TL].VertexIndex);
-                    TopTriangles.Add(TopVerticesMap[BL].VertexIndex);
-                    TopTriangles.Add(TopVerticesMap[BR].VertexIndex);
+				AllTriangles.Add(TL);
+				AllTriangles.Add(BR);
+				AllTriangles.Add(BL);
 
-                    TopTriangles.Add(TopVerticesMap[TL].VertexIndex);
-                    TopTriangles.Add(TopVerticesMap[BR].VertexIndex);
-                    TopTriangles.Add(TopVerticesMap[TR].VertexIndex);
-                }
-            }
-        }
-		
+				AllTriangles.Add(TL);
+				AllTriangles.Add(TR);
+				AllTriangles.Add(BR);
+			}
+		}
+
+		// Compute normals including border ---
+		TArray<FVector> AllNormals;
+		TArray<FProcMeshTangent> AllTangents;
+		RenderNormals.Empty();
+		RenderTangents.Empty();
+		Island.CalculateNormalsAndTangents(AllVertices, AllTriangles, AllUVs, AllNormals, AllTangents);
+
+		// Extract only render normals/tangents
+		RenderNormals.SetNum(RenderVertices.Num());
+		RenderTangents.SetNum(RenderVertices.Num());
+		for (int32 i = 0; i < AllVertexIndicesMap.Num(); ++i)
+		{
+			int32 RenderIndex = AllVertexIndicesMap[i];
+			if (RenderIndex != -1)
+			{
+				RenderNormals[RenderIndex] = AllNormals[i];
+				RenderTangents[RenderIndex] = AllTangents[i];
+			}
+		}
+
+		// Remap triangles: skip triangles with any border vertex
+		for (int32 i = 0; i < AllTriangles.Num(); i += 3)
+		{
+			int32 A = AllVertexIndicesMap[AllTriangles[i]];
+			int32 B = AllVertexIndicesMap[AllTriangles[i + 1]];
+			int32 C = AllVertexIndicesMap[AllTriangles[i + 2]];
+
+			if (A != -1 && B != -1 && C != -1)
+			{
+				RenderTriangles.Add(A);
+				RenderTriangles.Add(B);
+				RenderTriangles.Add(C);
+			}
+		}
+
 		TArray<FVector2D> emptyUv;
         TArray<FLinearColor> emptyColor;
-		Island.CalculateNormalsAndTangents(TopVertices, TopTriangles, TopUVs, TopNormals, TopTangents);
-		PMC.CreateMeshSection_LinearColor(0, TopVertices, TopTriangles, TopNormals, TopUVs, emptyUv, emptyUv, emptyUv, emptyColor, TopTangents, true);
+		PMC.CreateMeshSection_LinearColor(0, RenderVertices, RenderTriangles, RenderNormals, RenderUVs, emptyUv, emptyUv, emptyUv, emptyColor, RenderTangents, true);
 
 		if (IsValid(Island.DA_IslandBiome))
 		{
@@ -145,23 +195,5 @@ class ANewIslandChunk : AActor
 		H = (H * 16777619) ^ H;
 
 		return float(H) / float(0xFFFFFFFF); // UINT32_MAX
-	}
-
-	bool IsEdgeVertex(const FVector& Vertex, const TMap<int32, FVertexData>& VerticesMap, int32 EdgeThickness) const
-	{
-		const float VertexOffset = (Island.ChunkResolution * Island.VertexDistance) / 2;
-		const int32 X = int32((Vertex.X + VertexOffset) / Island.VertexDistance);
-		const int32 Y = int32((Vertex.Y + VertexOffset) / Island.VertexDistance);
-
-		for (int32 OffsetX = -EdgeThickness; OffsetX <= EdgeThickness; ++OffsetX)
-		{
-			const int32 RowOffset = (X + OffsetX) * Island.ChunkResolution;
-			for (int32 OffsetY = -EdgeThickness; OffsetY <= EdgeThickness; ++OffsetY)
-			{
-				if (!VerticesMap.Contains(RowOffset + (Y + OffsetY)))
-					return true;
-			}
-		}
-		return false;
 	}
 }
