@@ -1,9 +1,3 @@
-struct FVertexData
-{
-	int32 VertexIndex; // Index of TopVertices.
-	uint8 TerrainChunkIndex;
-};
-
 struct FCliffData
 {
 	TArray<FTransform> Instances;
@@ -33,7 +27,7 @@ class ANewIsland : AActor
 	UProceduralMeshComponent PMC;
 
 	UPROPERTY()
-	TArray<UInstancedStaticMeshComponent> CliffsComponents;
+	TArray<UHierarchicalInstancedStaticMeshComponent> CliffsComponents;
 
 	bool bPlayerIsland = false;
 	bool bLoadFromSave = false;
@@ -402,7 +396,7 @@ class ANewIsland : AActor
 			if (StaticMesh == nullptr)
 				continue;
 
-			UInstancedStaticMeshComponent Cliff = UInstancedStaticMeshComponent::Create(this);
+			UHierarchicalInstancedStaticMeshComponent Cliff = UHierarchicalInstancedStaticMeshComponent::Create(this);
 			Cliff.AttachToComponent(RootComponent);
 			Cliff.SetStaticMesh(StaticMesh);
 			if (DA_IslandBiome.BottomMaterial != nullptr) Cliff.SetMaterial(0, DA_IslandBiome.BottomMaterial);

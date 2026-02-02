@@ -18,7 +18,7 @@ class ANewIslandChunk : AActor
     ANewIsland Island;
 
 	TArray<FVector2D> RenderVerticesAxis; // Raw Axis = (X,Y)
-	TMap<int32, FVertexData> RenderVerticesMap; // Key: Combined Axis = (X * Island.ChunkResolution + Y)
+	TMap<int32, int32> RenderVerticesMap; // Key: Combined Axis = (X * Island.ChunkResolution + Y)
 	TArray<FVector> RenderVertices; // Locations (X * CellSize - VertexOffset, Y * CellSize - VertexOffset)
     TArray<int32> RenderTriangles;
 	TArray<FVector2D> RenderUVs;
@@ -40,14 +40,17 @@ class ANewIslandChunk : AActor
 		const float InvUVScale = 1.0f / float(Stride - 1);
 		const int32 StrideWithBorder = Stride + 2 * Border;
 		const int32 TotalVertexCount = StrideWithBorder * StrideWithBorder;
+
 		TArray<FVector> AllVertices;	   // include border
 		TArray<int32> AllVertexIndicesMap; // map to main vertex index (-1 if border)
 		TArray<FVector2D> AllUVs;
+
 		AllVertices.Reserve(TotalVertexCount);
 		AllVertexIndicesMap.Reserve(TotalVertexCount);
 		AllUVs.Reserve(TotalVertexCount);
-		RenderVertices.Reserve(StrideWithBorder * StrideWithBorder);
-		RenderUVs.Reserve(StrideWithBorder * StrideWithBorder);
+		RenderVertices.Reserve(TotalVertexCount);
+		RenderUVs.Reserve(TotalVertexCount);
+		
 		int32 CurrentVertexIndex = 0;
 		for (int32 X = -Border; X <= Island.ChunkResolution + Border; ++X)
 		{
@@ -71,12 +74,9 @@ class ANewIslandChunk : AActor
 
 				if (bInside && X >= 0 && X <= Island.ChunkResolution && Y >= 0 && Y <= Island.ChunkResolution)
 				{
-					// Core vertex
-					FVertexData VertexData;
-					VertexData.VertexIndex = CurrentVertexIndex;
 					RenderVerticesAxis.Add(FVector2D(X, Y));
 					int32 Key = X * Stride + Y;
-					RenderVerticesMap.Add(Key, VertexData);
+					RenderVerticesMap.Add(Key, CurrentVertexIndex);
 					RenderVertices.Add(Vertex);
 					RenderUVs.Add(UV);
 					AllVertexIndicesMap.Add(CurrentVertexIndex);
