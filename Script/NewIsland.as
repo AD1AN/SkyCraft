@@ -54,7 +54,7 @@ class ANewIsland : AActor
 	UPROPERTY(VisibleAnywhere) float VertexDistance = 100.0f; // I like 100 units.
 	UPROPERTY(VisibleAnywhere) int32 ChunkResolution = 50; // I like 50 units.
 	UPROPERTY() float ShapeRadius = 1000.0f;
-	UPROPERTY() int32 ShapePoints = 20;
+	UPROPERTY() int32 KeyShapePoints = 20;
 	UPROPERTY() float InterpShapePointLength = 1500.0f;
 	UPROPERTY() float ScalePerlinNoise1D = 0.25f;
 	UPROPERTY(Category="TerrainNoise") float ScaleRandomShape = 0.5f;
@@ -138,7 +138,7 @@ class ANewIsland : AActor
 		else
 		{
 			// // Random from seed
-			// ShapePoints = Seed.RandRange(15, int32(20 * (IslandSize + 1)));
+			// KeyShapePoints = Seed.RandRange(15, int32(20 * (IslandSize + 1)));
 			// ScalePerlinNoise1D = Seed.RandRange(0.25f, 0.5f);
 			// if (0.8f > Seed.RandRange(0, 1)) ScaleRandomShape = Seed.RandRange(0.5f, 0.7f);
 			// else ScaleRandomShape = Seed.RandRange(0.15f, 0.35f);
@@ -152,8 +152,8 @@ class ANewIsland : AActor
 
 		// Generate KeyShapePoints
 		float MaxShapePointDistance = 0.0f;
-		const float Angle = 6.2832f / ShapePoints;
-		for (int32 i = 0; i < ShapePoints; ++i)
+		const float Angle = 6.2832f / KeyShapePoints;
+		for (int32 i = 0; i < KeyShapePoints; ++i)
 		{
 			float RandomRadius = ShapeRadius * (1 + Math::PerlinNoise1D(i * ScalePerlinNoise1D) * ScaleRandomShape);
 			float X = Math::Cos(i * Angle) * RandomRadius;
@@ -274,7 +274,9 @@ class ANewIsland : AActor
 
 				ANewIslandChunk Chunk = SpawnActor(ANewIslandChunk, ChunkLocation, FRotator(), NAME_None, true);
 				Chunk.Island = this;
-				Chunk.AttachToActor(this);
+				Chunk.ChunkX = ChunkX;
+				Chunk.ChunkY = ChunkY;
+				Chunk.AttachToActor(this, NAME_None, EAttachmentRule::KeepWorld);
 				FinishSpawningActor(Chunk);
 				IslandChunks.Add(Chunk);
 			}
@@ -410,13 +412,13 @@ class ANewIsland : AActor
 		}
 	}
 
-	private bool DoesChunkIntersectShape(int32 ChunkX, int32 ChunkY, float ChunkWorldSize, const TArray<FVector2D>& Shape)
+	private bool DoesChunkIntersectShape(int32 ChunkX, int32 ChunkY, float ChunkWorldSize, const TArray<FVector2D>& ShapePoints)
 	{
 		const FVector2D BoxMin(ChunkX * ChunkWorldSize, ChunkY * ChunkWorldSize);
 		const FVector2D BoxMax = BoxMin + FVector2D(ChunkWorldSize, ChunkWorldSize);
 
-		// 1️⃣ Any shape vertex inside chunk
-		for (const FVector2D& P : Shape)
+		// Any shape point inside chunk
+		for (const FVector2D& P : ShapePoints)
 		{
 			if (IsPointInBox(P, BoxMin, BoxMax))
 			{
@@ -424,27 +426,26 @@ class ANewIsland : AActor
 			}
 		}
 
-		// 2️⃣ Any chunk corner inside shape
+		// Any chunk corner inside shape
 		TArray<FVector2D> BoxCorners;
 		BoxCorners.Add(BoxMin);
 		BoxCorners.Add(FVector2D(BoxMax.X, BoxMin.Y));
 		BoxCorners.Add(FVector2D(BoxMin.X, BoxMax.Y));
 		BoxCorners.Add(BoxMax);
-
 		for (const FVector2D& C : BoxCorners)
 		{
-			if (IsInsideShape(C, Shape))
+			if (IsInsideShape(C, ShapePoints))
 			{
 				return true;
 			}
 		}
 
-		// 3️⃣ Edge intersection
-		const int32 Num = Shape.Num();
+		// Edge intersection
+		const int32 Num = ShapePoints.Num();
 		for (int32 i = 0; i < Num; ++i)
 		{
-			const FVector2D A = Shape[i];
-			const FVector2D B = Shape[(i + 1) % Num];
+			const FVector2D A = ShapePoints[i];
+			const FVector2D B = ShapePoints[(i + 1) % Num];
 
 			for (int32 e = 0; e < 4; ++e)
 			{
