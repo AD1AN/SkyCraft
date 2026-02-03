@@ -24,7 +24,7 @@ class ANewIsland : AActor
 	USceneComponent Root;
 
 	UPROPERTY(DefaultComponent)
-	UProceduralMeshComponent PMC;
+	UProceduralMeshComponent PMC_Bottom;
 
 	UPROPERTY()
 	TArray<UHierarchicalInstancedStaticMeshComponent> CliffsComponents;
@@ -64,6 +64,12 @@ class ANewIsland : AActor
 	
 	UPROPERTY() int32 ANGLE_SAMPLES = 512; // i think, 512 is good number.
 	TArray<float> RadiusByAngle;
+
+	UPROPERTY(EditAnywhere)
+	float MinTerrainHeight = -1000;
+
+	UPROPERTY(EditAnywhere)
+	float MaxTerrainHeight = 3000;
 
 	UFUNCTION(BlueprintOverride)
 	void BeginPlay()
@@ -364,13 +370,13 @@ class ANewIsland : AActor
 
 		TArray<FVector2D> emptyUvs;
 		TArray<FLinearColor> emptyColors;
-		PMC.CreateMeshSection_LinearColor(1, _IslandDataAs.BottomVertices, _IslandDataAs.BottomTriangles, _IslandDataAs.BottomNormals, _IslandDataAs.BottomUVs, emptyUvs, emptyUvs, emptyUvs, emptyColors, _IslandDataAs.BottomTangents, true);
+		PMC_Bottom.CreateMeshSection_LinearColor(1, _IslandDataAs.BottomVertices, _IslandDataAs.BottomTriangles, _IslandDataAs.BottomNormals, _IslandDataAs.BottomUVs, emptyUvs, emptyUvs, emptyUvs, emptyColors, _IslandDataAs.BottomTangents, true);
 
 		// FNavigationSystem::UpdateComponentData(*PMC_Main);
 
 		if (IsValid(DA_IslandBiome))
 		{
-			if (DA_IslandBiome.BottomMaterial != nullptr) PMC.SetMaterial(1, DA_IslandBiome.BottomMaterial);
+			if (DA_IslandBiome.BottomMaterial != nullptr) PMC_Bottom.SetMaterial(1, DA_IslandBiome.BottomMaterial);
 		}
 
 		// bIslandCanSave = true;
@@ -586,9 +592,13 @@ class ANewIsland : AActor
 		}
 	}
 
-	float GetGeneralFalloffMask(const FVector& WorldVertex) const
+	/*
+	 * LocalPoint location should be relative to island!
+	 * If point relative to chunk then do: Point + ChunkLocation - IslandLocation.
+	 */
+	float FalloffMask(const FVector& LocalPoint) const
 	{
-		FVector2D P(WorldVertex.X, WorldVertex.Y);
+		FVector2D P(LocalPoint.X, LocalPoint.Y);
 
 		float Dist = P.Size();
 		if (Dist < KINDA_SMALL_NUMBER)
@@ -655,8 +665,8 @@ class ANewIsland : AActor
 					FVector RandomOffset = FVector(Math::RandRange(-3.f, 3.f));
 					FLinearColor TerrainVertexColor = DebugTerrainVerticesRandomColors ? RandomChunkColor : FLinearColor::Blue;
 					// System::DrawDebugPoint(Chunk.GetActorLocation() + Vertex + RandomOffset, 5, TerrainVertexColor, 100000);
-					float Mask = GetGeneralFalloffMask(Chunk.GetActorLocation() + Vertex - GetActorLocation());
-					Mask = Math::SmoothStep(0.0f, 0.25f, Mask);
+					float Mask = FalloffMask(Vertex + Chunk.GetActorLocation() - GetActorLocation());
+					Mask = Math::SmoothStep(0.25f, 0.25f, Mask);
 					// Mask = Math::SmoothStep(0.25f, 1.f, Mask);
 					// Mask = Math::RoundToFloat(Mask);
 					FLinearColor Color = FLinearColor(Mask, Mask, Mask);

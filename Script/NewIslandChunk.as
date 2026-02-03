@@ -1,3 +1,21 @@
+struct FNewEditedVertex
+{
+	int32 VertexIndex = 0;
+	uint16 CompressedHeight = 0;
+
+	// Convert from FloatHeight to CompressedHeight
+	void SetHeight(float Height, float MinHeight, float MaxHeight)
+	{
+		CompressedHeight = uint16(Math::Clamp(Math::RoundToInt(((Height - MinHeight) / (MaxHeight - MinHeight)) * 65535.0f), 0, 65535));
+	}
+
+	// Convert back to Float
+	float GetHeight(float MinHeight, float MaxHeight) const
+	{
+		return MinHeight + (CompressedHeight / 65535.0f) * (MaxHeight - MinHeight);
+	}
+};
+
 class ANewIslandChunk : AActor
 {
     UPROPERTY(DefaultComponent, RootComponent)
@@ -10,12 +28,18 @@ class ANewIslandChunk : AActor
     default Bounds.bHiddenInGame = false;
 
 	UPROPERTY()
+	TArray<UFoliage> Foliage;
+
+	UPROPERTY()
 	int32 ChunkX = -1;
 
 	UPROPERTY()
 	int32 ChunkY = -1;
 
     ANewIsland Island;
+
+	UPROPERTY(ReplicatedUsing = OnRep_EditedVertices)
+	TArray<FNewEditedVertex> EditedVertices;
 
 	TArray<FVector2D> RenderVerticesAxis; // Raw Axis = (X,Y)
 	TMap<int32, int32> RenderVerticesMap; // Key: Combined Axis = (X * Island.ChunkResolution + Y)
@@ -29,6 +53,12 @@ class ANewIslandChunk : AActor
 	UFUNCTION(BlueprintOverride)
     void BeginPlay()
     {
+		GenerateTerrain();
+		GenerateFoliage();
+	}
+
+	private void GenerateTerrain()
+	{
 		BeginBounds();
 		const int32 Border = 1;
 		const FVector ChunkLocation = GetActorLocation();
@@ -50,7 +80,7 @@ class ANewIslandChunk : AActor
 		AllUVs.Reserve(TotalVertexCount);
 		RenderVertices.Reserve(TotalVertexCount);
 		RenderUVs.Reserve(TotalVertexCount);
-		
+
 		int32 CurrentVertexIndex = 0;
 		for (int32 X = -Border; X <= Island.ChunkResolution + Border; ++X)
 		{
@@ -62,7 +92,7 @@ class ANewIslandChunk : AActor
 				// Random height.
 				const float SmallNoise = SeededNoise2D(WorldVertex.X * Island.SmallNoiseScale, WorldVertex.Y * Island.SmallNoiseScale, IslandSeed) * Island.SmallNoiseStrength + Island.SmallNoiseHeight;
 				const float BigNoise = SeededNoise2D(WorldVertex.X * Island.BigNoiseScale, WorldVertex.Y * Island.BigNoiseScale, IslandSeed1) * Island.BigNoiseStrength + Island.BigNoiseHeight;
-				float FalloffMask = Island.GetGeneralFalloffMask(WorldVertex - IslandLocation);
+				float FalloffMask = Island.FalloffMask(WorldVertex - IslandLocation);
 				FalloffMask = Math::SmoothStep(0.05f, 0.25f, FalloffMask);
 				Vertex.Z = (BigNoise + SmallNoise) * FalloffMask;
 
@@ -147,16 +177,44 @@ class ANewIslandChunk : AActor
 		}
 
 		TArray<FVector2D> emptyUv;
-        TArray<FLinearColor> emptyColor;
+		TArray<FLinearColor> emptyColor;
 		PMC.CreateMeshSection_LinearColor(0, RenderVertices, RenderTriangles, RenderNormals, RenderUVs, emptyUv, emptyUv, emptyUv, emptyColor, RenderTangents, true);
 
 		if (IsValid(Island.DA_IslandBiome))
 		{
-			if (Island.DA_IslandBiome.TopMaterial != nullptr) PMC.SetMaterial(0, Island.DA_IslandBiome.TopMaterial);
+			if (Island.DA_IslandBiome.TopMaterial != nullptr)
+				PMC.SetMaterial(0, Island.DA_IslandBiome.TopMaterial);
 		}
 	}
 
-    void BeginBounds()
+	private void GenerateFoliage()
+	{
+		for (auto& DA_Foliage : Island.DA_IslandBiome.Foliage)
+		{
+			UFoliage NewFoliage = UFoliage::Create(this);
+			Foliage.Add(NewFoliage);
+			NewFoliage.AttachToComponent(RootComponent, NAME_None, EAttachmentRule::KeepRelative);
+			NewFoliage.DA_Foliage = DA_Foliage;
+			NewFoliage.BeginFoliage();
+		}
+	}
+	
+	UFUNCTION()
+	void OnRep_EditedVertices()
+	{
+		for (auto& EditedVertex : EditedVertices)
+		{
+			if (!RenderVertices.IsValidIndex(EditedVertex.VertexIndex))
+				continue;
+			RenderVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(Island.MinTerrainHeight, Island.MaxTerrainHeight);
+		}
+		Island.CalculateNormalsAndTangents(RenderVertices, RenderTriangles, RenderUVs, RenderNormals, RenderTangents);
+		TArray<FVector2D> emptyUVs;
+		TArray<FLinearColor> emptyColors;
+		PMC.UpdateMeshSection_LinearColor(0, RenderVertices, RenderNormals, RenderUVs, emptyUVs, emptyUVs, emptyUVs, emptyColors, RenderTangents);
+	}
+
+	void BeginBounds()
     {
         const float ChunkHalfSize = Island.ChunkResolution * Island.VertexDistance / 2;
 	    Bounds.SetBoxExtent(FVector(ChunkHalfSize,ChunkHalfSize, 10));
@@ -195,5 +253,18 @@ class ANewIslandChunk : AActor
 		H = (H * 16777619) ^ H;
 
 		return float(H) / float(0xFFFFFFFF); // UINT32_MAX
+	}
+
+	FVector RandomPointInTriangle(const FVector& V0, const FVector& V1, const FVector& V2)
+	{
+		float u = Island.Seed.GetFraction();
+		float v = Island.Seed.GetFraction();
+		if (u + v > 1.0f)
+		{
+			u = 1.0f - u;
+			v = 1.0f - v;
+		}
+		float w = 1.0f - u - v;
+		return (V0 * u) + (V1 * v) + (V2 * w);
 	}
 }

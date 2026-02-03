@@ -10,7 +10,7 @@ struct FNewIslandNPC
 struct FNewIslandResource
 {
 	UPROPERTY()
-	TObjectPtr<UDA_Resource> DA_Resource;
+	UDA_Resource DA_Resource;
 
 	UPROPERTY()
 	FUint8MinMax ResourceSize;
@@ -34,16 +34,16 @@ class UDA_NewIslandBiome : UDataAsset
 	FFloatMinMax IslandSize;
 
 	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UMaterialInterface> TopMaterial;
+	UMaterialInterface TopMaterial;
 
 	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UMaterialInterface> BottomMaterial;
+	UMaterialInterface BottomMaterial;
 
 	UPROPERTY(EditDefaultsOnly)
-	TArray<TObjectPtr<UStaticMesh>> Cliffs;
+	TArray<UStaticMesh> Cliffs;
 
 	UPROPERTY(EditDefaultsOnly)
-	TArray<TObjectPtr<UDA_Foliage>> Foliage;
+	TArray<UDA_NewFoliage> Foliage;
 
 	UPROPERTY(EditDefaultsOnly)
 	TArray<FIslandLOD> IslandLODs;
