@@ -16,19 +16,27 @@ struct FNewEditedVertex
 	}
 };
 
+struct FResourceEntry
+{
+	UResourceComponent ResourceComponent;
+	UDA_NewResource DA_Resource;
+	uint8 ResourceSize;
+	TMap<int32, FVector> InstancesMap;
+};
+
 class ANewIslandChunk : AActor
 {
     UPROPERTY(DefaultComponent, RootComponent)
     UProceduralMeshComponent PMC;
 
-    UPROPERTY(DefaultComponent)
-    UBoxComponent Bounds;
+    UPROPERTY(DefaultComponent) UBoxComponent Bounds;
+	
     default Bounds.bIsEditorOnly = true;
     default Bounds.bVisible = true;
     default Bounds.bHiddenInGame = false;
 
 	UPROPERTY()
-	TArray<UFoliage> Foliage;
+	TArray<UFoliageComponent> FoliageComponent;
 
 	UPROPERTY()
 	int32 ChunkX = -1;
@@ -40,6 +48,12 @@ class ANewIslandChunk : AActor
 
 	UPROPERTY(ReplicatedUsing = OnRep_EditedVertices)
 	TArray<FNewEditedVertex> EditedVertices;
+
+	TArray<FResourceEntry> ResourceEntries;
+
+	// Key: LOD index. INDEX_NONE(-1) = AlwaysLOD.
+	UPROPERTY(VisibleInstanceOnly)
+	TMap<int32, FNewIslandSpawnedLOD> SpawnedLODs;
 
 	TArray<FVector2D> RenderVerticesAxis; // Raw Axis = (X,Y)
 	TMap<int32, int32> RenderVerticesMap; // Key: Combined Axis = (X * Island.ChunkResolution + Y)
@@ -54,7 +68,35 @@ class ANewIslandChunk : AActor
     void BeginPlay()
     {
 		GenerateTerrain();
-		GenerateFoliage();
+		if (RenderVertices.Num() <= 10) return;
+
+		Island.ServerLOD = 0; // TODO this is for fast editor test.
+
+		if (HasAuthority())
+		{
+			if (Island.ServerLOD == 0)
+			{
+				GenerateFoliage(); 
+				// LoadBuildings();
+				// LoadDroppedItems();
+			}
+		
+			if (Island.bLoadFromSave)
+			{
+				LoadIsland();
+			}
+			else
+			{
+				for (int32 LOD = Island.GetLastLOD(); LOD >= Island.ServerLOD; --LOD)
+				{
+					GenerateLOD(LOD);
+				}
+			}
+		
+			if (!LoadLOD(adian::INDEX_NONE)) GenerateLOD(adian::INDEX_NONE); // Load/Generate AlwaysLOD;
+
+			Island.LowestServerLOD = Island.ServerLOD;
+		}
 	}
 
 	private void GenerateTerrain()
@@ -92,8 +134,8 @@ class ANewIslandChunk : AActor
 				// Random height.
 				const float SmallNoise = SeededNoise2D(WorldVertex.X * Island.SmallNoiseScale, WorldVertex.Y * Island.SmallNoiseScale, IslandSeed) * Island.SmallNoiseStrength + Island.SmallNoiseHeight;
 				const float BigNoise = SeededNoise2D(WorldVertex.X * Island.BigNoiseScale, WorldVertex.Y * Island.BigNoiseScale, IslandSeed1) * Island.BigNoiseStrength + Island.BigNoiseHeight;
-				float FalloffMask = Island.FalloffMask(WorldVertex - IslandLocation);
-				FalloffMask = Math::SmoothStep(0.05f, 0.25f, FalloffMask);
+				float FalloffMask = Island.FastFalloffMask(WorldVertex - IslandLocation);
+				FalloffMask = Math::SmoothStep(0.1f, 0.25f, FalloffMask);
 				Vertex.Z = (BigNoise + SmallNoise) * FalloffMask;
 
 				// Determine if vertex is inside island
@@ -191,14 +233,179 @@ class ANewIslandChunk : AActor
 	{
 		for (auto& DA_Foliage : Island.DA_IslandBiome.Foliage)
 		{
-			UFoliage NewFoliage = UFoliage::Create(this);
-			Foliage.Add(NewFoliage);
+			UFoliageComponent NewFoliage = UFoliageComponent::Create(this);
+			FoliageComponent.Add(NewFoliage);
 			NewFoliage.AttachToComponent(RootComponent, NAME_None, EAttachmentRule::KeepRelative);
 			NewFoliage.DA_Foliage = DA_Foliage;
 			NewFoliage.BeginFoliage();
 		}
 	}
-	
+
+	private void GenerateLOD(int32 GenerateLODIndex)
+	{
+		FNewIslandLOD IslandLOD;
+		if (GenerateLODIndex == adian::INDEX_NONE) // AlwaysLOD
+		{
+			IslandLOD = Island.DA_IslandBiome.AlwaysLOD;
+		}
+		else // IslandLOD
+		{
+			if (!Island.DA_IslandBiome.IslandLODs.IsValidIndex(GenerateLODIndex)) return;
+			IslandLOD = Island.DA_IslandBiome.IslandLODs[GenerateLODIndex];
+		}
+
+		FVector IslandLocation = Island.GetActorLocation();
+		FVector ChunkLocation = GetActorLocation();
+		const float MeshOffset = (Island.ChunkResolution * Island.VertexDistance) / 2;
+		FNewIslandSpawnedLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(GenerateLODIndex);
+
+		// Generate Resources
+		for (auto& IslandResource : IslandLOD.Resources)
+		{
+			for (uint8 ResourceSize = IslandResource.ResourceSize.Min; ResourceSize <= IslandResource.ResourceSize.Max; ++ResourceSize)
+			{
+				UDA_NewResource DA_Resource = IslandResource.DA_Resource;
+				FResourceEntry& ResourceEntry = FindOrCreateResourceEntry(DA_Resource, ResourceSize);
+			}
+		}
+
+		// Generate NPCs
+		for (auto& IslandNPC : IslandLOD.NPCs)
+		{
+			FNewNPCInstance InstanceNPC;
+			InstanceNPC.DA_NPC = IslandNPC.DA_NPC;
+			InstanceNPC.MaxInstances = Math::RoundToInt(Math::Lerp(Math::IntegerDivisionTrunc(IslandNPC.MaxSpawnPoints, 10), IslandNPC.MaxSpawnPoints, Island.IslandSize));
+
+			int32 SpawnedNPCs = 0;
+			int32 Attempts = 0;
+			while (Attempts < 30 && SpawnedNPCs < InstanceNPC.MaxInstances)
+			{
+				// Pick a random triangle
+				const int32 TriangleIndex = Island.Seed.RandRange(0, Math::IntegerDivisionTrunc(RenderTriangles.Num(), 3) - 1) * 3;
+				const FVector& V0 = RenderVertices[RenderTriangles[TriangleIndex]];
+				const FVector& V1 = RenderVertices[RenderTriangles[TriangleIndex + 1]];
+				const FVector& V2 = RenderVertices[RenderTriangles[TriangleIndex + 2]];
+				FVector RandomPoint = RandomPointInTriangle(V0, V1, V2);
+
+				// Exclude from island edges.
+				float FalloffMask = Island.FastFalloffMask(RandomPoint + ChunkLocation - IslandLocation);
+				FalloffMask = Math::SmoothStep(0.0f, 0.25f, FalloffMask);
+				if (FalloffMask <= 0.4f)
+				{
+					++Attempts;
+					continue;
+				}
+
+				FTransform NpcTransform(GetActorLocation() + RandomPoint + FVector(0, 0, 60));
+				ANewNPC SpawnedNPC = SpawnActor(IslandNPC.DA_NPC.NPCClass, NpcTransform.Location);
+				SpawnedNPC.DA_NPC = IslandNPC.DA_NPC;
+				SpawnedNPC.ParentIsland = Island;
+				SpawnedNPC.IslandLODIndex = GenerateLODIndex;
+				FinishSpawningActor(SpawnedNPC);
+				InstanceNPC.SpawnedNPCs.Add(SpawnedNPC);
+				++SpawnedNPCs;
+				Attempts = 0;
+			}
+			SpawnedLOD.NPCInstances.Add(InstanceNPC);
+		}
+	}
+
+	void LoadIsland()
+	{
+		// Foliage Loads themselves in FoliageHISM
+
+		// Load/Generate IslandLODs
+		int32 LowestLOD = Math::Max(Island.GetLastLOD(), Island.SS_Island.IslandLODs.Num() - 1);
+		for (int32 LOD = LowestLOD; LOD >= Island.ServerLOD; --LOD)
+		{
+			if (!LoadLOD(LOD))
+				GenerateLOD(LOD);
+
+			if (!LoadLOD(LOD)) GenerateLOD(LOD);
+
+			if (!LoadLOD(LOD)) GenerateLOD(LOD);
+		}
+
+		// Load EditedVertices
+		// int32 i = 0;
+		// for (auto& SS_TerrainChunk : Island.SS_Island.IslandChunks)
+		// {
+		// 	if (!TerrainChunks.IsValidIndex(i))
+		// 		continue;
+		// 	if (!IsValid(TerrainChunks[i]))
+		// 		continue;
+		// 	TerrainChunks[i].EditedVertices = SS_TerrainChunk.EditedVertices;
+		// 	if (TerrainChunks[i].EditedVertices.IsEmpty())
+		// 		continue;
+		// 	for (const FEditedVertex& EditedVertex : TerrainChunks[i].EditedVertices)
+		// 	{
+		// 		IslandData.RenderVertices[EditedVertex.VertexIndex].Z = EditedVertex.GetHeight(MinTerrainHeight, MaxTerrainHeight);
+		// 	}
+		// 	++i;
+		// }
+		// CalculateNormalsAndTangents(IslandData.RenderVertices, IslandData.RenderTriangles, IslandData.TopUVs, IslandData.TopNormals, IslandData.TopTangents);
+		// SS_Island.TerrainChunks.Empty();
+	}
+
+	bool LoadLOD(int32 LoadLODIndex)
+	{
+		for (auto& SS_IslandLOD : Island.SS_Island.IslandLODs)
+		{
+			if (SS_IslandLOD.LOD != LoadLODIndex)
+				continue;
+			FNewIslandSpawnedLOD& SpawnedLOD = SpawnedLODs.FindOrAdd(LoadLODIndex);
+
+			// Load Resources.
+			for (const auto& SS_Resource : SS_IslandLOD.Resources)
+			{
+				if (!IsValid(SS_Resource.DA_Resource)) continue;
+
+				FTransform ResTransform;
+				ResTransform.SetLocation(SS_Resource.RelativeLocation);
+				ResTransform.SetRotation(FQuat(SS_Resource.RelativeRotation));
+				// TSubclassOf<AResource> ResourceClass = (SS_Resource.DA_Resource.OverrideResourceClass) ? SS_Resource.DA_Resource.OverrideResourceClass : TSubclassOf<AResource>(AResource::StaticClass());
+				// AResource SpawnedRes = SpawnActor<AResource>(ResourceClass, ResTransform);
+				// SpawnedRes.bLoaded = true;
+				// SpawnedRes.Island = this;
+				// SpawnedRes.EntityComponent.OverrideHealth(SS_Resource.Health);
+				// SpawnedRes.DA_Resource = SS_Resource.DA_Resource;
+				// SpawnedRes.ResourceSize = SS_Resource.ResourceSize;
+				// SpawnedRes.SM_Variety = SS_Resource.SM_Variety;
+				// SpawnedRes.Growing = SS_Resource.Growing;
+				// SpawnedRes.CurrentGrowTime = SS_Resource.CurrentGrowTime;
+				// SpawnedRes.AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+				// SpawnedRes.FinishSpawning(ResTransform);
+				// SpawnedLOD.Resources.Add(SpawnedRes);
+			}
+
+			// Load NPCs
+			for (auto& SS_NPCInstance : SS_IslandLOD.NPCInstances)
+			{
+				if (!IsValid(SS_NPCInstance.DA_NPC))
+					continue;
+				FNewNPCInstance NPCInstance;
+				NPCInstance.DA_NPC = SS_NPCInstance.DA_NPC;
+				NPCInstance.MaxInstances = SS_NPCInstance.MaxInstances;
+				for (auto& SS_NPC : SS_NPCInstance.SpawnedNPCs)
+				{
+					FTransform LoadTransform = SS_NPC.Transform;
+					LoadTransform.SetLocation(LoadTransform.GetLocation() + FVector(0, 0, 60));
+					ANewNPC SpawnedNPC = SpawnActor(SS_NPCInstance.DA_NPC.NPCClass, LoadTransform.Location);
+					SpawnedNPC.DA_NPC = SS_NPCInstance.DA_NPC;
+					SpawnedNPC.ParentIsland = Island;
+					// SpawnedNPC.SetBase(Island.PMC_Bottom, NAME_None, false);
+					SpawnedNPC.IslandLODIndex = LoadLODIndex;
+					FinishSpawningActor(SpawnedNPC);
+					SpawnedNPC.LoadNPC(SS_NPC);
+					NPCInstance.SpawnedNPCs.Add(SpawnedNPC);
+				}
+				SpawnedLOD.NPCInstances.Add(NPCInstance);
+			}
+			return true;
+		}
+		return false;
+	}
+
 	UFUNCTION()
 	void OnRep_EditedVertices()
 	{
@@ -266,5 +473,33 @@ class ANewIslandChunk : AActor
 		}
 		float w = 1.0f - u - v;
 		return (V0 * u) + (V1 * v) + (V2 * w);
+	}
+
+	FResourceEntry& FindOrCreateResourceEntry(UDA_NewResource& DA_Resource, uint8 ResourceSize)
+	{
+		for (auto& Entry : ResourceEntries)
+		{
+			if (Entry.DA_Resource == DA_Resource && Entry.ResourceSize == ResourceSize)
+			{
+				return Entry;
+			}
+		}
+
+		FResourceEntry NewEntry;
+		NewEntry.DA_Resource = DA_Resource;
+		NewEntry.ResourceComponent = UResourceComponent::Create(this);
+		NewEntry.ResourceComponent.DA_Resource = DA_Resource;
+		NewEntry.ResourceComponent.IslandChunk = this;
+		NewEntry.ResourceComponent.Island = Island;
+		NewEntry.ResourceSize = ResourceSize;
+		NewEntry.ResourceComponent.ResourceSize = ResourceSize;
+		ResourceEntries.Add(NewEntry);
+		NewEntry.ResourceComponent.BeginResource();
+		return ResourceEntries[ResourceEntries.Num() - 1];
+	}
+
+	int32 MakeGridKey(int32 X, int32 Y)
+	{
+		return (int32(X) << 32) | uint32(Y);
 	}
 }

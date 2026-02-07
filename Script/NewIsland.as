@@ -1,3 +1,12 @@
+struct FNewIslandSpawnedLOD
+{
+	UPROPERTY()
+	TArray<int32> ResourcesEntries;
+	
+	UPROPERTY(VisibleInstanceOnly)
+	TArray<FNewNPCInstance> NPCInstances;
+};
+
 struct FCliffData
 {
 	TArray<FTransform> Instances;
@@ -14,7 +23,14 @@ struct FIslandDataAs
 	TArray<FVector2D> BottomUVs;
 	TArray<FVector> BottomNormals;
 	TArray<FProcMeshTangent> BottomTangents;
+
+	float MaxBoundaryDist; // sqrt already applied
+	TArray<FVector2D> EdgeStart;
+	TArray<FVector2D> EdgeDir;
+	TArray<float> EdgeLenSq;
 }
+
+delegate void FNewOnServerLOD();
 
 class ANewIsland : AActor
 {
@@ -31,7 +47,18 @@ class ANewIsland : AActor
 
 	bool bPlayerIsland = false;
 	bool bLoadFromSave = false;
-	UPROPERTY() UDA_NewIslandBiome DA_IslandBiome = nullptr;
+
+	UPROPERTY()
+	FSS_Island SS_Island;
+
+	UPROPERTY()
+	UDA_NewIslandBiome DA_IslandBiome = nullptr;
+
+	UPROPERTY()
+	TArray<ANewNPC> CorruptedNPCs;
+
+	UPROPERTY()
+	bool bCorruptionOngoing = false;
 
 	UPROPERTY(Replicated)
 	FRandomStream Seed;
@@ -71,13 +98,129 @@ class ANewIsland : AActor
 	UPROPERTY(EditAnywhere)
 	float MaxTerrainHeight = 3000;
 
+	TMap<int32, float> FalloffMaskMap;
+
+	// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Island LOD
+	UPROPERTY()
+	FNewOnServerLOD OnServerLOD;
+
+	// Current LOD.
+	// Calculated by closest USkyChunkRenderer distance.
+	// In ASkyChunk::UpdateLOD set via SetServerLOD.
+	UPROPERTY(VisibleInstanceOnly, ReplicatedUsing = OnRep_ServerLOD, BlueprintReadOnly)
+	int32 ServerLOD = -1;
+
+	// ====================== FUNCTIONS =============================
+
+	UFUNCTION(BlueprintCallable)
+	void SetServerLOD(int32 NewLOD)
+	{
+		// If AsyncGenerate Started and Not finished then Cancel and generate on game thread.
+		// if (!bIDGenerated && NewLOD == 0)
+		// {
+		// 	CancelAsyncGenerate();
+		// 	const FIslandData _ID = GenerateIsland();
+		// 	InitialGenerateComplete(_ID);
+		// }
+
+		// if (bFullGenerated && NewLOD < LowestServerLOD)
+		// {
+		// 	if (NewLOD == 0)
+		// 	{
+		// 		SpawnFoliageComponents();
+		// 		LoadBuildings();
+		// 		LoadDroppedItems();
+		// 	}
+
+		// 	for (int32 LOD = LowestServerLOD - 1; LOD >= NewLOD; --LOD)
+		// 	{
+		// 		if (!LoadLOD(LOD))
+		// 			GenerateLOD(LOD);
+		// 	}
+
+		// 	LowestServerLOD = NewLOD;
+		// }
+
+		// REP_SET(ServerLOD, NewLOD);
+	}
+
+	UFUNCTION()
+	void OnRep_ServerLOD()
+	{
+		// OnServerLOD.Broadcast();
+	}
+
+	// Generated or loaded lowest LOD.
+	// Only decreases.
+	UPROPERTY(VisibleInstanceOnly)
+	int32 LowestServerLOD = 666;
+
+	int32 GetLastLOD()
+	{
+		return Math::Max(0, DA_IslandBiome.IslandLODs.Num() - 1);
+	}
+	// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Island LOD
+
 	UFUNCTION(BlueprintOverride)
 	void BeginPlay()
 	{
-		IslandData = GenerateIsland();
+		IslandData = GenerateBasicGeometry();
+		GenerateChunks();
+
+		if (ServerLOD == 0)
+		{
+			// LoadBuildings();
+			// LoadDroppedItems();
+		}
+
 #if EDITOR
 		DebugIslandGeometry();
 #endif
+	}
+
+	void GenerateChunks()
+	{
+		// Compute shape bounds (AABB)
+		FVector2D Min(MAX_flt, MAX_flt);
+		FVector2D Max(-MAX_flt, -MAX_flt);
+		for (const FVector2D& Point : IslandData.KeyShapePoints)
+		{
+			Min.X = Math::Min(Min.X, Point.X);
+			Min.Y = Math::Min(Min.Y, Point.Y);
+			Max.X = Math::Max(Max.X, Point.X);
+			Max.Y = Math::Max(Max.Y, Point.Y);
+		}
+
+		const float ChunkWorldSize = ChunkResolution * VertexDistance;
+		const float HalfChunkWorldSize = ChunkWorldSize / 2;
+		const int32 MinChunkX = Math::FloorToInt(Min.X / ChunkWorldSize);
+		const int32 MaxChunkX = Math::CeilToInt(Max.X / ChunkWorldSize);
+		const int32 MinChunkY = Math::FloorToInt(Min.Y / ChunkWorldSize);
+		const int32 MaxChunkY = Math::CeilToInt(Max.Y / ChunkWorldSize);
+
+		for (int32 ChunkX = MinChunkX; ChunkX <= MaxChunkX; ++ChunkX)
+		{
+			for (int32 ChunkY = MinChunkY; ChunkY <= MaxChunkY; ++ChunkY)
+			{
+				if (!DoesChunkIntersectShape(ChunkX, ChunkY, ChunkWorldSize, IslandData.KeyShapePoints))
+				{
+					continue;
+				}
+
+				const float LocX = ChunkX * ChunkWorldSize + HalfChunkWorldSize;
+				const float LocY = ChunkY * ChunkWorldSize + HalfChunkWorldSize;
+
+				FVector ChunkLocation = GetActorLocation() + FVector(LocX, LocY, 0.f);
+
+				ANewIslandChunk Chunk = SpawnActor(ANewIslandChunk, ChunkLocation, FRotator(), NAME_None, true);
+				Chunk.Island = this;
+				Chunk.ChunkX = ChunkX;
+				Chunk.ChunkY = ChunkY;
+				Chunk.AttachToActor(this, NAME_None, EAttachmentRule::KeepWorld);
+				FinishSpawningActor(Chunk);
+				IslandChunks.Add(Chunk);
+			}
+		}
 	}
 
 	float CurrentReloadCooldown;
@@ -113,7 +256,8 @@ class ANewIsland : AActor
 				System::FlushPersistentDebugLines();
 				System::FlushDebugStrings();
 
-				IslandData = GenerateIsland();
+				IslandData = GenerateBasicGeometry();
+				GenerateChunks();
 #if EDITOR
 				DebugIslandGeometry();
 #endif
@@ -122,7 +266,7 @@ class ANewIsland : AActor
 		CurrentReloadCooldown += DeltaSeconds;
 	}
 
-	private FIslandDataAs GenerateIsland()
+	private FIslandDataAs GenerateBasicGeometry()
 	{
 		Seed.Reset();
 		FIslandDataAs _IslandDataAs;
@@ -162,6 +306,43 @@ class ANewIsland : AActor
 			_IslandDataAs.KeyShapePoints.Add(FVector2D(X, Y));
 		}
 
+		// Calculate RadiusByAngle.
+		RadiusByAngle.SetNum(ANGLE_SAMPLES);
+		for (int32 i = 0; i < ANGLE_SAMPLES; ++i)
+		{
+			float rbAngle = (2.f * PI * i) / ANGLE_SAMPLES;
+			FVector2D RayDir(Math::Cos(rbAngle), Math::Sin(rbAngle));
+
+			float ClosestT = MAX_flt;
+
+			for (int32 e = 0; e < _IslandDataAs.KeyShapePoints.Num(); ++e)
+			{
+				const FVector2D& A = _IslandDataAs.KeyShapePoints[e];
+				const FVector2D& B = _IslandDataAs.KeyShapePoints[(e + 1) % _IslandDataAs.KeyShapePoints.Num()];
+
+				FVector2D Edge = B - A;
+
+				// Solve: O + t*RayDir = A + u*Edge
+				float Det = RayDir.X * (-Edge.Y) - RayDir.Y * (-Edge.X);
+				if (Math::Abs(Det) < 1e-6f)
+					continue;
+
+				FVector2D AO = A; // origin is (0,0)
+
+				float t = (AO.X * (-Edge.Y) - AO.Y * (-Edge.X)) / Det;
+				float u = (RayDir.X * AO.Y - RayDir.Y * AO.X) / Det;
+
+				if (t > 0.f && u >= 0.f && u <= 1.f)
+				{
+					ClosestT = Math::Min(ClosestT, t);
+				}
+			}
+
+			RadiusByAngle[i] = (ClosestT < MAX_flt) ? ClosestT : 0.0f;
+		}
+
+		// BuildGoodFalloffMaskData(_IslandDataAs);
+
 		// Interpolate Shape Points
 		for (int32 i = 0; i < _IslandDataAs.KeyShapePoints.Num(); ++i)
 		{
@@ -200,85 +381,6 @@ class ANewIsland : AActor
 			if (!CliffsComponents.IsEmpty())
 			{
 				_IslandDataAs.GeneratedCliffs.FindOrAdd(Seed.RandRange(0, CliffsComponents.Num() - 1)).Instances.Add(FTransform(InstanceRotation, InstanceLocation, InstanceScale * CliffScale));
-			}
-		}
-
-		// Compute shape bounds (AABB)
-		FVector2D Min(MAX_flt, MAX_flt);
-		FVector2D Max(-MAX_flt, -MAX_flt);
-		for (const FVector2D& Point : _IslandDataAs.KeyShapePoints)
-		{
-			Min.X = Math::Min(Min.X, Point.X);
-			Min.Y = Math::Min(Min.Y, Point.Y);
-			Max.X = Math::Max(Max.X, Point.X);
-			Max.Y = Math::Max(Max.Y, Point.Y);
-		}
-
-		// Calculate RadiusByAngle.
-		RadiusByAngle.SetNum(ANGLE_SAMPLES);
-		for (int32 i = 0; i < ANGLE_SAMPLES; ++i)
-		{
-			float rbAngle = (2.f * PI * i) / ANGLE_SAMPLES;
-			FVector2D RayDir(Math::Cos(rbAngle), Math::Sin(rbAngle));
-
-			float ClosestT = MAX_flt;
-
-			for (int32 e = 0; e < _IslandDataAs.KeyShapePoints.Num(); ++e)
-			{
-				const FVector2D& A = _IslandDataAs.KeyShapePoints[e];
-				const FVector2D& B = _IslandDataAs.KeyShapePoints[(e + 1) % _IslandDataAs.KeyShapePoints.Num()];
-
-				FVector2D Edge = B - A;
-
-				// Solve: O + t*RayDir = A + u*Edge
-				float Det = RayDir.X * (-Edge.Y) - RayDir.Y * (-Edge.X);
-				if (Math::Abs(Det) < 1e-6f)
-					continue;
-
-				FVector2D AO = A; // origin is (0,0)
-
-				float t = (AO.X * (-Edge.Y) - AO.Y * (-Edge.X)) / Det;
-				float u = (RayDir.X * AO.Y - RayDir.Y * AO.X) / Det;
-
-				if (t > 0.f && u >= 0.f && u <= 1.f)
-				{
-					ClosestT = Math::Min(ClosestT, t);
-				}
-			}
-
-			RadiusByAngle[i] = (ClosestT < MAX_flt) ? ClosestT : 0.0f;
-		}
-
-		// Convert bounds → chunk index range
-		const float ChunkWorldSize = ChunkResolution * VertexDistance;
-		const float HalfChunkWorldSize = ChunkWorldSize / 2;
-		const int32 MinChunkX = Math::FloorToInt(Min.X / ChunkWorldSize);
-		const int32 MaxChunkX = Math::CeilToInt (Max.X / ChunkWorldSize);
-		const int32 MinChunkY = Math::FloorToInt(Min.Y / ChunkWorldSize);
-		const int32 MaxChunkY = Math::CeilToInt (Max.Y / ChunkWorldSize);
-
-		// Spawn Chunks
-		for (int32 ChunkX = MinChunkX; ChunkX <= MaxChunkX; ++ChunkX)
-		{
-			for (int32 ChunkY = MinChunkY; ChunkY <= MaxChunkY; ++ChunkY)
-			{
-				if (!DoesChunkIntersectShape(ChunkX, ChunkY, ChunkWorldSize, _IslandDataAs.KeyShapePoints))
-				{
-					continue;
-				}
-
-				const float LocX = ChunkX * ChunkWorldSize + HalfChunkWorldSize;
-				const float LocY = ChunkY * ChunkWorldSize + HalfChunkWorldSize;
-
-				FVector ChunkLocation = GetActorLocation() + FVector(LocX, LocY, 0.f);
-
-				ANewIslandChunk Chunk = SpawnActor(ANewIslandChunk, ChunkLocation, FRotator(), NAME_None, true);
-				Chunk.Island = this;
-				Chunk.ChunkX = ChunkX;
-				Chunk.ChunkY = ChunkY;
-				Chunk.AttachToActor(this, NAME_None, EAttachmentRule::KeepWorld);
-				FinishSpawningActor(Chunk);
-				IslandChunks.Add(Chunk);
 			}
 		}
 
@@ -391,6 +493,29 @@ class ANewIsland : AActor
 		}
 
 		return _IslandDataAs;
+	}
+
+	void AddCorruptedNPC(ANewNPC InNPC)
+	{
+		CorruptedNPCs.Add(InNPC);
+	}
+
+	void RemoveCorruptedNPC(ANewNPC InNPC)
+	{
+		CorruptedNPCs.RemoveSingle(InNPC);
+
+		for (int32 i = CorruptedNPCs.Num() - 1; i >= 0; --i)
+		{
+			if (!IsValid(CorruptedNPCs[i]))
+			{
+				CorruptedNPCs.RemoveAt(i);
+			}
+		}
+
+		if (CorruptedNPCs.IsEmpty())
+		{
+			bCorruptionOngoing = false;
+		}
 	}
 
 	void SpawnCliffsComponents()
@@ -593,10 +718,11 @@ class ANewIsland : AActor
 	}
 
 	/*
-	 * LocalPoint location should be relative to island!
-	 * If point relative to chunk then do: Point + ChunkLocation - IslandLocation.
+	 *	O(1) Bad shape/good performance.
+	 *  LocalPoint location should be relative to island!
+	 *	If point relative to chunk then do: Point + ChunkLocation - IslandLocation.
 	 */
-	float FalloffMask(const FVector& LocalPoint) const
+	float FastFalloffMask(const FVector& LocalPoint) const
 	{
 		FVector2D P(LocalPoint.X, LocalPoint.Y);
 
@@ -615,11 +741,62 @@ class ANewIsland : AActor
 		int32 I1 = (I0 + 1) % RadiusByAngle.Num();
 
 		float Alpha = SampleIndex - float(I0);
-
 		float BoundaryRadius = Math::Lerp(RadiusByAngle[I0], RadiusByAngle[I1], Alpha);
 
 		float Mask = 1.0f - (Dist / BoundaryRadius);
 		return Math::Clamp(Mask, 0.0f, 1.0f);
+	}
+
+	/*
+	 *	O(N) Good mask/bad performance. TODO: In future, figure out how to optimize it
+	 * 	LocalPoint location should be relative to island!
+	 *	If point relative to chunk then do: Point + ChunkLocation - IslandLocation.
+	 */
+	float GoodFalloffMask(const FVector& LocalPoint) const
+	{
+		const FVector2D P(LocalPoint.X, LocalPoint.Y);
+
+		float MinDistSq = MAX_flt;
+
+		const int32 Num = IslandData.EdgeStart.Num();
+		for (int32 i = 0; i < Num; ++i)
+		{
+			const FVector2D AP = P - IslandData.EdgeStart[i];
+			float T = Math::Clamp(AP.DotProduct(IslandData.EdgeDir[i]) / IslandData.EdgeLenSq[i], 0.0f, 1.0f);
+			const FVector2D Closest = IslandData.EdgeStart[i] + IslandData.EdgeDir[i] * T;
+			MinDistSq = Math::Min(MinDistSq, (P - Closest).SizeSquared());
+		}
+		
+		return Math::Clamp(Math::Sqrt(MinDistSq) / IslandData.MaxBoundaryDist, 0.0f, 1.0f);
+	}
+
+	void BuildGoodFalloffMaskData(FIslandDataAs& _IslandData)
+	{
+		const TArray<FVector2D>& Poly = _IslandData.KeyShapePoints;
+
+		_IslandData.EdgeStart.SetNum(Poly.Num());
+		_IslandData.EdgeDir.SetNum(Poly.Num());
+		_IslandData.EdgeLenSq.SetNum(Poly.Num());
+
+		float MaxDistSq = 0.0f;
+
+		int32 j = Poly.Num() - 1;
+		for (int32 i = 0; i < Poly.Num(); ++i)
+		{
+			const FVector2D& A = Poly[j];
+			const FVector2D& B = Poly[i];
+
+			FVector2D AB = A - B;
+
+			_IslandData.EdgeStart[i] = B;
+			_IslandData.EdgeDir[i] = AB;
+			_IslandData.EdgeLenSq[i] = AB.SizeSquared();
+
+			MaxDistSq = Math::Max(MaxDistSq, B.SizeSquared());
+			j = i;
+		}
+
+		_IslandData.MaxBoundaryDist = Math::Sqrt(MaxDistSq);
 	}
 
 #if EDITORONLY_DATA
@@ -665,10 +842,13 @@ class ANewIsland : AActor
 					FVector RandomOffset = FVector(Math::RandRange(-3.f, 3.f));
 					FLinearColor TerrainVertexColor = DebugTerrainVerticesRandomColors ? RandomChunkColor : FLinearColor::Blue;
 					// System::DrawDebugPoint(Chunk.GetActorLocation() + Vertex + RandomOffset, 5, TerrainVertexColor, 100000);
-					float Mask = FalloffMask(Vertex + Chunk.GetActorLocation() - GetActorLocation());
+
+					// float Mask = GoodFalloffMask(Vertex + Chunk.GetActorLocation() - GetActorLocation());
+					// Mask = Math::SmoothStep(0.25f, 0.25f, Mask);
+
+					float Mask = FastFalloffMask(Vertex + Chunk.GetActorLocation() - GetActorLocation());
 					Mask = Math::SmoothStep(0.25f, 0.25f, Mask);
-					// Mask = Math::SmoothStep(0.25f, 1.f, Mask);
-					// Mask = Math::RoundToFloat(Mask);
+
 					FLinearColor Color = FLinearColor(Mask, Mask, Mask);
 					System::DrawDebugPoint(Chunk.GetActorLocation() + Vertex, 5, Color, 100000);
 					// int32 Key = int32(Chunk.TopVerticesAxis[i].X * Stride + Chunk.TopVerticesAxis[i].Y);

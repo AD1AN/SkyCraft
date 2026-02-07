@@ -251,4 +251,6 @@ public:
 		return static_cast<uint8>(FMath::Clamp(Value, 0, 255));
 	}
 
+	UFUNCTION(BlueprintCallable)
+	static void ImplementStaticMesh(FStaticMeshBase& Data, UStaticMeshComponent* MeshComponent);
 };

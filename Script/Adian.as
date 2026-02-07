@@ -13,6 +13,8 @@ struct FNewFloatMinMax
 
 namespace adian
 {
+	const int32 INDEX_NONE = -1;
+
 	FVector_NetQuantize QuantizeVector(FVector& Vector)
 	{
 		FVector_NetQuantize Quantized;

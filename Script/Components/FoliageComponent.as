@@ -34,58 +34,8 @@ struct FGridValue
 
 delegate void FOnComponentStarted();
 
-class UFoliage : UHierarchicalInstancedStaticMeshComponent
+class UFoliageComponent : UHierarchicalInstancedStaticMeshComponent
 {
-	bool bComponentStarted = false;
-
-	// Server starting component from here.
-    void BeginFoliage()
-    {
-		StartComponent(); // Only server.
-	}
-
-	// Client starting component from here.
-	UFUNCTION()
-	void OnRep_DA_Foliage()
-    {
-		StartComponent(); // Only clients.
-	}
-
-	void StartComponent()
-	{
-		SetStaticMesh(DA_Foliage.StaticMesh);
-		SetCastShadow(false);
-		SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		SetCullDistance(DA_Foliage.DrawDistance);
-		// InstanceStartCullDistance = DA_Foliage.CullingDistance;
-		// InstanceEndCullDistance = DA_Foliage.CullingDistance;
-		WorldPositionOffsetDisableDistance = DA_Foliage.WPO_DisableDistance;
-
-		IslandChunk = Cast<ANewIslandChunk>(GetOwner());
-        Island = IslandChunk.Island;
-		// Island.OnIDGenerated.RemoveDynamic(this, &UFoliageHISM::StartComponent);
-		// if (!Island.bIDGenerated)
-		// {
-		// 	Island.OnIDGenerated.AddDynamic(this, &UFoliageHISM::StartComponent);
-		// 	return;
-		// }
-		Generate_InitialInstances();
-		AddInstances(InitialInstances, false, false, false);
-		// if (Island.bLoadFromSave)
-		// {
-		// 	for (auto& SS_Foliage : Island.SS_Island.Foliage)
-		// 	{
-		// 		if (SS_Foliage.DA_Foliage == DA_Foliage)
-		// 		{
-		// 			LoadFromSave(SS_Foliage);
-		// 			break;
-		// 		}
-		// 	}
-		// }
-		bComponentStarted = true;
-		// OnComponentStarted.Broadcast();
-	}
-
 	UPROPERTY()
 	FOnComponentStarted OnComponentStarted;
 
@@ -111,6 +61,56 @@ class UFoliage : UHierarchicalInstancedStaticMeshComponent
     ANewIsland Island;
     ANewIslandChunk IslandChunk;
 
+	bool bComponentStarted = false;
+
+	// Server starting component from here.
+	void BeginFoliage()
+	{
+		StartComponent(); // Only server.
+	}
+
+	// Client starting component from here.
+	UFUNCTION()
+	void OnRep_DA_Foliage()
+	{
+		StartComponent(); // Only clients.
+	}
+
+	void StartComponent()
+	{
+		SetStaticMesh(DA_Foliage.StaticMesh);
+		SetCastShadow(false);
+		SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		SetCullDistance(DA_Foliage.DrawDistance);
+		// InstanceStartCullDistance = DA_Foliage.CullingDistance;
+		// InstanceEndCullDistance = DA_Foliage.CullingDistance;
+		WorldPositionOffsetDisableDistance = DA_Foliage.WPO_DisableDistance;
+
+		IslandChunk = Cast<ANewIslandChunk>(GetOwner());
+		Island = IslandChunk.Island;
+		// Island.OnIDGenerated.RemoveDynamic(this, &UFoliageHISM::StartComponent);
+		// if (!Island.bIDGenerated)
+		// {
+		// 	Island.OnIDGenerated.AddDynamic(this, &UFoliageHISM::StartComponent);
+		// 	return;
+		// }
+		Generate_InitialInstances();
+		AddInstances(InitialInstances, false, false, false);
+		// if (Island.bLoadFromSave)
+		// {
+		// 	for (auto& SS_Foliage : Island.SS_Island.Foliage)
+		// 	{
+		// 		if (SS_Foliage.DA_Foliage == DA_Foliage)
+		// 		{
+		// 			LoadFromSave(SS_Foliage);
+		// 			break;
+		// 		}
+		// 	}
+		// }
+		bComponentStarted = true;
+		// OnComponentStarted.Broadcast();
+	}
+
 	void Generate_InitialInstances()
 	{
         FVector IslandLocation = Island.GetActorLocation();
@@ -127,21 +127,20 @@ class UFoliage : UHierarchicalInstancedStaticMeshComponent
 			const FVector& V1 = IslandChunk.RenderVertices[IslandChunk.RenderTriangles[TriangleIndex + 1]];
 			const FVector& V2 = IslandChunk.RenderVertices[IslandChunk.RenderTriangles[TriangleIndex + 2]];
 
-			// Generate a random point in the triangle
-			FVector Candidate = IslandChunk.RandomPointInTriangle(V0, V1, V2);
+			// Random point in the triangle relative to chunk.
+			FVector RandomPoint = IslandChunk.RandomPointInTriangle(V0, V1, V2);
 
-			// Check if Edge
-			float FalloffMask = Island.FalloffMask(Candidate + ChunkLocation - IslandLocation);
-			FalloffMask = Math::SmoothStep(0.0f, 0.25f, FalloffMask);
-			if (FalloffMask <= 0.4f)
+			// Exclude from island edges.
+			float FalloffMask = Island.FastFalloffMask(RandomPoint + ChunkLocation - IslandLocation);
+			if (FalloffMask <= 0.15f)
 			{
 				++Attempts;
 				continue;
 			}
 
 			// Convert the point to a spatial grid key
-			const int32 GridX = Math::RoundToInt(Candidate.X / DA_Foliage.Spacing);
-			const int32 GridY = Math::RoundToInt(Candidate.Y / DA_Foliage.Spacing);
+			const int32 GridX = Math::RoundToInt(RandomPoint.X / DA_Foliage.Spacing);
+			const int32 GridY = Math::RoundToInt(RandomPoint.Y / DA_Foliage.Spacing);
 			const int32 GridKey = MakeGridKey(GridX, GridY);
 			if (GridMap.Contains(GridKey))
 			{
@@ -159,7 +158,7 @@ class UFoliage : UHierarchicalInstancedStaticMeshComponent
 					if (GridMap.Contains(NeighborKey))
 					{
 						FVector_NetQuantize Loc = GridMap[NeighborKey].Location;
-						if (FVector(Loc.X, Loc.Y, Loc.Z).DistSquared(Candidate) < SpacingSqr)
+						if (FVector(Loc.X, Loc.Y, Loc.Z).DistSquared(RandomPoint) < SpacingSqr)
 						{
 							bTooClose = true;
 							break;
@@ -175,6 +174,7 @@ class UFoliage : UHierarchicalInstancedStaticMeshComponent
 				continue;
 			}
 
+			// Check floor slope.
 			const FVector TriangleNormal = FVector(V2 - V0).CrossProduct(V1 - V0).GetSafeNormal();
 			if (DA_Foliage.bMaxFloorSlope)
 			{
@@ -186,8 +186,8 @@ class UFoliage : UHierarchicalInstancedStaticMeshComponent
 				}
 			}
 
-			// Accept candidate
-			FTransform InitialInstance(Candidate);
+			// Accept random point.
+			FTransform InitialInstance(RandomPoint);
 			FQuat GrassRotation(FRotator::ZeroRotator);
 			if (DA_Foliage.bRotationAlignGround) GrassRotation = FQuat::FindBetweenNormals(FVector::UpVector, TriangleNormal);
 			const FQuat GrassYaw = FQuat(FVector::UpVector, Math::DegreesToRadians(Island.Seed.RandRange(0.0f, 360.0f)));
@@ -195,7 +195,7 @@ class UFoliage : UHierarchicalInstancedStaticMeshComponent
 			if (DA_Foliage.bRandomScale) InitialInstance.SetScale3D(FVector(1, 1, Island.Seed.RandRange(DA_Foliage.ScaleZ.Min, DA_Foliage.ScaleZ.Max)));
 			FGridValue GridValue;
             GridValue.Index = InstanceIndex;
-			GridValue.Location = adian::QuantizeVector(Candidate);
+			GridValue.Location = adian::QuantizeVector(RandomPoint);
             GridValue.bDynamicInstance = false;
             GridMap.Add(GridKey, GridValue);
 			InitialInstances.Add(InitialInstance);

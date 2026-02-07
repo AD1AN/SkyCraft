@@ -1,17 +1,17 @@
 class UDA_NewNPC : UDataAsset
 {
 	// Class to spawn. Should be valid.
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<ANPC> NPCClass = nullptr;
+	UPROPERTY()
+	TSubclassOf<ANewNPC> NPCClass;
 
 	// Can respawn?
-	UPROPERTY(EditDefaultsOnly, meta = (InlineEditConditionToggle))
+	UPROPERTY(Meta = (InlineEditConditionToggle))
 	bool bCanRespawn = true;
 
 	// In Seconds.
-	UPROPERTY(EditDefaultsOnly, meta = (EditCondition = "bCanRespawn"))
+	UPROPERTY(Meta = (EditCondition = "bCanRespawn"))
 	float SpawnTime = 120.0f;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY()
 	TArray<FOverrideMaterial> OverrideMaterials;
 };

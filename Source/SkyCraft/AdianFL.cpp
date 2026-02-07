@@ -14,6 +14,7 @@
 #include "Net/Core/PushModel/PushModel.h"
 #include "SkyCraft/DataAssets/DA_SkyTag.h"
 #include "Structs/RelativeBox.h"
+#include "Structs/ResourceSize.h"
 
 FUniformSubtractOut UAdianFL::UniformSubtract(FEssence Essence, int32 TotalToSubtract)
 {
@@ -336,4 +337,9 @@ UInventoryComponent* UAdianFL::GetPlayerInventory(const AActor* Actor)
 		return PFInterface->GetPlayerInventory();
 	}
 	return nullptr;
+}
+
+void UAdianFL::ImplementStaticMesh(FStaticMeshBase& Data, UStaticMeshComponent* MeshComponent)
+{
+	Data.ImplementStaticMesh(MeshComponent);
 }

@@ -1,7 +1,7 @@
 struct FNewIslandNPC
 {
 	UPROPERTY()
-	UDA_NewNPC DA_NPC = nullptr;
+	UDA_NewNPC DA_NPC;
 
 	UPROPERTY()
 	int32 MaxSpawnPoints = 1000;
@@ -10,7 +10,7 @@ struct FNewIslandNPC
 struct FNewIslandResource
 {
 	UPROPERTY()
-	UDA_Resource DA_Resource;
+	UDA_NewResource DA_Resource;
 
 	UPROPERTY()
 	FUint8MinMax ResourceSize;
@@ -19,10 +19,10 @@ struct FNewIslandResource
 struct FNewIslandLOD
 {
 	UPROPERTY()
-	TArray<FIslandResource> Resources;
+	TArray<FNewIslandResource> Resources;
 
 	UPROPERTY()
-	TArray<FIslandNPC> NPCs;
+	TArray<FNewIslandNPC> NPCs;
 };
 
 class UDA_NewIslandBiome : UDataAsset
@@ -31,7 +31,7 @@ class UDA_NewIslandBiome : UDataAsset
 	FText BiomeName;
 
 	UPROPERTY(EditDefaultsOnly)
-	FFloatMinMax IslandSize;
+	FNewFloatMinMax IslandSize;
 
 	UPROPERTY(EditDefaultsOnly)
 	UMaterialInterface TopMaterial;
@@ -46,11 +46,11 @@ class UDA_NewIslandBiome : UDataAsset
 	TArray<UDA_NewFoliage> Foliage;
 
 	UPROPERTY(EditDefaultsOnly)
-	TArray<FIslandLOD> IslandLODs;
+	TArray<FNewIslandLOD> IslandLODs;
 
 	UPROPERTY(EditDefaultsOnly)
-	TArray<FIslandNPC> NightNPCs;
+	TArray<FNewIslandNPC> NightNPCs;
     
 	UPROPERTY(EditDefaultsOnly)
-	FIslandLOD AlwaysLOD;
+	FNewIslandLOD AlwaysLOD;
 };
